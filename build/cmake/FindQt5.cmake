@@ -18,7 +18,7 @@ set(_components
     # QuickControls2
     # QuickTemplates2
     # QuickWidgets
-    Xml
+    # Xml
     # XmlPatterns
     # Svg
     # Widgets

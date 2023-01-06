@@ -23,7 +23,7 @@
 #ifndef __MUSICXMLSUPPORT_H__
 #define __MUSICXMLSUPPORT_H__
 
-#include <QDomElement>
+#include "global/serialization/xmldom.h"
 #include <QXmlStreamReader>
 #include <QTextStream>
 #include <QSet>
@@ -208,7 +208,7 @@ class MxmlSupport
 {
 public:
     static int stringToInt(const QString& s, bool* ok);
-    static Fraction durationAsFraction(const int divisions, const QDomElement e);
+    static Fraction durationAsFraction(const int divisions, const XmlDomElement e);
     static Fraction noteTypeToFraction(QString type);
     static Fraction calculateFraction(QString type, int dots, int normalNotes, int actualNotes);
 };
@@ -235,10 +235,11 @@ protected:
 private:
     QString m_errors;
 };
-#endif
 
 extern void domError(const QDomElement&);
 extern void domNotImplemented(const QDomElement&);
+#endif
+inline void domError(const XmlDomNode&) {}; // TODO: print debug logs
 
 extern QString accSymId2MxmlString(const SymId id);
 extern QString accidentalType2MxmlString(const AccidentalType type);

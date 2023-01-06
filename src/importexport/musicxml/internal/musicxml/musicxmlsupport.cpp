@@ -166,7 +166,7 @@ QString MusicXMLInstrument::toString() const
            .arg(int(stemDirection));
 }
 
-#if 0
+#if 0 // no validate
 void ValidatorMessageHandler::handleMessage(QtMsgType type, const QString& description,
                                             const QUrl& /* identifier */, const QSourceLocation& sourceLocation)
 {
@@ -212,6 +212,7 @@ void ValidatorMessageHandler::handleMessage(QtMsgType type, const QString& descr
 }
 #endif
 
+#if 0 // no QtXml
 //---------------------------------------------------------
 //   printDomElementPath
 //---------------------------------------------------------
@@ -275,6 +276,7 @@ void domNotImplemented(const QDomElement& e)
         LOGD("  text node <%s>", qPrintable(e.toText().data()));
     }
 }
+#endif
 
 //---------------------------------------------------------
 //   errorStringWithLocation
@@ -335,10 +337,10 @@ int MxmlSupport::stringToInt(const QString& s, bool* ok)
  Caller must ensure divisions is valid.
  */
 
-Fraction MxmlSupport::durationAsFraction(const int divisions, const QDomElement e)
+Fraction MxmlSupport::durationAsFraction(const int divisions, const XmlDomElement e)
 {
     Fraction f;
-    if (e.tagName() == "duration") {
+    if (e.nodeName() == "duration") {
         bool ok;
         int val = MxmlSupport::stringToInt(e.text(), &ok);
         f = Fraction(val, 4 * divisions);     // note divisions = ticks / quarter note

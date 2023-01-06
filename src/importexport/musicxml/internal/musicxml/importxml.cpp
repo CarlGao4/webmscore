@@ -25,7 +25,7 @@
  */
 
 #include <QBuffer>
-#include <QDomDocument>
+// #include <QDomDocument>
 // #include <QMessageBox> // no gui
 // #include <QXmlSchema> // no validate
 // #include <QXmlSchemaValidator> // no validate
@@ -143,24 +143,23 @@ static bool extractRootfile(QFile* qf, QByteArray& data)
     MQZipReader f(qf->fileName());
     data = f.fileData("META-INF/container.xml");
 
-    QDomDocument container;
-    int line, column;
-    QString err;
-    if (!container.setContent(data, false, &err, &line, &column)) {
-        LOGE() << String("Error reading container.xml at line %1 column %2: %3\n").arg(line).arg(column).arg(err);
+    XmlDomDocument container;
+    container.setContent(ByteArray::fromQByteArrayNoCopy(data));
+    if (container.hasError()) {
+        LOGE() << String("Error reading container.xml: %1\n").arg(container.errorString());
         return false;
     }
 
     // extract first rootfile
     QString rootfile = "";
-    for (QDomElement e = container.documentElement(); !e.isNull(); e = e.nextSiblingElement()) {
-        if (e.tagName() == "container") {
-            for (QDomElement ee = e.firstChildElement(); !ee.isNull(); ee = ee.nextSiblingElement()) {
-                if (ee.tagName() == "rootfiles") {
-                    for (QDomElement eee = ee.firstChildElement(); !eee.isNull(); eee = eee.nextSiblingElement()) {
-                        if (eee.tagName() == "rootfile") {
+    for (XmlDomNode e = container.rootElement(); !e.isNull(); e = e.nextSibling()) {
+        if (e.nodeName() == "container") {
+            for (XmlDomNode ee = e.firstChild(); !ee.isNull(); ee = ee.nextSibling()) {
+                if (ee.nodeName() == "rootfiles") {
+                    for (XmlDomNode eee = ee.firstChild(); !eee.isNull(); eee = eee.nextSibling()) {
+                        if (eee.nodeName() == "rootfile") {
                             if (rootfile == "") {
-                                rootfile = eee.attribute(QString("full-path"));
+                                rootfile = eee.attribute("full-path");
                             }
                         } else {
                             domError(eee);
