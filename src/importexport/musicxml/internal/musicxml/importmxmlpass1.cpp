@@ -508,7 +508,7 @@ int MusicXMLParserPass1::octaveShift(const QString& id, const staff_idx_t staff,
 
 void MusicXMLParserPass1::skipLogCurrElem()
 {
-    _logger->logDebugInfo(QString("skipping '%1'").arg(_e.name().toString()), &_e);
+    _logger->logDebugInfo(QString("skipping '%1'").arg(_e.name().ascii()), &_e);
     _e.skipCurrentElement();
 }
 
@@ -947,7 +947,8 @@ Err MusicXMLParserPass1::parse(QIODevice* device)
 {
     _logger->logDebugTrace("MusicXMLParserPass1::parse device");
     _parts.clear();
-    _e.setDevice(device);
+    // _e.setDevice(device);
+    _e.setData(ByteArray::fromQByteArrayNoCopy(device->readAll()));
     auto res = parse();
     if (res != Err::NoError) {
         return res;
@@ -983,7 +984,7 @@ Err MusicXMLParserPass1::parse()
             scorePartwise();
         } else {
             _logger->logError(QString("this is not a MusicXML score-partwise file (top-level node '%1')")
-                              .arg(_e.name().toString()), &_e);
+                              .arg(_e.name().ascii()), &_e);
             _e.skipCurrentElement();
             return Err::FileBadFormat;
         }
@@ -1037,9 +1038,9 @@ void MusicXMLParserPass1::scorePartwise()
         } else if (_e.name() == "work") {
             while (_e.readNextStartElement()) {
                 if (_e.name() == "work-number") {
-                    _score->setMetaTag(u"workNumber", _e.readElementText());
+                    _score->setMetaTag(u"workNumber", _e.readText());
                 } else if (_e.name() == "work-title") {
-                    _score->setMetaTag(u"workTitle", _e.readElementText());
+                    _score->setMetaTag(u"workTitle", _e.readText());
                 } else {
                     skipLogCurrElem();
                 }
@@ -1049,9 +1050,9 @@ void MusicXMLParserPass1::scorePartwise()
         } else if (_e.name() == "defaults") {
             defaults();
         } else if (_e.name() == "movement-number") {
-            _score->setMetaTag(u"movementNumber", _e.readElementText());
+            _score->setMetaTag(u"movementNumber", _e.readText());
         } else if (_e.name() == "movement-title") {
-            _score->setMetaTag(u"movementTitle", _e.readElementText());
+            _score->setMetaTag(u"movementTitle", _e.readText());
         } else if (_e.name() == "credit") {
             credit(_credits);
         } else {
@@ -1132,25 +1133,25 @@ void MusicXMLParserPass1::identification()
     while (_e.readNextStartElement()) {
         if (_e.name() == "creator") {
             // type is an arbitrary label
-            QString strType = _e.attributes().value("type").toString();
-            _score->setMetaTag(strType, _e.readElementText());
+            QString strType = _e.attribute("type").toQString();
+            _score->setMetaTag(strType, _e.readText());
         } else if (_e.name() == "rights") {
-            _score->setMetaTag(u"copyright", _e.readElementText());
+            _score->setMetaTag(u"copyright", _e.readText());
         } else if (_e.name() == "encoding") {
             // TODO
             while (_e.readNextStartElement()) {
-                if (_e.name() == "supports" && _e.attributes().value("element") == "beam" && _e.attributes().value("type") == "yes") {
+                if (_e.name() == "supports" && _e.attribute("element") == "beam" && _e.attribute("type") == "yes") {
                     _hasBeamingInfo = true;
                 }
                 _e.skipCurrentElement();
             }
-            // _score->setMetaTag("encoding", _e.readElementText()); works with DOM but not with pull parser
+            // _score->setMetaTag("encoding", _e.readText()); works with DOM but not with pull parser
             // temporarily fake the encoding tag (compliant with DOM parser) to help the autotester
             if (MScore::debugMode) {
                 _score->setMetaTag(u"encoding", u"MuseScore 0.7.02007-09-10");
             }
         } else if (_e.name() == "source") {
-            _score->setMetaTag(u"source", _e.readElementText());
+            _score->setMetaTag(u"source", _e.readText());
         } else if (_e.name() == "miscellaneous") {
             // TODO
             _e.skipCurrentElement();        // skip but don't log
@@ -1260,18 +1261,18 @@ static QString decodeEntities(const QString& src)
  Read the next part of a MusicXML formatted string and convert to MuseScore internal encoding.
  */
 
-static QString nextPartOfFormattedString(QXmlStreamReader& e)
+static QString nextPartOfFormattedString(XmlStreamReader& e)
 {
     //QString lang       = e.attribute(QString("xml:lang"), "it");
-    QString fontWeight = e.attributes().value("font-weight").toString();
-    QString fontSize   = e.attributes().value("font-size").toString();
-    QString fontStyle  = e.attributes().value("font-style").toString();
-    QString underline  = e.attributes().value("underline").toString();
-    QString strike     = e.attributes().value("line-through").toString();
-    QString fontFamily = e.attributes().value("font-family").toString();
+    QString fontWeight = e.attribute("font-weight").toQString();
+    QString fontSize   = e.attribute("font-size").toQString();
+    QString fontStyle  = e.attribute("font-style").toQString();
+    QString underline  = e.attribute("underline").toQString();
+    QString strike     = e.attribute("line-through").toQString();
+    QString fontFamily = e.attribute("font-family").toQString();
     // TODO: color, enclosure, yoffset in only part of the text, ...
 
-    QString txt        = e.readElementText();
+    QString txt        = e.readText();
     // replace HTML entities
     txt = decodeEntities(txt);
     QString syms       = text2syms(txt);
@@ -1351,7 +1352,7 @@ void MusicXMLParserPass1::credit(CreditWordsList& credits)
 {
     _logger->logDebugTrace("MusicXMLParserPass1::credit", &_e);
 
-    const auto page = _e.attributes().value("page").toString().toInt();         // ignoring errors implies incorrect conversion defaults to the first page
+    const auto page = _e.attribute("page").toQString().toInt();         // ignoring errors implies incorrect conversion defaults to the first page
     // multiple credit-words elements may be present,
     // which are appended
     // use the position info from the first one
@@ -1369,19 +1370,19 @@ void MusicXMLParserPass1::credit(CreditWordsList& credits)
         if (_e.name() == "credit-words") {
             // IMPORT_LAYOUT
             if (!creditWordsRead) {
-                defaultx = _e.attributes().value("default-x").toString().toDouble();
-                defaulty = _e.attributes().value("default-y").toString().toDouble();
-                fontSize = _e.attributes().value("font-size").toString().toDouble();
-                justify  = _e.attributes().value("justify").toString();
-                halign   = _e.attributes().value("halign").toString();
-                valign   = _e.attributes().value("valign").toString();
+                defaultx = _e.attribute("default-x").toQString().toDouble();
+                defaulty = _e.attribute("default-y").toQString().toDouble();
+                fontSize = _e.attribute("font-size").toQString().toDouble();
+                justify  = _e.attribute("justify").toQString();
+                halign   = _e.attribute("halign").toQString();
+                valign   = _e.attribute("valign").toQString();
                 creditWordsRead = true;
             }
             crwords += nextPartOfFormattedString(_e);
         } else if (_e.name() == "credit-type") {
             // multiple credit-type elements may be present, supported by
             // e.g. Finale v26.3 for Mac.
-            crtypes += _e.readElementText();
+            crtypes += _e.readText();
         } else {
             skipLogCurrElem();
         }
@@ -1512,9 +1513,9 @@ void MusicXMLParserPass1::defaults()
         } else if (_e.name() == "scaling") {
             while (_e.readNextStartElement()) {
                 if (_e.name() == "millimeters") {
-                    millimeter = _e.readElementText().toDouble();
+                    millimeter = _e.readText().toDouble();
                 } else if (_e.name() == "tenths") {
-                    tenths = _e.readElementText().toDouble();
+                    tenths = _e.readText().toDouble();
                 } else {
                     skipLogCurrElem();
                 }
@@ -1536,7 +1537,7 @@ void MusicXMLParserPass1::defaults()
                 } else if (_e.name() == "system-margins") {
                     _e.skipCurrentElement();            // skip but don't log
                 } else if (_e.name() == "system-distance") {
-                    Spatium val(_e.readElementText().toDouble() / 10.0);
+                    Spatium val(_e.readText().toDouble() / 10.0);
                     if (isImportLayout) {
                         _score->style().set(Sid::minSystemDistance, val);
                         //LOGD("system distance %f", val.val());
@@ -1550,7 +1551,7 @@ void MusicXMLParserPass1::defaults()
         } else if (_e.name() == "staff-layout") {
             while (_e.readNextStartElement()) {
                 if (_e.name() == "staff-distance") {
-                    Spatium val(_e.readElementText().toDouble() / 10.0);
+                    Spatium val(_e.readText().toDouble() / 10.0);
                     if (isImportLayout) {
                         _score->style().set(Sid::staffDistance, val);
                     }
@@ -1561,12 +1562,12 @@ void MusicXMLParserPass1::defaults()
         } else if (_e.name() == "music-font") {
             _e.skipCurrentElement();        // skip but don't log
         } else if (_e.name() == "word-font") {
-            wordFontFamily = _e.attributes().value("font-family").toString();
-            wordFontSize = _e.attributes().value("font-size").toString();
+            wordFontFamily = _e.attribute("font-family").toQString();
+            wordFontSize = _e.attribute("font-size").toQString();
             _e.skipCurrentElement();
         } else if (_e.name() == "lyric-font") {
-            lyricFontFamily = _e.attributes().value("font-family").toString();
-            lyricFontSize = _e.attributes().value("font-size").toString();
+            lyricFontFamily = _e.attribute("font-family").toQString();
+            lyricFontSize = _e.attribute("font-size").toQString();
             _e.skipCurrentElement();
         } else if (_e.name() == "lyric-language") {
             _e.skipCurrentElement();        // skip but don't log
@@ -1605,20 +1606,20 @@ void MusicXMLParserPass1::pageLayout(PageFormat& pf, const qreal conversion)
 
     while (_e.readNextStartElement()) {
         if (_e.name() == "page-margins") {
-            QString type = _e.attributes().value("type").toString();
+            QString type = _e.attribute("type").toQString();
             if (type == "") {
                 type = "both";
             }
             qreal lm = 0.0, rm = 0.0, tm = 0.0, bm = 0.0;
             while (_e.readNextStartElement()) {
                 if (_e.name() == "left-margin") {
-                    lm = _e.readElementText().toDouble() * conversion;
+                    lm = _e.readText().toDouble() * conversion;
                 } else if (_e.name() == "right-margin") {
-                    rm = _e.readElementText().toDouble() * conversion;
+                    rm = _e.readText().toDouble() * conversion;
                 } else if (_e.name() == "top-margin") {
-                    tm = _e.readElementText().toDouble() * conversion;
+                    tm = _e.readText().toDouble() * conversion;
                 } else if (_e.name() == "bottom-margin") {
-                    bm = _e.readElementText().toDouble() * conversion;
+                    bm = _e.readText().toDouble() * conversion;
                 } else {
                     skipLogCurrElem();
                 }
@@ -1637,12 +1638,12 @@ void MusicXMLParserPass1::pageLayout(PageFormat& pf, const qreal conversion)
                 pf.evenBottomMargin = bm;
             }
         } else if (_e.name() == "page-height") {
-            double val = _e.readElementText().toDouble();
+            double val = _e.readText().toDouble();
             size.rheight() = val * conversion;
             // set pageHeight and pageWidth for use by doCredits()
             _pageSize.setHeight(static_cast<int>(val + 0.5));
         } else if (_e.name() == "page-width") {
-            double val = _e.readElementText().toDouble();
+            double val = _e.readText().toDouble();
             size.rwidth() = val * conversion;
             // set pageHeight and pageWidth for use by doCredits()
             _pageSize.setWidth(static_cast<int>(val + 0.5));
@@ -1791,22 +1792,22 @@ void MusicXMLParserPass1::partGroup(const int scoreParts,
 {
     _logger->logDebugTrace("MusicXMLParserPass1::partGroup", &_e);
     bool barlineSpan = true;
-    int number = _e.attributes().value("number").toInt();
+    int number = _e.attribute("number").toInt();
     if (number > 0) {
         number--;
     }
     QString symbol = "";
-    QString type = _e.attributes().value("type").toString();
+    QString type = _e.attribute("type").toQString();
 
     while (_e.readNextStartElement()) {
         if (_e.name() == "group-name") {
             _e.skipCurrentElement();        // skip but don't log
         } else if (_e.name() == "group-abbreviation") {
-            symbol = _e.readElementText();
+            symbol = _e.readText();
         } else if (_e.name() == "group-symbol") {
-            symbol = _e.readElementText();
+            symbol = _e.readText();
         } else if (_e.name() == "group-barline") {
-            if (_e.readElementText() == "no") {
+            if (_e.readText() == "no") {
                 barlineSpan = false;
             }
         } else {
@@ -1837,7 +1838,7 @@ void MusicXMLParserPass1::partGroup(const int scoreParts,
 void MusicXMLParserPass1::scorePart()
 {
     _logger->logDebugTrace("MusicXMLParserPass1::scorePart", &_e);
-    QString id = _e.attributes().value("id").toString().trimmed();
+    QString id = _e.attribute("id").toQString().trimmed();
 
     if (_parts.contains(id)) {
         _logger->logError(QString("duplicate part id '%1'").arg(id), &_e);
@@ -1855,8 +1856,8 @@ void MusicXMLParserPass1::scorePart()
             // It is displayed by default, but can be suppressed (print-object=”no”)
             // As of MusicXML 3.0, formatting is deprecated, with part-name in plain text
             // and the formatted version in the part-name-display element
-            _parts[id].setPrintName(!(_e.attributes().value("print-object") == "no"));
-            QString name = _e.readElementText();
+            _parts[id].setPrintName(!(_e.attribute("print-object") == "no"));
+            QString name = _e.readText();
             _parts[id].setName(name);
         } else if (_e.name() == "part-name-display") {
             // TODO
@@ -1866,20 +1867,20 @@ void MusicXMLParserPass1::scorePart()
             // It is displayed by default, but can be suppressed (print-object=”no”)
             // As of MusicXML 3.0, formatting is deprecated, with part-name in plain text
             // and the formatted version in the part-abbreviation-display element
-            _parts[id].setPrintAbbr(!(_e.attributes().value("print-object") == "no"));
-            QString name = _e.readElementText();
+            _parts[id].setPrintAbbr(!(_e.attribute("print-object") == "no"));
+            QString name = _e.readText();
             _parts[id].setAbbr(name);
         } else if (_e.name() == "part-abbreviation-display") {
             _e.skipCurrentElement();        // skip but don't log
         } else if (_e.name() == "score-instrument") {
             scoreInstrument(id);
         } else if (_e.name() == "midi-device") {
-            if (!_e.attributes().hasAttribute("port")) {
-                _e.readElementText();         // empty string
+            if (!_e.hasAttribute("port")) {
+                _e.readText();         // empty string
                 continue;
             }
-            QString instrId = _e.attributes().value("id").toString();
-            QString port = _e.attributes().value("port").toString();
+            QString instrId = _e.attribute("id").toQString();
+            QString port = _e.attribute("port").toQString();
             // If instrId is missing, the device assignment affects all
             // score-instrument elements in the score-part
             if (instrId.isEmpty()) {
@@ -1890,7 +1891,7 @@ void MusicXMLParserPass1::scorePart()
                 _instruments[id][instrId].midiPort = port.toInt() - 1;
             }
 
-            _e.readElementText();       // empty string
+            _e.readText();       // empty string
         } else if (_e.name() == "midi-instrument") {
             midiInstrument(id);
         } else {
@@ -1910,13 +1911,13 @@ void MusicXMLParserPass1::scorePart()
 void MusicXMLParserPass1::scoreInstrument(const QString& partId)
 {
     _logger->logDebugTrace("MusicXMLParserPass1::scoreInstrument", &_e);
-    QString instrId = _e.attributes().value("id").toString();
+    QString instrId = _e.attribute("id").toQString();
 
     while (_e.readNextStartElement()) {
         if (_e.name() == "ensemble") {
             skipLogCurrElem();
         } else if (_e.name() == "instrument-name") {
-            QString instrName = _e.readElementText();
+            QString instrName = _e.readText();
             /*
             LOGD("partId '%s' instrId '%s' instrName '%s'",
                    qPrintable(partId),
@@ -1931,19 +1932,19 @@ void MusicXMLParserPass1::scoreInstrument(const QString& partId)
                 _instruments[partId][instrId].name = instrName;
             }
         } else if (_e.name() == "instrument-sound") {
-            QString instrSound = _e.readElementText();
+            QString instrSound = _e.readText();
             if (_instruments[partId].contains(instrId)) {
                 _instruments[partId][instrId].sound = instrSound;
             }
         } else if (_e.name() == "virtual-instrument") {
             while (_e.readNextStartElement()) {
                 if (_e.name() == "virtual-library") {
-                    QString virtualLibrary = _e.readElementText();
+                    QString virtualLibrary = _e.readText();
                     if (_instruments[partId].contains(instrId)) {
                         _instruments[partId][instrId].virtLib = virtualLibrary;
                     }
                 } else if (_e.name() == "virtual-name") {
-                    QString virtualName = _e.readElementText();
+                    QString virtualName = _e.readText();
                     if (_instruments[partId].contains(instrId)) {
                         _instruments[partId][instrId].virtName = virtualName;
                     }
@@ -1968,13 +1969,13 @@ void MusicXMLParserPass1::scoreInstrument(const QString& partId)
 void MusicXMLParserPass1::midiInstrument(const QString& partId)
 {
     _logger->logDebugTrace("MusicXMLParserPass1::midiInstrument", &_e);
-    QString instrId = _e.attributes().value("id").toString();
+    QString instrId = _e.attribute("id").toQString();
 
     while (_e.readNextStartElement()) {
         if (_e.name() == "midi-bank") {
             skipLogCurrElem();
         } else if (_e.name() == "midi-channel") {
-            int channel = _e.readElementText().toInt();
+            int channel = _e.readText().toInt();
             if (channel < 1) {
                 _logger->logError(QString("incorrect midi-channel: %1").arg(channel), &_e);
                 channel = 1;
@@ -1986,7 +1987,7 @@ void MusicXMLParserPass1::midiInstrument(const QString& partId)
                 _instruments[partId][instrId].midiChannel = channel - 1;
             }
         } else if (_e.name() == "midi-program") {
-            int program = _e.readElementText().toInt();
+            int program = _e.readText().toInt();
             // Bug fix for Cubase 6.5.5 which generates <midi-program>0</midi-program>
             // Check program number range
             if (program < 1) {
@@ -2001,10 +2002,10 @@ void MusicXMLParserPass1::midiInstrument(const QString& partId)
             }
         } else if (_e.name() == "midi-unpitched") {
             if (_instruments[partId].contains(instrId)) {
-                _instruments[partId][instrId].unpitched = _e.readElementText().toInt() - 1;
+                _instruments[partId][instrId].unpitched = _e.readText().toInt() - 1;
             }
         } else if (_e.name() == "volume") {
-            double vol = _e.readElementText().toDouble();
+            double vol = _e.readText().toDouble();
             if (vol >= 0 && vol <= 100) {
                 if (_instruments[partId].contains(instrId)) {
                     _instruments[partId][instrId].midiVolume = static_cast<int>((vol / 100) * 127);
@@ -2013,7 +2014,7 @@ void MusicXMLParserPass1::midiInstrument(const QString& partId)
                 _logger->logError(QString("incorrect midi-volume: %1").arg(vol), &_e);
             }
         } else if (_e.name() == "pan") {
-            double pan = _e.readElementText().toDouble();
+            double pan = _e.readText().toDouble();
             if (pan >= -90 && pan <= 90) {
                 if (_instruments[partId].contains(instrId)) {
                     _instruments[partId][instrId].midiPan = static_cast<int>(((pan + 90) / 180) * 127);
@@ -2060,7 +2061,7 @@ static void setNumberOfStavesForPart(Part* const part, const size_t staves)
 void MusicXMLParserPass1::part()
 {
     _logger->logDebugTrace("MusicXMLParserPass1::part", &_e);
-    const QString id = _e.attributes().value("id").toString().trimmed();
+    const QString id = _e.attribute("id").toQString().trimmed();
 
     if (!_parts.contains(id)) {
         _logger->logError(QString("cannot find part '%1'").arg(id), &_e);
@@ -2139,7 +2140,7 @@ void MusicXMLParserPass1::measure(const QString& partId,
                                   const int measureNr)
 {
     _logger->logDebugTrace("MusicXMLParserPass1::measure", &_e);
-    QString number = _e.attributes().value("number").toString();
+    QString number = _e.attribute("number").toQString();
 
     Fraction mTime;   // current time stamp within measure
     Fraction mDura;   // current total measure duration
@@ -2286,8 +2287,8 @@ void MusicXMLParserPass1::print(const int measureNr)
 {
     _logger->logDebugTrace("MusicXMLParserPass1::print", &_e);
 
-    const QString newPage = _e.attributes().value("new-page").toString();
-    const QString newSystem = _e.attributes().value("new-system").toString();
+    const QString newPage = _e.attribute("new-page").toQString();
+    const QString newSystem = _e.attribute("new-system").toQString();
     if (newPage == "yes") {
         _pageStartMeasureNrs.insert(measureNr);
     }
@@ -2346,7 +2347,7 @@ void MusicXMLParserPass1::clef(const QString& /* partId */)
 {
     _logger->logDebugTrace("MusicXMLParserPass1::clef", &_e);
 
-    QString number = _e.attributes().value("number").toString();
+    QString number = _e.attribute("number").toQString();
     int n = 0;
     if (number != "") {
         n = number.toInt();
@@ -2362,7 +2363,7 @@ void MusicXMLParserPass1::clef(const QString& /* partId */)
         if (_e.name() == "line") {
             _e.skipCurrentElement();        // skip but don't log
         } else if (_e.name() == "sign") {
-            QString sign = _e.readElementText();
+            QString sign = _e.readText();
         } else {
             skipLogCurrElem();
         }
@@ -2381,7 +2382,7 @@ void MusicXMLParserPass1::clef(const QString& /* partId */)
 
 // TODO: share between pass 1 and pass 2
 
-static bool determineTimeSig(MxmlLogger* logger, const QXmlStreamReader* const xmlreader,
+static bool determineTimeSig(MxmlLogger* logger, const XmlStreamReader* const xmlreader,
                              const QString beats, const QString beatType, const QString timeSymbol,
                              TimeSigType& st, int& bts, int& btp)
 {
@@ -2446,13 +2447,13 @@ void MusicXMLParserPass1::time(const Fraction cTime)
 {
     QString beats;
     QString beatType;
-    QString timeSymbol = _e.attributes().value("symbol").toString();
+    QString timeSymbol = _e.attribute("symbol").toQString();
 
     while (_e.readNextStartElement()) {
         if (_e.name() == "beats") {
-            beats = _e.readElementText();
+            beats = _e.readText();
         } else if (_e.name() == "beat-type") {
-            beatType = _e.readElementText();
+            beatType = _e.readText();
         } else {
             skipLogCurrElem();
         }
@@ -2482,7 +2483,7 @@ void MusicXMLParserPass1::transpose(const QString& partId, const Fraction& tick)
 {
     Interval interval;
     while (_e.readNextStartElement()) {
-        int i = _e.readElementText().toInt();
+        int i = _e.readText().toInt();
         if (_e.name() == "diatonic") {
             interval.diatonic = i;
         } else if (_e.name() == "chromatic") {
@@ -2515,7 +2516,7 @@ void MusicXMLParserPass1::transpose(const QString& partId, const Fraction& tick)
 
 void MusicXMLParserPass1::divisions()
 {
-    _divs = _e.readElementText().toInt();
+    _divs = _e.readText().toInt();
     if (!(_divs > 0)) {
         _logger->logError("illegal divisions", &_e);
     }
@@ -2533,7 +2534,7 @@ void MusicXMLParserPass1::staves(const QString& partId)
 {
     _logger->logDebugTrace("MusicXMLParserPass1::staves", &_e);
 
-    int staves = _e.readElementText().toInt();
+    int staves = _e.readText().toInt();
     if (!(staves > 0 && staves <= MAX_STAVES)) {
         _logger->logError("illegal staves", &_e);
         return;
@@ -2566,7 +2567,7 @@ void MusicXMLParserPass1::direction(const QString& partId, const Fraction cTime)
             directionType(cTime, starts, stops);
         } else if (_e.name() == "staff") {
             int nstaves = static_cast<int>(getPart(partId)->nstaves());
-            QString strStaff = _e.readElementText();
+            QString strStaff = _e.readText();
             staff = strStaff.toInt() - 1;
             if (0 <= staff && staff < nstaves) {
                 //LOGD("direction staff %d", staff + 1);
@@ -2629,7 +2630,7 @@ void MusicXMLParserPass1::directionType(const Fraction cTime,
 {
     while (_e.readNextStartElement()) {
         if (_e.name() == "octave-shift") {
-            QString number = _e.attributes().value("number").toString();
+            QString number = _e.attribute("number").toQString();
             int n = 0;
             if (number != "") {
                 n = number.toInt();
@@ -2641,8 +2642,8 @@ void MusicXMLParserPass1::directionType(const Fraction cTime,
             }
 
             if (0 <= n && n < MAX_NUMBER_LEVEL) {
-                short size = _e.attributes().value("size").toShort();
-                QString type = _e.attributes().value("type").toString();
+                short size = _e.attribute("size").toInt();
+                QString type = _e.attribute("type").toQString();
                 //LOGD("octave-shift type '%s' size %d number %d", qPrintable(type), size, n);
                 MxmlOctaveShiftDesc osDesc;
                 handleOctaveShift(cTime, type, size, osDesc);
@@ -2717,7 +2718,7 @@ void MusicXMLParserPass1::notations(MxmlStartStop& tupletStartStop)
 
     while (_e.readNextStartElement()) {
         if (_e.name() == "tuplet") {
-            QString tupletType       = _e.attributes().value("type").toString();
+            QString tupletType       = _e.attribute("type").toQString();
 
             // ignore possible children (currently not supported)
             _e.skipCurrentElement();
@@ -3096,7 +3097,7 @@ void MusicXMLParserPass1::note(const QString& partId,
 {
     //_logger->logDebugTrace("MusicXMLParserPass1::note", &_e);
 
-    if (_e.attributes().value("print-spacing") == "no") {
+    if (_e.attribute("print-spacing") == "no") {
         notePrintSpacingNo(dura);
         return;
     }
@@ -3132,10 +3133,10 @@ void MusicXMLParserPass1::note(const QString& partId,
             grace = true;
             _e.skipCurrentElement();  // skip but don't log
         } else if (_e.name() == "instrument") {
-            instrId = _e.attributes().value("id").toString();
+            instrId = _e.attribute("id").toQString();
             _e.skipCurrentElement();  // skip but don't log
         } else if (_e.name() == "lyric") {
-            const auto number = _e.attributes().value("number").toString();
+            const auto number = _e.attribute("number").toQString();
             _parts[partId].lyricNumberHandler().addNumber(number);
             _e.skipCurrentElement();
         } else if (_e.name() == "notations") {
@@ -3149,7 +3150,7 @@ void MusicXMLParserPass1::note(const QString& partId,
             rest();
         } else if (_e.name() == "staff") {
             auto ok = false;
-            auto strStaff = _e.readElementText();
+            auto strStaff = _e.readText();
             staff = strStaff.toInt(&ok);
             _parts[partId].setMaxStaff(staff);
             Part* part = _partMap.value(partId);
@@ -3164,11 +3165,11 @@ void MusicXMLParserPass1::note(const QString& partId,
         } else if (_e.name() == "tie") {
             _e.skipCurrentElement();        // skip but don't log
         } else if (_e.name() == "type") {
-            type = _e.readElementText();
+            type = _e.readText();
         } else if (_e.name() == "unpitched") {
             _e.skipCurrentElement();        // skip but don't log
         } else if (_e.name() == "voice") {
-            voice = _e.readElementText();
+            voice = _e.readText();
         } else {
             skipLogCurrElem();
         }
@@ -3284,7 +3285,7 @@ void MusicXMLParserPass1::duration(Fraction& dura)
     //_logger->logDebugTrace("MusicXMLParserPass1::duration", &_e);
 
     dura.set(0, 0);    // invalid unless set correctly
-    int intDura = _e.readElementText().toInt();
+    int intDura = _e.readText().toInt();
     if (intDura > 0) {
         if (_divs > 0) {
             dura.set(intDura, 4 * _divs);
@@ -3363,9 +3364,9 @@ void MusicXMLParserPass1::timeModification(Fraction& timeMod)
 
     while (_e.readNextStartElement()) {
         if (_e.name() == "actual-notes") {
-            strActual = _e.readElementText();
+            strActual = _e.readText();
         } else if (_e.name() == "normal-notes") {
-            strNormal = _e.readElementText();
+            strNormal = _e.readText();
         } else {
             skipLogCurrElem();
         }

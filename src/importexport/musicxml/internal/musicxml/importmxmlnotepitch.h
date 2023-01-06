@@ -23,7 +23,8 @@
 #ifndef __IMPORTMXMLNOTEPITCH_H__
 #define __IMPORTMXMLNOTEPITCH_H__
 
-#include <QXmlStreamReader>
+// #include <QXmlStreamReader>
+#include "global/serialization/xmlstreamreader.h"
 
 #include "libmscore/accidental.h"
 
@@ -44,14 +45,14 @@ class mxmlNotePitch
 public:
     mxmlNotePitch(MxmlLogger* logger)
         : _logger(logger) { /* nothing so far */ }
-    void pitch(QXmlStreamReader& e);
-    bool readProperties(QXmlStreamReader& e, Score* score);
+    void pitch(XmlStreamReader& e);
+    bool readProperties(XmlStreamReader& e, Score* score);
     Accidental* acc() const { return _acc; }
     AccidentalType accType() const { return _accType; }
     int alter() const { return _alter; }
     int displayOctave() const { return _displayOctave; }
     int displayStep() const { return _displayStep; }
-    void displayStepOctave(QXmlStreamReader& e);
+    void displayStepOctave(XmlStreamReader& e);
     int octave() const { return _octave; }
     int step() const { return _step; }
     bool unpitched() const { return _unpitched; }

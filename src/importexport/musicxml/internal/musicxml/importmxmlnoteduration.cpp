@@ -20,7 +20,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <QXmlStreamReader>
+// #include <QXmlStreamReader>
 
 #include "engraving/types/fraction.h"
 #include "engraving/types/typesconv.h"
@@ -197,12 +197,12 @@ QString mxmlNoteDuration::checkTiming(const QString& type, const bool rest, cons
  Parse the /score-partwise/part/measure/note/duration node.
  */
 
-void mxmlNoteDuration::duration(QXmlStreamReader& e)
+void mxmlNoteDuration::duration(XmlStreamReader& e)
 {
     _logger->logDebugTrace("MusicXMLParserPass1::duration", &e);
 
     _specDura.set(0, 0);          // invalid unless set correctly
-    int intDura = e.readElementText().toInt();
+    int intDura = e.readText().toInt();
     if (intDura > 0) {
         if (_divs > 0) {
             _specDura.set(intDura, 4 * _divs);
@@ -225,9 +225,9 @@ void mxmlNoteDuration::duration(QXmlStreamReader& e)
  Return true if handled.
  */
 
-bool mxmlNoteDuration::readProperties(QXmlStreamReader& e)
+bool mxmlNoteDuration::readProperties(XmlStreamReader& e)
 {
-    const QStringRef& tag(e.name());
+    const AsciiStringView& tag(e.name());
     //LOGD("tag %s", qPrintable(tag.toString()));
     if (tag == "dot") {
         _dots++;
@@ -251,7 +251,7 @@ bool mxmlNoteDuration::readProperties(QXmlStreamReader& e)
  Parse the /score-partwise/part/measure/note/time-modification node.
  */
 
-void mxmlNoteDuration::timeModification(QXmlStreamReader& e)
+void mxmlNoteDuration::timeModification(XmlStreamReader& e)
 {
     _logger->logDebugTrace("MusicXMLParserPass1::timeModification", &e);
 
@@ -261,21 +261,21 @@ void mxmlNoteDuration::timeModification(QXmlStreamReader& e)
     QString strNormal;
 
     while (e.readNextStartElement()) {
-        const QStringRef& tag(e.name());
+        const AsciiStringView& tag(e.name());
         if (tag == "actual-notes") {
-            strActual = e.readElementText();
+            strActual = e.readText();
         } else if (tag == "normal-notes") {
-            strNormal = e.readElementText();
+            strNormal = e.readText();
         } else if (tag == "normal-type") {
             // "measure" is not a valid normal-type,
             // but would be accepted by setType()
-            QString strNormalType = e.readElementText();
+            QString strNormalType = e.readText();
             if (strNormalType != "measure") {
                 QByteArray ba = strNormalType.toLatin1();
                 _normalType.setType(TConv::fromXml(ba.constData(), DurationType::V_INVALID));
             }
         } else {
-            _logger->logDebugInfo(QString("skipping '%1'").arg(e.name().toString()), &e);
+            _logger->logDebugInfo(QString("skipping '%1'").arg(e.name().ascii()), &e);
             e.skipCurrentElement();
         }
     }

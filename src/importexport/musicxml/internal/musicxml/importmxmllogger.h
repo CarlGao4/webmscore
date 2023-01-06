@@ -24,8 +24,8 @@
 #define __IMPORTMXMLLOGGER_H__
 
 #include <QString>
-
-class QXmlStreamReader;
+#include "global/serialization/xmlstreamreader.h"
+// class QXmlStreamReader;
 
 namespace mu::engraving {
 class MxmlLogger
@@ -35,9 +35,9 @@ public:
         MXML_TRACE, MXML_INFO, MXML_ERROR
     };
     MxmlLogger() {}
-    void logDebugTrace(const QString& trace, const QXmlStreamReader* const xmlreader = 0);
-    void logDebugInfo(const QString& info, const QXmlStreamReader* const xmlreader = 0);
-    void logError(const QString& error, const QXmlStreamReader* const xmlreader = 0);
+    void logDebugTrace(const QString& trace, const XmlStreamReader* const xmlreader = 0);
+    void logDebugInfo(const QString& info, const XmlStreamReader* const xmlreader = 0);
+    void logError(const QString& error, const XmlStreamReader* const xmlreader = 0);
     void setLoggingLevel(const Level level) { _level = level; }
 private:
     Level _level = Level::MXML_INFO;

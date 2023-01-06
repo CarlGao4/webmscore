@@ -130,14 +130,14 @@ private:
 class MusicXMLParserLyric
 {
 public:
-    MusicXMLParserLyric(const LyricNumberHandler lyricNumberHandler, QXmlStreamReader& e, Score* score, MxmlLogger* logger);
+    MusicXMLParserLyric(const LyricNumberHandler lyricNumberHandler, XmlStreamReader& e, Score* score, MxmlLogger* logger);
     QSet<Lyrics*> extendedLyrics() const { return _extendedLyrics; }
     QMap<int, Lyrics*> numberedLyrics() const { return _numberedLyrics; }
     void parse();
 private:
     void skipLogCurrElem();
     const LyricNumberHandler _lyricNumberHandler;
-    QXmlStreamReader& _e;
+    XmlStreamReader& _e;
     Score* const _score;                        // the score
     MxmlLogger* _logger;                        ///< Error logger
     QMap<int, Lyrics*> _numberedLyrics;   // lyrics with valid number
@@ -165,7 +165,7 @@ public:
     QString print() const;
     void setText(const QString& text) { _text = text; }
     QString text() const { return _text; }
-    static Notation notationWithAttributes(const QString& name, const QXmlStreamAttributes attributes, const QString& parent = "",
+    static Notation notationWithAttributes(const QString& name, const std::vector<mu::XmlStreamReader::Attribute> attributes, const QString& parent = "",
                                            const SymId& symId = SymId::noSym);
 private:
     QString _name;
@@ -202,7 +202,7 @@ using SpannerSet = std::set<Spanner*>;
 class MusicXMLParserNotations
 {
 public:
-    MusicXMLParserNotations(QXmlStreamReader& e, Score* score, MxmlLogger* logger);
+    MusicXMLParserNotations(XmlStreamReader& e, Score* score, MxmlLogger* logger);
     void parse();
     void addToScore(ChordRest* const cr, Note* const note, const int tick, SlurStack& slurs, Glissando* glissandi[MAX_NUMBER_LEVEL][2],
                     MusicXmlSpannerMap& spanners, TrillStack& trills, Tie*& tie);
@@ -227,7 +227,7 @@ private:
     void technical();
     void tied();
     void tuplet();
-    QXmlStreamReader& _e;
+    XmlStreamReader& _e;
     Score* const _score;                        // the score
     MxmlLogger* _logger;                              // the error logger
     QString _errors;                    // errors to present to the user
@@ -308,7 +308,7 @@ private:
 
     // generic pass 2 data
 
-    QXmlStreamReader _e;
+    XmlStreamReader _e;
     int _divs;                            // the current divisions value
     Score* const _score;                  // the score
     MusicXMLParserPass1& _pass1;          // the pass1 results
@@ -360,12 +360,12 @@ private:
 class MusicXMLParserDirection
 {
 public:
-    MusicXMLParserDirection(QXmlStreamReader& e, Score* score, const MusicXMLParserPass1& pass1, MusicXMLParserPass2& pass2,
+    MusicXMLParserDirection(XmlStreamReader& e, Score* score, const MusicXMLParserPass1& pass1, MusicXMLParserPass2& pass2,
                             MxmlLogger* logger);
     void direction(const QString& partId, Measure* measure, const Fraction& tick, const int divisions, MusicXmlSpannerMap& spanners);
 
 private:
-    QXmlStreamReader& _e;
+    XmlStreamReader& _e;
     Score* const _score;                        // the score
     const MusicXMLParserPass1& _pass1;          // the pass1 results
     MusicXMLParserPass2& _pass2;                // the pass2 results

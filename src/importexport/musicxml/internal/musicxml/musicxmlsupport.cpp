@@ -291,16 +291,16 @@ QString errorStringWithLocation(int line, int col, const QString& error)
 //   checkAtEndElement
 //---------------------------------------------------------
 
-QString checkAtEndElement(const QXmlStreamReader& e, const QString& expName)
+QString checkAtEndElement(const XmlStreamReader& e, const QString& expName)
 {
-    if (e.isEndElement() && e.name() == expName) {
+    if (e.isEndElement() && e.name().ascii() == expName) {
         return "";
     }
 
     QString res = qtrc("iex_musicxml", "expected token type and name 'EndElement %1', actual '%2 %3'")
                   .arg(expName)
-                  .arg(e.tokenString())
-                  .arg(e.name().toString());
+                  .arg(e.tokenString().ascii())
+                  .arg(e.name().ascii());
     return res;
 }
 

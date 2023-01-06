@@ -48,12 +48,12 @@ public:
     Fraction specifiedDuration() const { return _specDura; }    // value read from the duration element
     int dots() const { return _dots; }
     TDuration normalType() const { return _normalType; }
-    bool readProperties(QXmlStreamReader& e);
+    bool readProperties(XmlStreamReader& e);
     Fraction timeMod() const { return _timeMod; }
 
 private:
-    void duration(QXmlStreamReader& e);
-    void timeModification(QXmlStreamReader& e);
+    void duration(XmlStreamReader& e);
+    void timeModification(XmlStreamReader& e);
     const int _divs;                                  // the current divisions value
     int _dots = 0;
     Fraction _calcDura;

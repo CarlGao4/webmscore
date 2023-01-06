@@ -24,7 +24,7 @@
 #define __MUSICXMLSUPPORT_H__
 
 #include "global/serialization/xmldom.h"
-#include <QXmlStreamReader>
+#include "global/serialization/xmlstreamreader.h"
 #include <QTextStream>
 #include <QSet>
 // #include <QAbstractMessageHandler>
@@ -249,6 +249,6 @@ extern AccidentalType microtonalGuess(double val);
 extern bool isLaissezVibrer(const SymId id);
 extern const Articulation* findLaissezVibrer(const Chord* const chord);
 extern QString errorStringWithLocation(int line, int col, const QString& error);
-extern QString checkAtEndElement(const QXmlStreamReader& e, const QString& expName);
+extern QString checkAtEndElement(const XmlStreamReader& e, const QString& expName);
 } // namespace Ms
 #endif

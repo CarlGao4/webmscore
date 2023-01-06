@@ -43,13 +43,13 @@ namespace mu::engraving {
 
 // TODO: split in reading parameters versus creation
 
-static Accidental* accidental(QXmlStreamReader& e, Score* score)
+static Accidental* accidental(XmlStreamReader& e, Score* score)
 {
-    bool cautionary = e.attributes().value("cautionary") == "yes";
-    bool editorial = e.attributes().value("editorial") == "yes";
-    bool parentheses = e.attributes().value("parentheses") == "yes";
+    bool cautionary = e.attribute("cautionary") == "yes";
+    bool editorial = e.attribute("editorial") == "yes";
+    bool parentheses = e.attribute("parentheses") == "yes";
 
-    const auto s = e.readElementText();
+    const auto s = e.readText();
     const auto type = mxmlString2accidentalType(s);
 
     if (type != AccidentalType::NONE) {
@@ -73,11 +73,11 @@ static Accidental* accidental(QXmlStreamReader& e, Score* score)
  Handle <display-step> and <display-octave> for <rest> and <unpitched>
  */
 
-void mxmlNotePitch::displayStepOctave(QXmlStreamReader& e)
+void mxmlNotePitch::displayStepOctave(XmlStreamReader& e)
 {
     while (e.readNextStartElement()) {
         if (e.name() == "display-step") {
-            const auto step = e.readElementText();
+            const auto step = e.readText();
             int pos = QString("CDEFGAB").indexOf(step);
             if (step.size() == 1 && pos >= 0 && pos < 7) {
                 _displayStep = pos;
@@ -86,7 +86,7 @@ void mxmlNotePitch::displayStepOctave(QXmlStreamReader& e)
                 LOGD("invalid step '%s'", qPrintable(step));                // TODO
             }
         } else if (e.name() == "display-octave") {
-            const auto oct = e.readElementText();
+            const auto oct = e.readText();
             bool ok;
             _displayOctave = oct.toInt(&ok);
             if (!ok || _displayOctave < 0 || _displayOctave > 9) {
@@ -108,7 +108,7 @@ void mxmlNotePitch::displayStepOctave(QXmlStreamReader& e)
  Parse the /score-partwise/part/measure/note/pitch node.
  */
 
-void mxmlNotePitch::pitch(QXmlStreamReader& e)
+void mxmlNotePitch::pitch(XmlStreamReader& e)
 {
     // defaults
     _step = -1;
@@ -117,7 +117,7 @@ void mxmlNotePitch::pitch(QXmlStreamReader& e)
 
     while (e.readNextStartElement()) {
         if (e.name() == "alter") {
-            const auto alter = e.readElementText();
+            const auto alter = e.readText();
             bool ok;
             _alter = MxmlSupport::stringToInt(alter, &ok);             // fractions not supported by mscore
             if (!ok || _alter < -2 || _alter > 2) {
@@ -131,7 +131,7 @@ void mxmlNotePitch::pitch(QXmlStreamReader& e)
                 _alter = 0;
             }
         } else if (e.name() == "octave") {
-            const auto oct = e.readElementText();
+            const auto oct = e.readText();
             bool ok;
             _octave = oct.toInt(&ok);
             if (!ok || _octave < 0 || _octave > 9) {
@@ -139,7 +139,7 @@ void mxmlNotePitch::pitch(QXmlStreamReader& e)
                 _octave = -1;
             }
         } else if (e.name() == "step") {
-            const auto step = e.readElementText();
+            const auto step = e.readText();
             const auto pos = QString("CDEFGAB").indexOf(step);
             if (step.size() == 1 && pos >= 0 && pos < 7) {
                 _step = pos;
@@ -162,9 +162,9 @@ void mxmlNotePitch::pitch(QXmlStreamReader& e)
  Return true if handled.
  */
 
-bool mxmlNotePitch::readProperties(QXmlStreamReader& e, Score* score)
+bool mxmlNotePitch::readProperties(XmlStreamReader& e, Score* score)
 {
-    const QStringRef& tag(e.name());
+    const auto& tag(e.name());
 
     if (tag == "accidental") {
         _acc = accidental(e, score);

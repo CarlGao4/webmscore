@@ -23,7 +23,7 @@
 #ifndef __IMPORTMXMLPASS1_H__
 #define __IMPORTMXMLPASS1_H__
 
-#include <QXmlStreamReader>
+// #include <QXmlStreamReader>
 
 #include "importxmlfirstpass.h"
 #include "musicxml.h" // for the creditwords and MusicXmlPartGroupList definitions
@@ -180,7 +180,7 @@ private:
     void addError(const QString& error);        ///< Add an error to be shown in the GUI
 
     // generic pass 1 data
-    QXmlStreamReader _e;
+    XmlStreamReader _e;
     int _divs;                                  ///< Current MusicXML divisions value
     QMap<QString, MusicXmlPart> _parts;         ///< Parts data, mapped on part id
     std::set<int> _systemStartMeasureNrs;       ///< Measure numbers of measures starting a page
