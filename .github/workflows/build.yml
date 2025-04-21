@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  EM_VERSION: 2.0.6
+  EM_VERSION: 3.1.74
   EM_CACHE_FOLDER: 'emsdk-cache'
   COMMIT_MSG: ${{ github.event.head_commit.message }}
 
@@ -28,7 +28,7 @@ jobs:
           submodules: true
       - uses: actions/setup-node@v1
         with:
-          node-version: 16
+          node-version: 20
       - uses: actions/cache@v3
         with:
           path: ${{env.EM_CACHE_FOLDER}}
@@ -65,7 +65,7 @@ jobs:
           echo $Qt5_DIR
           cp --verbose -r build/qt/* ${Qt5_DIR}
           echo $(which emcc).py
-          sed -i -r "s/(shared.Settings.MEM_INIT_IN_WASM = )True/\1False/" "$(which emcc).py"
+          # sed -i -r "s/(shared.Settings.MEM_INIT_IN_WASM = )True/\1False/" "$(which emcc).py"
       - name: Install ccache
         run: |
           sudo apt install -y ccache
@@ -95,7 +95,7 @@ jobs:
           submodules: false
       - uses: actions/setup-node@v1
         with:
-          node-version: 12
+          node-version: 20
 
       - name: Download webmscore package tarball
         uses: actions/download-artifact@v4

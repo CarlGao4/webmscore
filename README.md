@@ -143,7 +143,7 @@ aqt install-qt linux desktop ${Qt5_VER} wasm_32 --outputdir ${AQT_PREFIX} --arch
 cp -r build/qt/* ${Qt5_DIR}
 
 # Patch emcc.py to emit separate .mem files regardless of MEM_INIT_METHOD settings (MEM_INIT_METHOD won't work with wasm)
-sed -i -r "s/(shared.Settings.MEM_INIT_IN_WASM = )True/\1False/" "$(which emcc).py"
+# sed -i -r "s/(shared.Settings.MEM_INIT_IN_WASM = )True/\1False/" "$(which emcc).py"
 ```
 
 4. Checkout submodules

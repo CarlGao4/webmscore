@@ -5,6 +5,10 @@ project(webmscore)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
+# Emscripten.cmake will disable the default CMake finders to avoid incompatible packages
+# But we are using all our own packages so we need to enable them again
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE BOTH)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -73,7 +77,11 @@ set(CMAKE_CXX_FLAGS         "${CMAKE_CXX_FLAGS} -s USE_ZLIB=1")      # 1 = use z
 # set(CMAKE_CXX_FLAGS         "${CMAKE_CXX_FLAGS} -s USE_FREETYPE=1")  # 1 = use freetype from emscripten-ports
 set(CMAKE_CXX_FLAGS         "${CMAKE_CXX_FLAGS} -s USE_VORBIS=1")    # 1 = use vorbis from emscripten-ports
 set(CMAKE_CXX_FLAGS         "${CMAKE_CXX_FLAGS} -s USE_OGG=1")       # 1 = use ogg from emscripten-ports
-set(CMAKE_CXX_FLAGS         "${CMAKE_CXX_FLAGS} -s DEMANGLE_SUPPORT=1")
+
+# Only enable this when emcc version < 3.1.54 since it's deprecated
+if(EMSCRIPTEN_VERSION VERSION_LESS "3.1.54")
+    set(CMAKE_CXX_FLAGS         "${CMAKE_CXX_FLAGS} -s DEMANGLE_SUPPORT=1")
+endif()
 
 set(CMAKE_CXX_FLAGS_DEBUG   "-g4 -s ASSERTIONS=2 -s STACK_OVERFLOW_CHECK=2 -s SAFE_HEAP=1")
 set(CMAKE_CXX_FLAGS_RELEASE "-Oz -DNDEBUG -DQT_NO_DEBUG")
