@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,6 +22,9 @@
 
 #include "ottava.h"
 
+#include "types/translatablestring.h"
+
+#include "chordrest.h"
 #include "score.h"
 #include "staff.h"
 #include "system.h"
@@ -67,6 +70,7 @@ OttavaSegment::OttavaSegment(Ottava* sp, System* parent)
     : TextLineBaseSegment(ElementType::OTTAVA_SEGMENT, sp, parent, ElementFlag::MOVABLE | ElementFlag::ON_STAFF)
 {
     m_text->setTextStyleType(TextStyleType::OTTAVA);
+    m_endText->setTextStyleType(TextStyleType::OTTAVA);
 }
 
 //---------------------------------------------------------
@@ -299,6 +303,11 @@ PropertyValue Ottava::getProperty(Pid propertyId) const
 bool Ottava::setProperty(Pid propertyId, const PropertyValue& val)
 {
     switch (propertyId) {
+    case Pid::PLAY:
+        setPlaySpanner(val.toBool());
+        staff()->updateOttava();
+        break;
+
     case Pid::OTTAVA_TYPE:
         setOttavaType(OttavaType(val.toInt()));
         break;
@@ -353,7 +362,7 @@ PropertyValue Ottava::propertyDefault(Pid pid) const
     case Pid::BEGIN_HOOK_HEIGHT:
         return Spatium(.0);
     case Pid::END_TEXT:
-        return String(u"");
+        return String();
     case Pid::PLACEMENT:
         return styleValue(Pid::PLACEMENT, getPropertyStyle(Pid::PLACEMENT));
 
@@ -372,11 +381,67 @@ String Ottava::accessibleInfo() const
 }
 
 //---------------------------------------------------------
+//   subtypeUserName
+//---------------------------------------------------------
+
+muse::TranslatableString Ottava::subtypeUserName() const
+{
+    return ottavaDefault[int(ottavaType())].userName;
+}
+
+void OttavaSegment::rebaseOffsetsOnAnchorChanged(Grip grip, const PointF& oldPos, System* sys)
+{
+    if (grip == Grip::MIDDLE || grip == Grip::END) {
+        ottava()->computeEndElement();
+    }
+    LineSegment::rebaseOffsetsOnAnchorChanged(grip, oldPos, sys);
+}
+
+//---------------------------------------------------------
 //   ottavaTypeName
 //---------------------------------------------------------
 
 const char* Ottava::ottavaTypeName(OttavaType type)
 {
     return ottavaDefault[int(type)].name;
+}
+
+PointF Ottava::linePos(Grip grip, System** system) const
+{
+    if (grip == Grip::START) {
+        return TextLineBase::linePos(grip, system);
+    }
+
+    bool extendToEndOfDuration = false; // TODO: style
+    if (extendToEndOfDuration) {
+        return SLine::linePos(grip, system);
+    }
+
+    ChordRest* endCr = endElement() && endElement()->isChordRest() ? toChordRest(endElement()) : nullptr;
+    if (!endCr) {
+        return PointF();
+    }
+
+    Segment* seg = endCr->segment();
+
+    *system = seg->measure()->system();
+
+    // End 1sp after the right edge of the end chord, but don't overlap followig segments
+    Shape staffShape = seg->staffShape(endCr->vStaffIdx());
+    staffShape.remove_if([](ShapeElement& el) { return el.height() == 0; });
+    double x = staffShape.right() + seg->x() + seg->measure()->x() + spatium();
+    Segment* followingCRseg = score()->tick2segment(endCr->tick() + endCr->actualTicks(), true, SegmentType::ChordRest);
+    if (followingCRseg && followingCRseg->system() == seg->system()) {
+        x = std::min(x, followingCRseg->x() + followingCRseg->measure()->x());
+    }
+
+    x -= 0.5 * absoluteFromSpatium(lineWidth());
+
+    return PointF(x, 0.0);
+}
+
+void Ottava::doComputeEndElement()
+{
+    setEndElement(score()->findChordRestEndingBeforeTickInStaff(tick2(), track2staff(track())));
 }
 }

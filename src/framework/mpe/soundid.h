@@ -20,15 +20,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_MPE_SOUNDID_H
-#define MU_MPE_SOUNDID_H
+#ifndef MUSE_MPE_SOUNDID_H
+#define MUSE_MPE_SOUNDID_H
 
 #include <set>
 #include <unordered_map>
 
 #include "types/string.h"
 
-namespace mu::mpe {
+namespace muse::mpe {
 enum class SoundId
 {
     Undefined = -1,
@@ -63,6 +63,7 @@ enum class SoundId
     Theorbo,
     Archlute,
     Balalaika,
+    Guzheng,
     Koto,
     Oud,
     Shamisen,
@@ -87,6 +88,7 @@ enum class SoundId
     Erhu,
     Contrabass,
     Octobass,
+    TimpleCanario,
 
     WindsGroup,
     Piccolo,
@@ -182,8 +184,34 @@ enum class SoundId
     KlaxonHorns,
     Kalimba,
     Bongos,
+    Xiaogu,
+    Bangu,
+    Dagu,
+    Daluo,
+    Xiaoluo,
+    Ban,
+    Dabo,
+    Naobo,
+    Bangzi,
+    Janggu,
+    Buk,
+    Sogo,
+    Kkwaenggwari,
+    Jing,
     TomToms,
+    KoTsuzumi,
+    OTsuzumi,
+    Kakko,
+    ShimeDaiko,
+    MiyaDaiko,
+    TsuriDaiko,
+    OkedoDaiko,
+    Kane,
+    Shoko,
     Conga,
+    Djembe,
+    Doumbek,
+    Cajon,
     Cuica,
     Drumset,
     Drum,
@@ -209,11 +237,14 @@ enum class SoundId
     Quijada,
     Ratchet,
     Shaker,
+    Shekere,
     Stones,
     Tambourine,
     Tubo,
     Vibraslap,
     Whip,
+    Cannon,
+    BirdCall,
     Snap,
     Clap,
     Slap,
@@ -287,12 +318,19 @@ enum class SoundSubCategory
     Pad,
     Plucked,
 
+    FourPiece,
+    FivePiece,
+
     Temple,
     Military,
     Ride,
     Sleigh,
     Cow,
+    Agogo,
     Marching,
+    Show_Style,
+    Opera,
+    China,
 
     Splash,
     Crash,
@@ -300,6 +338,8 @@ enum class SoundSubCategory
     Bowl,
     Frame,
     Slit,
+    Log,
+    Ocean,
     Field,
     Snare,
     Brake,
@@ -434,6 +474,7 @@ inline const std::unordered_map<SoundId, String> ID_STRINGS
     { SoundId::Theorbo, String(u"theorbo") },
     { SoundId::Archlute, String(u"archlute") },
     { SoundId::Balalaika, String(u"balalaika") },
+    { SoundId::Guzheng, String(u"ghuzheng") },
     { SoundId::Koto, String(u"koto") },
     { SoundId::Oud, String(u"oud") },
     { SoundId::Shamisen, String(u"shamisen") },
@@ -458,6 +499,7 @@ inline const std::unordered_map<SoundId, String> ID_STRINGS
     { SoundId::Erhu, String(u"erhu") },
     { SoundId::Contrabass, String(u"contrabass") },
     { SoundId::Octobass, String(u"octobass") },
+    { SoundId::TimpleCanario, String(u"timple_canario") },
 
     { SoundId::WindsGroup, String(u"winds_group") },
     { SoundId::Piccolo, String(u"piccolo") },
@@ -553,8 +595,34 @@ inline const std::unordered_map<SoundId, String> ID_STRINGS
     { SoundId::KlaxonHorns, String(u"klaxon_horns") },
     { SoundId::Kalimba, String(u"kalimba") },
     { SoundId::Bongos, String(u"bongos") },
+    { SoundId::Xiaogu, String(u"xiaogu") },
+    { SoundId::Bangu, String(u"bangu") },
+    { SoundId::Dagu, String(u"dagu") },
+    { SoundId::Daluo, String(u"daluo") },
+    { SoundId::Xiaoluo, String(u"xiaoluo") },
+    { SoundId::Ban, String(u"ban") },
+    { SoundId::Dabo, String(u"dabo") },
+    { SoundId::Naobo, String(u"naobo") },
+    { SoundId::Bangzi, String(u"bangzi") },
+    { SoundId::Janggu, String(u"janggu") },
+    { SoundId::Buk, String(u"buk") },
+    { SoundId::Sogo, String(u"sogo") },
+    { SoundId::Kkwaenggwari, String(u"kkwaenggwari") },
+    { SoundId::Jing, String(u"jing") },
     { SoundId::TomToms, String(u"tom_toms") },
+    { SoundId::KoTsuzumi, String(u"ko_tsuzumi") },
+    { SoundId::OTsuzumi, String(u"o_tsuzumi") },
+    { SoundId::Kakko, String(u"kakko") },
+    { SoundId::ShimeDaiko, String(u"shime_daiko") },
+    { SoundId::MiyaDaiko, String(u"miya_daiko") },
+    { SoundId::TsuriDaiko, String(u"tsuri_daiko") },
+    { SoundId::OkedoDaiko, String(u"okedo_daiko") },
+    { SoundId::Kane, String(u"kane") },
+    { SoundId::Shoko, String(u"shoko") },
     { SoundId::Conga, String(u"conga") },
+    { SoundId::Djembe, String(u"djembe") },
+    { SoundId::Doumbek, String(u"doumbek") },
+    { SoundId::Cajon, String(u"cajon") },
     { SoundId::Cuica, String(u"cuica") },
     { SoundId::Drumset, String(u"drumset") },
     { SoundId::Drum, String(u"drum") },
@@ -580,11 +648,14 @@ inline const std::unordered_map<SoundId, String> ID_STRINGS
     { SoundId::Quijada, String(u"quijada") },
     { SoundId::Ratchet, String(u"ratchet") },
     { SoundId::Shaker, String(u"shaker") },
+    { SoundId::Shekere, String(u"shekere") },
     { SoundId::Stones, String(u"stones") },
     { SoundId::Tambourine, String(u"tambourine") },
     { SoundId::Tubo, String(u"tubo") },
     { SoundId::Vibraslap, String(u"vibraslap") },
     { SoundId::Whip, String(u"whip") },
+    { SoundId::Cannon, String(u"cannon") },
+    { SoundId::BirdCall, String(u"bird_call") },
     { SoundId::Snap, String(u"snap") },
     { SoundId::Clap, String(u"clap") },
     { SoundId::Slap, String(u"slap") },
@@ -705,12 +776,19 @@ inline const std::unordered_map<SoundSubCategory, String> SUBCATEGORY_STRINGS
     { SoundSubCategory::Pad, String(u"pad") },
     { SoundSubCategory::Plucked, String(u"plucked") },
 
+    { SoundSubCategory::FourPiece, String(u"4_piece") },
+    { SoundSubCategory::FivePiece, String(u"5_piece") },
+
     { SoundSubCategory::Temple, String(u"temple") },
     { SoundSubCategory::Military, String(u"military") },
     { SoundSubCategory::Ride, String(u"ride") },
     { SoundSubCategory::Sleigh, String(u"sleigh") },
     { SoundSubCategory::Cow, String(u"cow") },
+    { SoundSubCategory::Agogo, String(u"agogo") },
     { SoundSubCategory::Marching, String(u"marching") },
+    { SoundSubCategory::Show_Style, String(u"show_style") },
+    { SoundSubCategory::Opera, String(u"opera") },
+    { SoundSubCategory::China, String(u"china") },
 
     { SoundSubCategory::Splash, String(u"splash") },
     { SoundSubCategory::Crash, String(u"crash") },
@@ -718,6 +796,8 @@ inline const std::unordered_map<SoundSubCategory, String> SUBCATEGORY_STRINGS
     { SoundSubCategory::Bowl, String(u"bowl") },
     { SoundSubCategory::Frame, String(u"frame") },
     { SoundSubCategory::Slit, String(u"slit") },
+    { SoundSubCategory::Log, String(u"log") },
+    { SoundSubCategory::Ocean, String(u"ocean") },
     { SoundSubCategory::Field, String(u"field") },
     { SoundSubCategory::Snare, String(u"snare") },
     { SoundSubCategory::Brake, String(u"brake") },
@@ -849,4 +929,4 @@ inline SoundSubCategory soundSubCategoryFromString(const String& str)
 }
 }
 
-#endif // MU_MPE_SOUNDID_H
+#endif // MUSE_MPE_SOUNDID_H

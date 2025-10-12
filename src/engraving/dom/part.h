@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -20,14 +20,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_ENGRAVING_PART_H
-#define MU_ENGRAVING_PART_H
+#pragma once
 
 #include <vector>
 
 #include "mscore.h"
 #include "instrument.h"
-#include "types/types.h"
+#include "../types/types.h"
 
 namespace mu::engraving::read206 {
 class Read206;
@@ -78,8 +77,8 @@ public:
     Part(Score* score = nullptr);
     void initFromInstrTemplate(const InstrumentTemplate*);
 
-    const ID& id() const;
-    void setId(const ID& id);
+    const muse::ID& id() const;
+    void setId(const muse::ID& id);
 
     Part* clone() const;
 
@@ -190,6 +189,12 @@ public:
     const Part* masterPart() const;
     Part* masterPart();
 
+    AutoOnOff hideWhenEmpty() const { return m_hideWhenEmpty; }
+    void setHideWhenEmpty(AutoOnOff v) { m_hideWhenEmpty = v; }
+
+    bool hideStavesWhenIndividuallyEmpty() const { return m_hideStavesWhenIndividuallyEmpty; }
+    void setHideStavesWhenIndividuallyEmpty(bool v) { m_hideStavesWhenIndividuallyEmpty = v; }
+
     PreferSharpFlat preferSharpFlat() const { return m_preferSharpFlat; }
     void setPreferSharpFlat(PreferSharpFlat v) { m_preferSharpFlat = v; }
 
@@ -199,21 +204,28 @@ public:
 
     std::map<int, HarpPedalDiagram*> harpDiagrams;
 
+    const std::map<int, StringTunings*>& stringTunings() const { return m_stringTunings; }
+
 private:
     friend class read206::Read206;
 
     String m_partName;                ///< used in tracklist (mixer)
     InstrumentList m_instruments;
     std::vector<Staff*> m_staves;
-    ID m_id = INVALID_ID;             ///< used for MusicXml import
+    muse::ID m_id = INVALID_ID;       ///< used for MusicXML import
     bool m_show = false;              ///< show part in partitur if true
     bool m_soloist = false;           ///< used in score ordering
     int m_capoFret = 0;
     int m_color = 0;                  ///User specified color for helping to label parts
 
+    /// Hide staves in this part when empty
+    AutoOnOff m_hideWhenEmpty = AutoOnOff::AUTO;
+
+    /// Hide staves when they are individually empty, rather than only if all this part's staves are empty
+    bool m_hideStavesWhenIndividuallyEmpty = false;
+
     PreferSharpFlat m_preferSharpFlat = PreferSharpFlat::AUTO;
 
     std::map<int, StringTunings*> m_stringTunings;
 };
-} // namespace mu::engraving
-#endif
+}

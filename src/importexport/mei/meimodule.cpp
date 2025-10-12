@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -31,6 +31,7 @@
 
 #include "internal/meiconfiguration.h"
 
+using namespace muse;
 using namespace mu::iex::mei;
 using namespace mu::project;
 
@@ -43,25 +44,25 @@ void MeiModule::registerExports()
 {
     m_configuration = std::make_shared<MeiConfiguration>();
 
-    modularity::ioc()->registerExport<IMeiConfiguration>(moduleName(), m_configuration);
+    ioc()->registerExport<IMeiConfiguration>(moduleName(), m_configuration);
 }
 
 void MeiModule::resolveImports()
 {
-    auto readers = modularity::ioc()->resolve<INotationReadersRegister>(moduleName());
+    auto readers = ioc()->resolve<INotationReadersRegister>(moduleName());
     if (readers) {
         readers->reg({ "mei" }, std::make_shared<MeiReader>());
     }
 
-    auto writers = modularity::ioc()->resolve<INotationWritersRegister>(moduleName());
+    auto writers = ioc()->resolve<INotationWritersRegister>(moduleName());
     if (writers) {
         writers->reg({ "mei" }, std::make_shared<MeiWriter>());
     }
 }
 
-void MeiModule::onInit(const framework::IApplication::RunMode& mode)
+void MeiModule::onInit(const IApplication::RunMode& mode)
 {
-    if (mode == framework::IApplication::RunMode::AudioPluginRegistration) {
+    if (mode == IApplication::RunMode::AudioPluginRegistration) {
         return;
     }
 

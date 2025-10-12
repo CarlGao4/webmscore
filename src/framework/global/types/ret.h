@@ -20,8 +20,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_FRAMEWORK_RET_H
-#define MU_FRAMEWORK_RET_H
+#ifndef MUSE_GLOBAL_RET_H
+#define MUSE_GLOBAL_RET_H
 
 #include <string>
 #include <map>
@@ -31,7 +31,9 @@
 #include <QString>
 #endif
 
-namespace mu {
+#include "global/log.h"
+
+namespace muse {
 class Ret
 {
 public:
@@ -55,8 +57,8 @@ public:
         UiFirst         = 100,
         UiLast          = 199,
 
-        PluginsFirst    = 200,
-        PluginsLast     = 299,
+        ExtensionsFirst = 200,
+        ExtensionsLast  = 299,
 
         AudioFirst      = 300,
         AudioLast       = 399,
@@ -101,7 +103,10 @@ public:
         ProjectLast   = 3999,
 
         DiagnosticsFirst = 4000,
-        DiagnosticsLast = 4999
+        DiagnosticsLast = 4999,
+
+        MuseSoundsFirst = 5000,
+        MuseSoundsLast = 5999
     };
 
     Ret() = default;
@@ -117,7 +122,42 @@ public:
     void setText(const std::string& s);
     const std::string& text() const;
     void setData(const std::string& key, const std::any& val);
-    std::any data(const std::string& key) const;
+
+    template<typename DataType, typename DefaultType>
+    DataType data(const std::string& key, const DefaultType& defaultValue) const
+    {
+        static_assert(std::is_same_v<DataType, std::decay_t<DefaultType> >,
+                      "defaultValue must be the same type as DataType");
+        static_assert(!std::is_reference_v<DataType>, "DataType must not be a reference");
+        static_assert(!std::is_pointer_v<DataType>, "DataType must not be a pointer");
+
+        const auto it = m_data.find(key);
+        if (it == m_data.end()) {
+            IF_ASSERT_FAILED_X(false, "Ret::data<" + std::string(typeid(DataType).name()) + ">: key not found: '" + key + "'") {
+                return defaultValue;
+            }
+        }
+
+        if (it->second.type() == typeid(DataType)) {
+            try
+            {
+                return std::any_cast<DataType>(it->second);
+            }
+            catch (const std::bad_any_cast& e)
+            {
+                IF_ASSERT_FAILED_X(false, "Ret::data<" + std::string(typeid(DataType).name())
+                                   + ">: bad_any_cast for key '" + key + "': " + e.what()) {
+                    return defaultValue;
+                }
+            }
+        }
+        IF_ASSERT_FAILED_X(false, "Ret::data<" + std::string(typeid(DataType).name())
+                           + ">: type mismatch for key '" + key
+                           + "', stored type is " + it->second.type().name())
+        {
+            return defaultValue;
+        }
+    }
 
     inline Ret& operator=(int c) { m_code = c; return *this; }
     inline Ret& operator=(bool arg) { m_code = arg ? int(Code::Ok) : int(Code::UnknownError); return *this; }
@@ -134,28 +174,28 @@ private:
     std::map<std::string, std::any> m_data;
 };
 
-inline mu::Ret make_ok()
+inline muse::Ret make_ok()
 {
     return Ret(static_cast<int>(Ret::Code::Ok));
 }
 
-inline mu::Ret make_ret(Ret::Code e)
+inline muse::Ret make_ret(Ret::Code e)
 {
     return Ret(static_cast<int>(e));
 }
 
-inline mu::Ret make_ret(Ret::Code e, const std::string& text)
+inline muse::Ret make_ret(Ret::Code e, const std::string& text)
 {
     return Ret(static_cast<int>(e), text);
 }
 
-inline mu::Ret make_ret(int e, const std::string& text)
+inline muse::Ret make_ret(int e, const std::string& text)
 {
     return Ret(e, text);
 }
 
 #ifndef NO_QT_SUPPORT
-inline mu::Ret make_ret(Ret::Code e, const QString& text)
+inline muse::Ret make_ret(Ret::Code e, const QString& text)
 {
     return Ret(static_cast<int>(e), text.toStdString());
 }
@@ -168,4 +208,4 @@ inline bool check_ret(const Ret& r, Ret::Code c)
 }
 }
 
-#endif // MU_FRAMEWORK_RET_H
+#endif // MUSE_GLOBAL_RET_H

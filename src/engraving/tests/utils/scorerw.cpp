@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -37,7 +37,7 @@
 #include "log.h"
 
 using namespace mu;
-using namespace mu::io;
+using namespace muse::io;
 using namespace mu::engraving;
 
 String ScoreRW::m_rootPath;
@@ -54,10 +54,10 @@ String ScoreRW::rootPath()
 
 MasterScore* ScoreRW::readScore(const String& name, bool isAbsolutePath, ImportFunc importFunc)
 {
-    io::path_t path = isAbsolutePath ? name : (rootPath() + u"/" + name);
-    MasterScore* score = compat::ScoreAccess::createMasterScoreWithBaseStyle();
+    muse::io::path_t path = isAbsolutePath ? name : (rootPath() + u"/" + name);
+    MasterScore* score = compat::ScoreAccess::createMasterScoreWithBaseStyle(nullptr);
     score->setFileInfoProvider(std::make_shared<LocalFileInfoProvider>(path));
-    std::string suffix = io::suffix(path);
+    std::string suffix = muse::io::suffix(path);
 
     ScoreLoad sl;
     Err rv;
@@ -102,7 +102,7 @@ bool ScoreRW::saveScore(Score* score, const String& name)
         return false;
     }
 
-    return rw::RWRegister::writer()->writeScore(score, &file, false);
+    return rw::RWRegister::writer(score->iocContext())->writeScore(score, &file);
 }
 
 bool ScoreRW::saveScore(Score* score, const String& name, ExportFunc exportFunc)
@@ -116,7 +116,7 @@ bool ScoreRW::saveScore(Score* score, const String& name, ExportFunc exportFunc)
         return false;
     }
 
-    io::path_t path =  name;
+    muse::io::path_t path =  name;
     Err rv = exportFunc(score, path);
 
     if (rv != Err::NoError) {
@@ -136,7 +136,7 @@ EngravingItem* ScoreRW::writeReadElement(EngravingItem* element)
     buffer.open(IODevice::WriteOnly);
     XmlWriter xml(&buffer);
     xml.startDocument();
-    rw::RWRegister::writer()->writeItem(element, xml);
+    rw::RWRegister::writer(element->iocContext())->writeItem(element, xml);
     xml.flush();
     buffer.close();
 
@@ -151,7 +151,7 @@ EngravingItem* ScoreRW::writeReadElement(EngravingItem* element)
     return element;
 }
 
-bool ScoreRW::saveMimeData(ByteArray mimeData, const String& saveName)
+bool ScoreRW::saveMimeData(muse::ByteArray mimeData, const String& saveName)
 {
     File f(saveName);
     if (!f.open(IODevice::WriteOnly)) {

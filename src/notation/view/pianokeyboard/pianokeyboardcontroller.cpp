@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2022 MuseScore BVBA and others
+ * Copyright (C) 2022 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -25,9 +25,10 @@
 #include "log.h"
 
 using namespace mu::notation;
-using namespace mu::midi;
+using namespace muse::midi;
 
-void PianoKeyboardController::init()
+PianoKeyboardController::PianoKeyboardController(const muse::modularity::ContextPtr& iocCtx)
+    : muse::Injectable(iocCtx)
 {
     onNotationChanged();
 
@@ -53,7 +54,7 @@ KeyState PianoKeyboardController::keyState(piano_key_t key) const
     return KeyState::None;
 }
 
-mu::async::Notification PianoKeyboardController::keyStatesChanged() const
+muse::async::Notification PianoKeyboardController::keyStatesChanged() const
 {
     return m_keyStatesChanged;
 }
@@ -131,10 +132,12 @@ void PianoKeyboardController::updateNotesKeys(const std::vector<const Note*>& re
         m_keyStatesChanged.notify();
     };
 
+    const bool useWrittenPitch = notationConfiguration()->midiUseWrittenPitch().val;
+
     for (const mu::engraving::Note* note : receivedNotes) {
-        newKeys.insert(static_cast<piano_key_t>(note->epitch()));
+        newKeys.insert(static_cast<piano_key_t>(useWrittenPitch ? note->epitch() : note->ppitch()));
         for (const mu::engraving::Note* otherNote : note->chord()->notes()) {
-            newOtherNotesInChord.insert(static_cast<piano_key_t>(otherNote->epitch()));
+            newOtherNotesInChord.insert(static_cast<piano_key_t>(useWrittenPitch ? otherNote->epitch() : otherNote->ppitch()));
         }
     }
 }
@@ -146,11 +149,11 @@ void PianoKeyboardController::sendNoteOn(piano_key_t key)
         return;
     }
 
-    mu::midi::Event ev;
-    ev.setMessageType(mu::midi::Event::MessageType::ChannelVoice10);
-    ev.setOpcode(mu::midi::Event::Opcode::NoteOn);
+    muse::midi::Event ev;
+    ev.setMessageType(muse::midi::Event::MessageType::ChannelVoice10);
+    ev.setOpcode(muse::midi::Event::Opcode::NoteOn);
     ev.setNote(key);
-    ev.setVelocity(80);
+    ev.setVelocity7(80);
 
     notation->midiInput()->onMidiEventReceived(ev);
 }
@@ -162,9 +165,9 @@ void PianoKeyboardController::sendNoteOff(piano_key_t key)
         return;
     }
 
-    mu::midi::Event ev;
-    ev.setMessageType(mu::midi::Event::MessageType::ChannelVoice10);
-    ev.setOpcode(mu::midi::Event::Opcode::NoteOff);
+    muse::midi::Event ev;
+    ev.setMessageType(muse::midi::Event::MessageType::ChannelVoice10);
+    ev.setOpcode(muse::midi::Event::Opcode::NoteOff);
     ev.setNote(key);
 
     notation->midiInput()->onMidiEventReceived(ev);

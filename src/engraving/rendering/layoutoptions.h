@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2023 MuseScore BVBA and others
+ * Copyright (C) 2023 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -27,7 +27,7 @@ namespace mu::engraving {
 //   LayoutMode
 //    PAGE   The normal page view, honors page and line breaks.
 //    LINE   The panoramic view, one long system
-//    FLOAT  The "reflow" mode, ignore page and line breaks
+//    FLOAT  The "reflow" mode, ignore page and line breaks, stave spacer up, fixed and down
 //    SYSTEM The "never ending page", page break are turned into line break
 //---------------------------------------------------------
 

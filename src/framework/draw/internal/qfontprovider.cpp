@@ -26,11 +26,16 @@
 #include <QFontDatabase>
 #include <QFontMetricsF>
 
-#include "engraving/dom/mscore.h"
-#include "fontengineft.h"
+#define DISABLED_MUSICSYMBOLS_METRICS
 
-using namespace mu;
-using namespace mu::draw;
+#ifndef DISABLED_MUSICSYMBOLS_METRICS
+#include "fontengineft.h"
+#endif
+
+#include "log.h"
+
+using namespace muse;
+using namespace muse::draw;
 
 class FontPaintDevice : public QPaintDevice
 {
@@ -45,7 +50,7 @@ protected:
     {
         switch (m) {
         case QPaintDevice::PdmDpiY:
-            return static_cast<int>(mu::engraving::DPI);
+            return 360; // same as mu::engraving::DPI
         default:
             return 1;
         }
@@ -58,16 +63,6 @@ int QFontProvider::addSymbolFont(const String& family, const io::path_t& path)
 {
     m_symbolsFonts[family] = path;
     return QFontDatabase::addApplicationFont(path.toQString());
-}
-
-int QFontProvider::addTextFont(const io::path_t& path)
-{
-    return QFontDatabase::addApplicationFont(path.toQString());
-}
-
-void QFontProvider::insertSubstitution(const String& familyName, const String& substituteName)
-{
-    QFont::insertSubstitution(familyName, substituteName);
 }
 
 double QFontProvider::lineSpacing(const Font& f) const
@@ -83,6 +78,11 @@ double QFontProvider::xHeight(const Font& f) const
 double QFontProvider::height(const Font& f) const
 {
     return QFontMetricsF(f.toQFont(), &device).height();
+}
+
+double QFontProvider::capHeight(const Font& f) const
+{
+    return QFontMetrics(f.toQFont(), &device).capHeight();
 }
 
 double QFontProvider::ascent(const Font& f) const
@@ -139,12 +139,19 @@ RectF QFontProvider::boundingRect(const Font& f, const RectF& r, int flags, cons
 
 RectF QFontProvider::tightBoundingRect(const Font& f, const String& string) const
 {
-    return RectF::fromQRectF(QFontMetricsF(f.toQFont(), &device).tightBoundingRect(string));
+    auto boundingRect = QFontMetricsF(f.toQFont(), &device).tightBoundingRect(string);
+    if (!boundingRect.isValid()) {
+        // fix for https://github.com/musescore/MuseScore/issues/19503 - Qt can return garbage bounding rectangles that corrupt layout
+        return RectF();
+    }
+    return RectF::fromQRectF(boundingRect);
 }
 
 // Score symbols
+
 RectF QFontProvider::symBBox(const Font& f, char32_t ucs4, double dpi_f) const
 {
+#ifndef DISABLED_MUSICSYMBOLS_METRICS
     FontEngineFT* engine = symEngine(f);
     if (!engine) {
         return RectF();
@@ -168,10 +175,18 @@ RectF QFontProvider::symBBox(const Font& f, char32_t ucs4, double dpi_f) const
     }
 
     return rect;
+#else
+    UNUSED(f);
+    UNUSED(ucs4);
+    UNUSED(dpi_f);
+    UNREACHABLE;
+    return RectF();
+#endif
 }
 
 double QFontProvider::symAdvance(const Font& f, char32_t ucs4, double dpi_f) const
 {
+#ifndef DISABLED_MUSICSYMBOLS_METRICS
     FontEngineFT* engine = symEngine(f);
     if (!engine) {
         return 0.0;
@@ -195,10 +210,18 @@ double QFontProvider::symAdvance(const Font& f, char32_t ucs4, double dpi_f) con
     }
 
     return symAdvance;
+#else
+    UNUSED(f);
+    UNUSED(ucs4);
+    UNUSED(dpi_f);
+    UNREACHABLE;
+    return 0.0;
+#endif
 }
 
 FontEngineFT* QFontProvider::symEngine(const Font& f) const
 {
+#ifndef DISABLED_MUSICSYMBOLS_METRICS
     QString path = m_symbolsFonts.value(f.family()).toQString();
     if (path.isEmpty()) {
         return nullptr;
@@ -214,4 +237,9 @@ FontEngineFT* QFontProvider::symEngine(const Font& f) const
         m_symEngines[path] = engine;
     }
     return engine;
+#else
+    UNUSED(f);
+    UNREACHABLE;
+    return nullptr;
+#endif
 }

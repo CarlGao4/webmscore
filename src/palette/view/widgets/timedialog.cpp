@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -41,7 +41,7 @@ TimeDialog::TimeDialog(QWidget* parent)
     : QWidget(parent, Qt::WindowFlags(Qt::Dialog | Qt::Window))
 {
     setupUi(this);
-    setWindowTitle(mu::qtrc("palette", "Time signatures"));
+    setWindowTitle(muse::qtrc("palette", "Time signatures"));
 
     setWindowFlags(this->windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
@@ -54,8 +54,8 @@ TimeDialog::TimeDialog(QWidget* parent)
     sp->setReadOnly(false);
     sp->setSelectable(true);
 
-    connect(zNominal, QOverload<int>::of(&QSpinBox::valueChanged), this, &TimeDialog::zChanged);
-    connect(nNominal, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &TimeDialog::nChanged);
+    connect(zNominal, &QSpinBox::editingFinished, this, &TimeDialog::zChanged);
+    connect(nNominal, &QComboBox::currentIndexChanged, this, &TimeDialog::nChanged);
     connect(sp, &PaletteWidget::boxClicked, this, &TimeDialog::paletteChanged);
     connect(sp, &PaletteWidget::changed, this, &TimeDialog::setDirty);
     connect(addButton, &QPushButton::clicked, this, &TimeDialog::addClicked);
@@ -88,11 +88,6 @@ TimeDialog::TimeDialog(QWidget* parent)
 
     //! NOTE: It is necessary for the correct start of navigation in the dialog
     setFocus();
-}
-
-TimeDialog::TimeDialog(const TimeDialog& dialog)
-    : TimeDialog(dialog.parentWidget())
-{
 }
 
 bool TimeDialog::dirty() const
@@ -153,10 +148,14 @@ void TimeDialog::save()
 //   zChanged
 //---------------------------------------------------------
 
-void TimeDialog::zChanged(int val)
+void TimeDialog::zChanged()
 {
-    Q_UNUSED(val);
-    Fraction sig(zNominal->value(), denominator());
+    int numerator = zNominal->value();
+    int denominator = this->denominator();
+
+    Fraction sig(numerator, denominator);
+
+    // Update beam groups view
     groups->setSig(sig, Groups::endings(sig), zText->text(), nText->text());
 }
 

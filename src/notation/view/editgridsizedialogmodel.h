@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -28,16 +28,16 @@
 #include "notation/inotationconfiguration.h"
 
 namespace mu::notation {
-class EditGridSizeDialogModel : public QObject
+class EditGridSizeDialogModel : public QObject, public muse::Injectable
 {
     Q_OBJECT
-
-    INJECT(INotationConfiguration, configuration)
 
     Q_PROPERTY(
         int verticalGridSizeSpatium READ verticalGridSizeSpatium WRITE setVerticalGridSizeSpatium NOTIFY verticalGridSizeSpatiumChanged)
     Q_PROPERTY(
         int horizontalGridSizeSpatium READ horizontalGridSizeSpatium WRITE setHorizontalGridSizeSpatium NOTIFY horizontalGridSizeSpatiumChanged)
+
+    muse::Inject<INotationConfiguration> configuration = { this };
 
 public:
     explicit EditGridSizeDialogModel(QObject* parent = nullptr);

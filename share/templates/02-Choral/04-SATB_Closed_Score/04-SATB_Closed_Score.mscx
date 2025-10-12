@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<museScore version="4.20">
+<museScore version="4.60">
   <Score>
     <LayerTag id="0" tag="default"></LayerTag>
     <currentLayer>0</currentLayer>
@@ -40,13 +40,15 @@
         <StaffType group="pitched">
           <name>stdNormal</name>
           </StaffType>
-        <mergeMatchingRests>1</mergeMatchingRests>
+        <mergeMatchingRests>on</mergeMatchingRests>
         <bracket type="0" span="2" col="0"/>
         </Staff>
       <trackName>Women</trackName>
       <Instrument id="women">
         <longName>S
 A</longName>
+        <shortName>S
+A</shortName>
         <trackName>Women</trackName>
         <minPitchP>55</minPitchP>
         <maxPitchP>84</maxPitchP>
@@ -112,12 +114,14 @@ A</longName>
           </StaffType>
         <defaultConcertClef>G8vb</defaultConcertClef>
         <defaultTransposingClef>F</defaultTransposingClef>
-        <mergeMatchingRests>1</mergeMatchingRests>
+        <mergeMatchingRests>on</mergeMatchingRests>
         </Staff>
       <trackName>Men</trackName>
       <Instrument id="men">
         <longName>T
 B</longName>
+        <shortName>T
+B</shortName>
         <trackName>Men</trackName>
         <minPitchP>38</minPitchP>
         <maxPitchP>69</maxPitchP>

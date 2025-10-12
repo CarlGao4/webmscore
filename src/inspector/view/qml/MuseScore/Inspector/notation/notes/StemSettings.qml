@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,8 +22,8 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 
-import MuseScore.Ui 1.0
-import MuseScore.UiComponents 1.0
+import Muse.Ui 1.0
+import Muse.UiComponents 1.0
 import MuseScore.Inspector 1.0
 
 import "../../common"
@@ -40,15 +40,13 @@ FocusableItem {
     property NavigationPanel navigationPanel: null
     property int navigationRowStart: 1
 
-    implicitHeight: contentColumn.height
+    implicitHeight: contentColumn.implicitHeight
     width: parent.width
 
     Column {
         id: contentColumn
 
-        height: implicitHeight
         width: root.width
-
         spacing: 12
 
         PropertyCheckBox {
@@ -60,6 +58,17 @@ FocusableItem {
             navigation.row: root.navigationRowStart + 1
         }
 
+        PropertyCheckBox {
+            text: qsTrc("inspector", "Show stem slash")
+            propertyItem: root.chordModel ? root.chordModel.showStemSlash : null
+            visible: root.chordModel ? root.chordModel.showStemSlashVisible : false
+            enabled: root.chordModel ? root.chordModel.showStemSlashEnabled : false
+
+            navigation.name: "Show stem slash"
+            navigation.panel: root.navigationPanel
+            navigation.row: root.navigationRowStart + 2
+        }
+
         DirectionSection {
             id: stemDirectionGroup
 
@@ -67,12 +76,11 @@ FocusableItem {
             propertyItem: root.stemModel ? root.stemModel.stemDirection : null
 
             navigationPanel: root.navigationPanel
-            navigationRowStart: root.navigationRowStart + 2
+            navigationRowStart: root.navigationRowStart + 3
         }
 
         Column {
             width: parent.width
-            height: childrenRect.height
             spacing: 8
 
             StyledTextLabel {
@@ -106,7 +114,6 @@ FocusableItem {
 
                     Column {
                         anchors.centerIn: parent
-                        height: childrenRect.height
                         spacing: 8
 
                         StyledIconLabel {

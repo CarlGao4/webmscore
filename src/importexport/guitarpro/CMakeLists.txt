@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: GPL-3.0-only
-# MuseScore-CLA-applies
+# MuseScore-Studio-CLA-applies
 #
-# MuseScore
+# MuseScore Studio
 # Music Composition & Notation
 #
-# Copyright (C) 2021 MuseScore BVBA and others
+# Copyright (C) 2021 MuseScore Limited
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 3 as
@@ -18,12 +18,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-set(MODULE iex_guitarpro)
+declare_module(iex_guitarpro)
 
 set(MODULE_SRC
     ${CMAKE_CURRENT_LIST_DIR}/guitarpromodule.cpp
     ${CMAKE_CURRENT_LIST_DIR}/guitarpromodule.h
     ${CMAKE_CURRENT_LIST_DIR}/iguitarproconfiguration.h
+    ${CMAKE_CURRENT_LIST_DIR}/internal/guitarprodrumset.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/internal/guitarprodrumset.h
     ${CMAKE_CURRENT_LIST_DIR}/internal/guitarproreader.cpp
     ${CMAKE_CURRENT_LIST_DIR}/internal/guitarproreader.h
 
@@ -37,6 +39,27 @@ set(MODULE_SRC
     ${CMAKE_CURRENT_LIST_DIR}/internal/importptb.h
     ${CMAKE_CURRENT_LIST_DIR}/internal/continiouselementsbuilder.cpp
     ${CMAKE_CURRENT_LIST_DIR}/internal/continiouselementsbuilder.h
+    ${CMAKE_CURRENT_LIST_DIR}/internal/utils.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/internal/utils.h
+
+    ${CMAKE_CURRENT_LIST_DIR}/internal/guitarbendimport/guitarbendimporttypes.h
+    ${CMAKE_CURRENT_LIST_DIR}/internal/guitarbendimport/guitarbendimporter.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/internal/guitarbendimport/guitarbendimporter.h
+    ${CMAKE_CURRENT_LIST_DIR}/internal/guitarbendimport/benddatacontext.h
+    ${CMAKE_CURRENT_LIST_DIR}/internal/guitarbendimport/benddatacollector.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/internal/guitarbendimport/benddatacollector.h
+    ${CMAKE_CURRENT_LIST_DIR}/internal/guitarbendimport/bendinfoconverter.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/internal/guitarbendimport/bendinfoconverter.h
+    ${CMAKE_CURRENT_LIST_DIR}/internal/guitarbendimport/benddataprocessor.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/internal/guitarbendimport/benddataprocessor.h
+
+    ${CMAKE_CURRENT_LIST_DIR}/internal/guitarbendimport/splitchord/benddatacontextsplitchord.h
+    ${CMAKE_CURRENT_LIST_DIR}/internal/guitarbendimport/splitchord/benddatacollectorsplitchord.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/internal/guitarbendimport/splitchord/benddatacollectorsplitchord.h
+    ${CMAKE_CURRENT_LIST_DIR}/internal/guitarbendimport/splitchord/benddataprocessorsplitchord.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/internal/guitarbendimport/splitchord/benddataprocessorsplitchord.h
+    ${CMAKE_CURRENT_LIST_DIR}/internal/guitarbendimport/splitchord/bendchorddurationsplitter.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/internal/guitarbendimport/splitchord/bendchorddurationsplitter.h
 
     ${CMAKE_CURRENT_LIST_DIR}/internal/gtp/gp6dombuilder.cpp
     ${CMAKE_CURRENT_LIST_DIR}/internal/gtp/gp6dombuilder.h
@@ -81,8 +104,8 @@ set(MODULE_LINK
     engraving
     )
 
-include(SetupModule)
+setup_module()
 
-if (MUE_BUILD_UNIT_TESTS)
+if (MUE_BUILD_IMPORTEXPORT_TESTS)
     add_subdirectory(tests)
 endif()

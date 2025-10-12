@@ -18,7 +18,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-set(MODULE network)
+declare_module(muse_network)
+set(MODULE_ALIAS muse::network)
 
 set(MODULE_SRC
     ${CMAKE_CURRENT_LIST_DIR}/networkmodule.cpp
@@ -27,14 +28,33 @@ set(MODULE_SRC
     ${CMAKE_CURRENT_LIST_DIR}/networktypes.h
     ${CMAKE_CURRENT_LIST_DIR}/inetworkmanager.h
     ${CMAKE_CURRENT_LIST_DIR}/inetworkmanagercreator.h
+    ${CMAKE_CURRENT_LIST_DIR}/inetworkconfiguration.h
+
     ${CMAKE_CURRENT_LIST_DIR}/internal/networkmanager.cpp
     ${CMAKE_CURRENT_LIST_DIR}/internal/networkmanager.h
     ${CMAKE_CURRENT_LIST_DIR}/internal/networkmanagercreator.cpp
     ${CMAKE_CURRENT_LIST_DIR}/internal/networkmanagercreator.h
+    ${CMAKE_CURRENT_LIST_DIR}/internal/networkconfiguration.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/internal/networkconfiguration.h
     )
 
-if (MUE_BUILD_UNIT_TESTS)
-    add_subdirectory(tests)
+list(APPEND MODULE_LINK Qt::Qml)
+list(APPEND MODULE_LINK_PUBLIC Qt::Network)
+
+if (MUSE_MODULE_NETWORK_WEBSOCKET)
+    set(MODULE_SRC ${MODULE_SRC}
+        ${CMAKE_CURRENT_LIST_DIR}/api/websocketapi.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/api/websocketapi.h
+        ${CMAKE_CURRENT_LIST_DIR}/api/websocketserverapi.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/api/websocketserverapi.h
+    )
+
+    list(APPEND MODULE_DEF -DMUSE_MODULE_NETWORK_WEBSOCKET)
+    list(APPEND MODULE_LINK Qt::WebSockets)
 endif()
 
-include(${PROJECT_SOURCE_DIR}/build/module.cmake)
+setup_module()
+
+if (MUSE_MODULE_NETWORK_TESTS)
+    add_subdirectory(tests)
+endif()

@@ -22,21 +22,21 @@
 
 #include "mpemodule.h"
 
-// #include <QQmlEngine>
+#include <QQmlEngine>
 
 #include "modularity/ioc.h"
-// #include "ui/iuiengine.h"
+#include "ui/iuiengine.h"
 
 #include "internal/articulationprofilesrepository.h"
 #include "view/articulationsprofileeditormodel.h"
 
-using namespace mu;
-using namespace mu::modularity;
-using namespace mu::mpe;
+using namespace muse;
+using namespace muse::modularity;
+using namespace muse::mpe;
 
 static void mpe_init_qrc()
 {
-    // Q_INIT_RESOURCE(mpe);
+    Q_INIT_RESOURCE(mpe);
 }
 
 std::string MpeModule::moduleName() const
@@ -46,16 +46,16 @@ std::string MpeModule::moduleName() const
 
 void MpeModule::registerExports()
 {
-    m_profilesRepository = std::make_shared<ArticulationProfilesRepository>();
+    m_profilesRepository = std::make_shared<ArticulationProfilesRepository>(iocContext());
 
     ioc()->registerExport<IArticulationProfilesRepository>(moduleName(), m_profilesRepository);
 }
 
 void MpeModule::registerUiTypes()
 {
-    // qmlRegisterType<ArticulationsProfileEditorModel>("MuseScore.Mpe", 1, 0, "ArticulationsProfileEditorModel");
+    qmlRegisterType<ArticulationsProfileEditorModel>("Muse.Mpe", 1, 0, "ArticulationsProfileEditorModel");
 
-    // ioc()->resolve<ui::IUiEngine>(moduleName())->addSourceImportPath(mpe_QML_IMPORT);
+    ioc()->resolve<muse::ui::IUiEngine>(moduleName())->addSourceImportPath(muse_mpe_QML_IMPORT);
 }
 
 void MpeModule::registerResources()

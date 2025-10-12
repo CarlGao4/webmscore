@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2024 MuseScore BVBA and others
+ * Copyright (C) 2024 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -23,8 +23,8 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 
-import MuseScore.Ui 1.0
-import MuseScore.UiComponents 1.0
+import Muse.Ui 1.0
+import Muse.UiComponents 1.0
 
 Column {
     id: root
@@ -42,9 +42,16 @@ Column {
         name: "SoundFlagParams" + title
         direction: NavigationPanel.Vertical
         accessible.name: title
+
+        onNavigationEvent: function(event) {
+            if (event.type === NavigationEvent.Escape) {
+                root.closeRequested()
+            }
+        }
     }
 
     signal toggleParamRequested(string paramCode)
+    signal closeRequested()
 
     spacing: 8
 

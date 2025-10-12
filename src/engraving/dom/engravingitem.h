@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -25,25 +25,24 @@
 
 #include <optional>
 
-#include "engravingobject.h"
-#include "elementgroup.h"
-
 #include "draw/types/color.h"
 #include "draw/types/geometry.h"
 #include "draw/painter.h"
 
 #include "modularity/ioc.h"
-#include "iengravingconfiguration.h"
-#include "rendering/iscorerenderer.h"
+#include "../iengravingconfiguration.h"
+#include "../rendering/iscorerenderer.h"
 
-#include "infrastructure/ld_access.h"
-#include "infrastructure/shape.h"
-#include "infrastructure/skyline.h"
+#include "../infrastructure/ld_access.h"
+#include "../infrastructure/shape.h"
+#include "../infrastructure/skyline.h"
 
-#include "types/fraction.h"
-#include "types/symid.h"
-#include "types/types.h"
+#include "../types/fraction.h"
+#include "../types/symid.h"
+#include "../types/types.h"
 
+#include "engravingobject.h"
+#include "elementgroup.h"
 #include "editdata.h"
 
 #define DECLARE_LAYOUTDATA_METHODS(Class) \
@@ -52,6 +51,16 @@
     LayoutData* createLayoutData() const override { return new Class::LayoutData(); } \
 
 namespace mu::engraving {
+template<typename T>
+inline void dump(const ld_field<T>& f, std::stringstream& ss)
+{
+    if (f.has_value()) {
+        dump(f.value(), ss);
+    } else {
+        ss << "no value";
+    }
+}
+
 class Factory;
 class XmlReader;
 
@@ -67,7 +76,7 @@ class StaffType;
 //   OffsetChange
 //---------------------------------------------------------
 
-enum class OffsetChange {
+enum class OffsetChange : signed char {
     RELATIVE_OFFSET   = -1,
     NONE              =  0,
     ABSOLUTE_OFFSET   =  1
@@ -104,26 +113,29 @@ enum class ElementFlag {
     NO_BREAK               = 0x00100000,
     HEADER                 = 0x00200000,
     TRAILER                = 0x00400000,      // also used in segment
-    KEYSIG                 = 0x00800000,
+    COURTESY_KEYSIG        = 0x00800000,
+    COURTESY_TIMESIG       = 0x01000000,
+    COURTESY_CLEF          = 0x02000000,
 
     // segment flags
-    ENABLED                = 0x01000000,      // used for segments
-    EMPTY                  = 0x02000000,
-    WRITTEN                = 0x04000000,
+    ENABLED                = 0x04000000,      // used for segments
+    EMPTY                  = 0x08000000,
+    WRITTEN                = 0x10000000,
+    END_OF_MEASURE_CHANGE  = 0x20000000,
 };
 
-typedef Flags<ElementFlag> ElementFlags;
+typedef muse::Flags<ElementFlag> ElementFlags;
 DECLARE_OPERATORS_FOR_FLAGS(ElementFlags)
 
-enum class KerningType
+enum class KerningType : unsigned char
 {
     KERNING,
     NON_KERNING,
-    LIMITED_KERNING,
+    KERN_UNTIL_LEFT_EDGE,
+    KERN_UNTIL_CENTER,
+    KERN_UNTIL_RIGHT_EDGE,
     SAME_VOICE_LIMIT,
-    KERNING_UNTIL_ORIGIN,
     ALLOW_COLLISION,
-    NOT_SET,
 };
 
 class EngravingItemList : public std::list<EngravingItem*>
@@ -144,10 +156,6 @@ public:
 
 class EngravingItem : public EngravingObject
 {
-    INJECT_STATIC(IEngravingConfiguration, engravingConfiguration)
-    INJECT_STATIC(rendering::IScoreRenderer, renderer)
-    mutable mu::RectF m_bbox;  ///< Bounding box relative to _pos + _offset
-
     M_PROPERTY2(bool, isPositionLinkedToMaster, setPositionLinkedToMaster, true)
     M_PROPERTY2(bool, isAppearanceLinkedToMaster, setAppearanceLinkedToMaster, true)
     M_PROPERTY2(bool, excludeFromOtherParts, setExcludeFromOtherParts, false)
@@ -166,6 +174,10 @@ public:
     EngravingItem* parentItem(bool explicitParent = true) const;
     EngravingItemList childrenItems(bool all = false) const;
 
+    const muse::modularity::ContextPtr& iocContext() const;
+    const std::shared_ptr<IEngravingConfiguration>& configuration() const;
+    const std::shared_ptr<rendering::IScoreRenderer>& renderer() const;
+
     EngravingItem* findAncestor(ElementType t);
     const EngravingItem* findAncestor(ElementType t) const;
 
@@ -174,7 +186,7 @@ public:
     MeasureBase* findMeasureBase();
     const MeasureBase* findMeasureBase() const;
 
-    //!Note Returns basic representative for the current element.
+    //!Note muse::Returns basic representative for the current element.
     //!     For example: notes->chord, chords->beam, etc.
     virtual EngravingItem* elementBase() const { return const_cast<EngravingItem*>(this); }
 
@@ -206,7 +218,7 @@ public:
     virtual void setSelected(bool f);
 
     bool visible() const { return !flag(ElementFlag::INVISIBLE); }
-    virtual void setVisible(bool f) { setFlag(ElementFlag::INVISIBLE, !f); }
+    virtual void setVisible(bool f);
 
     bool isInteractionAvailable() const;
 
@@ -214,7 +226,7 @@ public:
     void setSizeIsSpatiumDependent(bool v) { setFlag(ElementFlag::SIZE_SPATIUM_DEPENDENT, !v); }
     bool offsetIsSpatiumDependent() const override;
 
-    PlacementV placement() const { return PlacementV(!flag(ElementFlag::PLACE_ABOVE)); }
+    PlacementV placement() const;
     void setPlacement(PlacementV val) { setFlag(ElementFlag::PLACE_ABOVE, !bool(val)); }
     bool placeAbove() const { return placement() == PlacementV::ABOVE; }
     bool placeBelow() const { return placement() == PlacementV::BELOW; }
@@ -226,6 +238,7 @@ public:
     Spatium minDistance() const { return m_minDistance; }
     void setMinDistance(Spatium v) { m_minDistance = v; }
 
+    PointF systemPos() const;
     virtual PointF pagePos() const;            ///< position in page coordinates
     virtual PointF canvasPos() const;          ///< position in canvas coordinates
     double pageX() const;
@@ -238,37 +251,27 @@ public:
     virtual void setOffset(const PointF& o) { m_offset = o; }
     void setOffset(double x, double y) { m_offset.setX(x), m_offset.setY(y); }
     PointF& roffset() { return m_offset; }
-    double& rxoffset() { return m_offset.rx(); }
-    double& ryoffset() { return m_offset.ry(); }
+    real_t& rxoffset() { return m_offset.rx(); }
+    real_t& ryoffset() { return m_offset.ry(); }
 
     virtual Fraction tick() const;
     virtual Fraction rtick() const;
-    virtual Fraction playTick() const;   ///< Returns the tick at which playback should begin when this element is selected. Defaults to the element's own tick position.
+    virtual Fraction playTick() const;   ///< muse::Returns the tick at which playback should begin when this element is selected. Defaults to the element's own tick position.
 
     Fraction beat() const;
 
     bool isNudged() const { return !m_offset.isNull(); }
 
-    virtual const mu::RectF& bbox() const { return m_bbox; }
-    virtual mu::RectF& bbox() { return m_bbox; }
-
     bool contains(const PointF& p) const;
-    bool intersects(const mu::RectF& r) const;
+    bool intersects(const RectF& r) const;
 
-    virtual mu::RectF hitBBox() const { return ldata()->bbox(); }
+    virtual RectF hitBBox() const { return ldata()->bbox(); }
     virtual Shape hitShape() const { return shape(); }
     Shape canvasHitShape() const { return hitShape().translate(canvasPos()); }
     bool hitShapeContains(const PointF& p) const;
-    bool hitShapeIntersects(const mu::RectF& rr) const;
+    bool hitShapeIntersects(const RectF& rr) const;
 
     virtual int subtype() const { return -1; }                    // for select gui
-
-    void drawAt(mu::draw::Painter* p, const PointF& pt) const
-    {
-        p->translate(pt);
-        renderer()->drawItem(this, p);
-        p->translate(-pt);
-    }
 
 //       virtual ElementGroup getElementGroup() { return SingleElementGroup(this); }
     virtual std::unique_ptr<ElementGroup> getDragGroup(std::function<bool(const EngravingItem*)> /*isDragged*/)
@@ -277,10 +280,10 @@ public:
     }
 
     virtual void startDrag(EditData&);
-    virtual mu::RectF drag(EditData&);
+    virtual RectF drag(EditData&);
     virtual void endDrag(EditData&);
-    /** Returns anchor lines displayed while dragging element in canvas coordinates. */
-    virtual std::vector<mu::LineF> dragAnchorLines() const { return std::vector<mu::LineF>(); }
+    /** muse::Returns anchor lines displayed while dragging element in canvas coordinates. */
+    virtual std::vector<LineF> dragAnchorLines() const { return std::vector<LineF>(); }
     /**
      * A generic \ref dragAnchorLines() implementation which can be used in
      * dragAnchorLines() overrides in descendants. It is not made its default
@@ -290,7 +293,7 @@ public:
      * class of various annotation types and which would have this
      * dragAnchorLines() implementation by default.
      */
-    std::vector<mu::LineF> genericDragAnchorLines() const;
+    std::vector<LineF> genericDragAnchorLines() const;
 
     virtual bool isEditable() const { return !flag(ElementFlag::GENERATED); }
     virtual bool needStartEditingAfterSelecting() const { return false; }
@@ -309,13 +312,13 @@ public:
     void updateGrips(EditData&) const;
     virtual bool nextGrip(EditData&) const;
     virtual bool prevGrip(EditData&) const;
-    /** Returns anchor lines displayed while dragging element's grip in canvas coordinates. */
-    virtual std::vector<mu::LineF> gripAnchorLines(Grip) const { return std::vector<mu::LineF>(); }
+    /** muse::Returns anchor lines displayed while dragging element's grip in canvas coordinates. */
+    virtual std::vector<LineF> gripAnchorLines(Grip) const { return std::vector<LineF>(); }
 
     virtual int gripsCount() const { return 0; }
     virtual Grip initialEditModeGrip() const { return Grip::NO_GRIP; }
     virtual Grip defaultGrip() const { return Grip::NO_GRIP; }
-    /** Returns grips positions in page coordinates. */
+    /** muse::Returns grips positions in page coordinates. */
     virtual std::vector<PointF> gripsPositions(const EditData& = EditData()) const { return std::vector<PointF>(); }
 
     bool hasGrips() const;
@@ -328,7 +331,7 @@ public:
 
     staff_idx_t staffIdx() const;
     void setStaffIdx(staff_idx_t val);
-    staff_idx_t staffIdxOrNextVisible() const; // for system objects migrating
+    staff_idx_t effectiveStaffIdx() const; // for system objects migrating
     bool isTopSystemObject() const;
     virtual staff_idx_t vStaffIdx() const;
     voice_idx_t voice() const;
@@ -353,22 +356,22 @@ public:
     virtual TranslatableString subtypeUserName() const;
     virtual String translatedSubtypeUserName() const;
 
-    virtual mu::draw::Color color() const;
-    mu::draw::Color curColor() const;
-    mu::draw::Color curColor(bool isVisible) const;
-    mu::draw::Color curColor(bool isVisible, mu::draw::Color normalColor) const;
-    virtual void setColor(const mu::draw::Color& c) { m_color = c; }
+    virtual void setColor(const Color& c);
+    virtual Color color() const;
+    virtual Color curColor() const;
+    Color curColor(bool isVisible) const;
+    Color curColor(bool isVisible, Color normalColor) const;
 
-    void undoSetColor(const mu::draw::Color& c);
+    void undoSetColor(const Color& c);
     void undoSetVisible(bool v);
     void undoAddElement(EngravingItem* element, bool addToLinkedStaves = true);
 
     static ElementType readType(XmlReader& node, PointF*, Fraction*);
-    static EngravingItem* readMimeData(Score* score, const mu::ByteArray& data, PointF*, Fraction*);
+    static EngravingItem* readMimeData(Score* score, const muse::ByteArray& data, PointF*, Fraction*);
 
-    virtual mu::ByteArray mimeData(const PointF& dragOffset = PointF()) const;
+    virtual muse::ByteArray mimeData(const PointF& dragOffset = PointF()) const;
 /**
- Return true if this element accepts a drop at canvas relative \a pos
+ muse::Return true if this element accepts a drop at canvas relative \a pos
  of given element \a type and \a subtype.
 
  Reimplemented by elements that accept drops. Used to change cursor shape while
@@ -378,7 +381,7 @@ public:
 
 /**
  Handle a dropped element at canvas relative \a pos of given element
- \a type and \a subtype. Returns dropped element if any.
+ \a type and \a subtype. muse::Returns dropped element if any.
  The ownership of element in DropData is transferred to the called
  element (if not used, element has to be deleted).
  The returned element will be selected if not in note edit mode.
@@ -402,11 +405,13 @@ public:
     double magS() const;
 
     bool isPrintable() const;
-    bool isPlayable() const;
-    double point(const Spatium sp) const { return sp.val() * spatium(); }
+    virtual bool isPlayable() const;
+    virtual double absoluteFromSpatium(const Spatium& sp) const { return sp.val() * spatium(); }
 
     bool systemFlag() const { return flag(ElementFlag::SYSTEM); }
     void setSystemFlag(bool v) const { setFlag(ElementFlag::SYSTEM, v); }
+
+    virtual bool isSystemObjectBelowBottomStaff() const;
 
     bool header() const { return flag(ElementFlag::HEADER); }
     void setHeader(bool v) { setFlag(ElementFlag::HEADER, v); }
@@ -430,7 +435,10 @@ public:
 
     bool autoplace() const;
     virtual void setAutoplace(bool v) { setFlag(ElementFlag::NO_AUTOPLACE, !v); }
-    bool addToSkyline() const { return !(m_flags & (ElementFlag::INVISIBLE | ElementFlag::NO_AUTOPLACE)); }
+    bool addToSkyline() const { return !(m_flags & (ElementFlag::INVISIBLE | ElementFlag::NO_AUTOPLACE)) && !ldata()->isSkipDraw(); }
+
+    bool excludeVerticalAlign() const { return m_excludeVerticalAlign; }
+    void setExcludeVerticalAlign(bool v) { m_excludeVerticalAlign = v; }
 
     PropertyValue getProperty(Pid) const override;
     bool setProperty(Pid, const PropertyValue&) override;
@@ -442,15 +450,15 @@ public:
     bool custom(Pid) const;
     virtual bool isUserModified() const;
 
-    void drawSymbol(SymId id, mu::draw::Painter* p, const PointF& o = PointF(), double scale = 1.0) const;
-    void drawSymbols(const SymIdList&, mu::draw::Painter* p, const PointF& o = PointF(), double scale = 1.0) const;
-    void drawSymbols(const SymIdList&, mu::draw::Painter* p, const PointF& o, const SizeF& scale) const;
+    void drawSymbol(SymId id, muse::draw::Painter* p, const PointF& o = PointF(), double scale = 1.0) const;
+    void drawSymbols(const SymIdList&, muse::draw::Painter* p, const PointF& o = PointF(), double scale = 1.0) const;
+    void drawSymbols(const SymIdList&, muse::draw::Painter* p, const PointF& o, const SizeF& scale) const;
     double symHeight(SymId id) const;
     double symWidth(SymId id) const;
     double symWidth(const SymIdList&) const;
     RectF symBbox(SymId id) const;
     RectF symBbox(const SymIdList&) const;
-    Shape symShapeWithCutouts(SymId id) const;
+    virtual Shape symShapeWithCutouts(SymId id) const;
 
     PointF symSmuflAnchor(SymId symId, SmuflAnchorId anchorId) const;
 
@@ -482,14 +490,28 @@ public:
     virtual void triggerLayout() const;
     virtual void triggerLayoutAll() const;
     virtual void triggerLayoutToEnd() const;
-    virtual void drawEditMode(draw::Painter* painter, EditData& editData, double currentViewScaling);
 
     double styleP(Sid idx) const;
 
     bool colorsInversionEnabled() const;
-    void setColorsInverionEnabled(bool enabled);
+    void setColorsInversionEnabled(bool enabled);
 
-    std::pair<int, float> barbeat() const;
+    virtual void setParenthesesMode(const ParenthesesMode& v, bool addToLinked = true, bool generated = false);
+    ParenthesesMode parenthesesMode() const;
+    inline bool bothParentheses() const { return m_leftParenthesis && m_rightParenthesis; }
+    inline Parenthesis* paren(const DirectionH& dir) const { return dir == DirectionH::LEFT ? m_leftParenthesis : m_rightParenthesis; }
+    Parenthesis* leftParen() const { return m_leftParenthesis; }
+    Parenthesis* rightParen() const { return m_rightParenthesis; }
+    void setLeftParen(Parenthesis* paren) { m_leftParenthesis = paren; }
+    void setRightParen(Parenthesis* paren) { m_rightParenthesis = paren; }
+
+    struct BarBeat
+    {
+        int bar = 0;
+        int displayedBar = 0;
+        double beat = 0.0;
+    };
+    BarBeat barbeat() const;
 
     virtual EngravingItem* findLinkedInScore(const Score* score) const;
     EngravingItem* findLinkedInStaff(const Staff* staff) const;
@@ -507,6 +529,7 @@ public:
         virtual void reset()
         {
             m_shape.reset();
+            m_mask.reset();
             //! NOTE Temporary removed, have problems, need investigation
             //m_pos.reset();
         }
@@ -545,10 +568,10 @@ public:
 
         void setShape(const Shape& sh) { m_shape.set_value(sh); }
 
-        void setBbox(const mu::RectF& r);
+        void setBbox(const RectF& r);
 
-        void setBbox(double x, double y, double w, double h) { setBbox(mu::RectF(x, y, w, h)); }
-        void addBbox(const mu::RectF& r)
+        void setBbox(double x, double y, double w, double h) { setBbox(RectF(x, y, w, h)); }
+        void addBbox(const RectF& r)
         {
             DO_ASSERT(!std::isnan(r.x()) && !std::isinf(r.x()));
             DO_ASSERT(!std::isnan(r.y()) && !std::isinf(r.y()));
@@ -561,23 +584,61 @@ public:
 
         void setHeight(double v)
         {
-            mu::RectF r = bbox();
+            RectF r = bbox();
             r.setHeight(v);
             setBbox(r);
         }
 
         void setWidth(double v)
         {
-            mu::RectF r = bbox();
+#ifndef NDEBUG
+            setWidthDebugHook(v);
+#endif
+            RectF r = bbox();
             r.setWidth(v);
             setBbox(r);
         }
 
+        void setMask(const Shape& m) { m_mask.set_value(m); }
+        const Shape& mask() const { return m_mask.value(); }
+
         OffsetChange offsetChanged() const { return autoplace.offsetChanged; }
 
+        void connectItemSnappedBefore(EngravingItem* itemBefore);
+        void disconnectItemSnappedBefore();
+        void connectItemSnappedAfter(EngravingItem* itemAfter);
+        void disconnectItemSnappedAfter();
+        void disconnectSnappedItems() { disconnectItemSnappedBefore(); disconnectItemSnappedAfter(); }
+        EngravingItem* itemSnappedBefore() const { return m_itemSnappedBefore; }
+        EngravingItem* itemSnappedAfter() const { return m_itemSnappedAfter; }
+
+        struct StaffCenteringInfo {
+            double availableVertSpaceAbove = 0.0;
+            double availableVertSpaceBelow = 0.0;
+        };
+        const StaffCenteringInfo& staffCenteringInfo() const { return m_staffCenteringInfo; }
+        void setStaffCenteringInfo(double availSpaceAbove, double availSpaceBelow)
+        {
+            m_staffCenteringInfo.availableVertSpaceAbove = availSpaceAbove;
+            m_staffCenteringInfo.availableVertSpaceBelow = availSpaceBelow;
+        }
+
+        void dump(std::stringstream& ss) const;
+
     protected:
+
+        virtual void supDump(std::stringstream& ss) const { UNUSED(ss); }
+
+#ifndef NDEBUG
+        void doSetPosDebugHook(double x, double y);
+        void setWidthDebugHook(double w);
+#endif
+
         inline void doSetPos(double x, double y)
         {
+#ifndef NDEBUG
+            doSetPosDebugHook(x, y);
+#endif
             m_pos.mut_value().setX(x),
             m_pos.mut_value().setY(y);
         }
@@ -592,6 +653,12 @@ public:
         double m_mag = 1.0;                     // standard magnification (derived value)
         ld_field<PointF> m_pos = "pos";         // Reference position, relative to _parent, set by autoplace
         ld_field<Shape> m_shape = "shape";
+        ld_field<Shape> m_mask = "mask";
+
+        EngravingItem* m_itemSnappedBefore = nullptr;
+        EngravingItem* m_itemSnappedAfter = nullptr;
+
+        StaffCenteringInfo m_staffCenteringInfo;
     };
 
     const LayoutData* ldata() const;
@@ -601,9 +668,11 @@ public:
     Shape shape(LD_ACCESS mode = LD_ACCESS::CHECK) const { return ldata()->shape(mode); }
     virtual double baseLine() const { return -height(); }
 
-    mu::RectF abbox(LD_ACCESS mode = LD_ACCESS::CHECK) const { return ldata()->bbox(mode).translated(pagePos()); }
-    mu::RectF pageBoundingRect(LD_ACCESS mode = LD_ACCESS::CHECK) const { return ldata()->bbox(mode).translated(pagePos()); }
-    mu::RectF canvasBoundingRect(LD_ACCESS mode = LD_ACCESS::CHECK) const { return ldata()->bbox(mode).translated(canvasPos()); }
+    RectF pageBoundingRect(LD_ACCESS mode = LD_ACCESS::CHECK) const { return ldata()->bbox(mode).translated(pagePos()); }
+    RectF canvasBoundingRect(LD_ACCESS mode = LD_ACCESS::CHECK) const { return ldata()->bbox(mode).translated(canvasPos()); }
+
+    virtual PointF staffOffset() const;
+    double staffOffsetY() const { return staffOffset().y(); }
 
     virtual bool isPropertyLinkedToMaster(Pid id) const;
     virtual bool isUnlinkedFromMaster() const;
@@ -614,8 +683,10 @@ public:
     virtual bool canBeExcludedFromOtherParts() const { return false; }
     virtual void manageExclusionFromParts(bool exclude);
 
+    virtual bool isBefore(const EngravingItem* item) const;
+
     //! --- Old Interface ---
-    void setbbox(const mu::RectF& r) { mutldata()->setBbox(r); }
+    void setbbox(const RectF& r) { mutldata()->setBbox(r); }
     double height() const { return ldata()->bbox().height(); }
     void setHeight(double v) { mutldata()->setHeight(v); }
 
@@ -630,12 +701,21 @@ public:
 
     virtual void move(const PointF& s) { mutldata()->move(s); }
 
+    virtual bool allowTimeAnchor() const { return false; }
+
+    virtual bool hasVoiceAssignmentProperties() const { return false; }
+    bool appliesToAllVoicesInInstrument() const;
+    void setInitialTrackAndVoiceAssignment(track_idx_t track, bool curVoiceOnlyOverride);
+    void checkVoiceAssignmentCompatibleWithTrack();
+    virtual bool elementAppliesToTrack(const track_idx_t refTrack) const;
+    void setPlacementBasedOnVoiceAssignment(DirectionV styledDirection);
+
     void setOffsetChanged(bool val, bool absolute = true, const PointF& diff = PointF());
     //! ---------------------
 
 protected:
     EngravingItem(const ElementType& type, EngravingObject* parent = nullptr, ElementFlags = ElementFlag::NOTHING);
-    EngravingItem(const EngravingItem&);
+    EngravingItem(const EngravingItem&, bool link = false);
 
 #ifndef ENGRAVING_NO_ACCESSIBILITY
     virtual AccessibleItemPtr createAccessible();
@@ -643,11 +723,16 @@ protected:
 #endif
 
     virtual LayoutData* createLayoutData() const;
+    virtual const LayoutData* ldataInternal() const;
+    virtual LayoutData* mutldataInternal();
 
     mutable int m_z = 0;
-    mu::draw::Color m_color;                // element color attribute
+    Color m_color;                // element color attribute
 
-    track_idx_t m_track = mu::nidx;         // staffIdx * VOICES + voice
+    track_idx_t m_track = muse::nidx;         // staffIdx * VOICES + voice
+
+    static bool elementAppliesToTrack(const track_idx_t elementTrack, const track_idx_t refTrack, const VoiceAssignment voiceAssignment,
+                                      const Part* part);
 
 private:
 
@@ -667,7 +752,14 @@ private:
 
     bool m_colorsInversionEnabled = true;
 
+    bool m_excludeVerticalAlign = false;
+
     mutable LayoutData* m_layoutData = nullptr;
+
+    Parenthesis* m_leftParenthesis = nullptr;
+    Parenthesis* m_rightParenthesis = nullptr;
+    void setHasLeftParenthesis(bool v, bool addToLinked = true, bool generated = false);
+    void setHasRightParenthesis(bool v, bool addToLinked = true, bool generated = false);
 };
 
 using ElementPtr = std::shared_ptr<EngravingItem>;
@@ -701,7 +793,6 @@ class ElementEditData
 public:
     EngravingItem* e = nullptr;
     std::list<PropertyData> propertyData;
-    PointF initOffset;   ///< for dragging: difference between actual offset and editData.moveDelta
 
     virtual ~ElementEditData() = default;
     void pushProperty(Pid pid)
@@ -737,12 +828,10 @@ public:
     Compound(const ElementType& type, Score*);
     Compound(const Compound&);
 
-    virtual void draw(mu::draw::Painter*) const;
     virtual void addElement(EngravingItem*, double x, double y);
     void clear();
     virtual void setSelected(bool f);
     virtual void setVisible(bool);
-    virtual void layout();
 
 protected:
     const std::list<EngravingItem*>& getElements() const { return m_elements; }
@@ -756,6 +845,7 @@ extern void collectElements(void* data, EngravingItem* e);
 } // mu::engraving
 
 #ifndef NO_QT_SUPPORT
+Q_DECLARE_METATYPE(mu::engraving::ElementPtr)
 Q_DECLARE_METATYPE(mu::engraving::ElementType)
 #endif
 

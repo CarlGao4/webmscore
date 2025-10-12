@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -27,7 +27,8 @@
 
 #include "types/typesconv.h"
 
-#include "changeMap.h"
+#include "barline.h"
+#include "keysig.h"
 #include "measure.h"
 #include "score.h"
 #include "staff.h"
@@ -264,29 +265,6 @@ PropertyValue Volta::propertyDefault(Pid propertyId) const
 }
 
 //---------------------------------------------------------
-//   setVelocity
-//---------------------------------------------------------
-
-void Volta::setVelocity() const
-{
-    Measure* startMeasure = Spanner::startMeasure();
-    Measure* endMeasure = Spanner::endMeasure();
-
-    if (startMeasure && endMeasure) {
-        if (!endMeasure->repeatEnd()) {
-            return;
-        }
-
-        Fraction startTick  = Fraction::fromTicks(startMeasure->tick().ticks() - 1);
-        Fraction endTick    = Fraction::fromTicks((endMeasure->tick() + endMeasure->ticks()).ticks() - 1);
-        Staff* st      = staff();
-        ChangeMap& velo = st->velocities();
-        auto prevVelo  = velo.val(startTick);
-        velo.addFixed(endTick, prevVelo);
-    }
-}
-
-//---------------------------------------------------------
 //   setChannel
 //---------------------------------------------------------
 
@@ -337,6 +315,87 @@ void Volta::setTempo() const
 String Volta::accessibleInfo() const
 {
     return String(u"%1: %2").arg(EngravingItem::accessibleInfo(), text());
+}
+
+PointF Volta::linePos(Grip grip, System** system) const
+{
+    bool start = grip == Grip::START;
+
+    Segment* segment = score()->tick2leftSegment(start ? tick() : tick2(), true,
+                                                 SegmentType::ChordRest | SegmentType::StartRepeatBarLine | SegmentType::EndBarLine);
+    if (!segment) {
+        return PointF();
+    }
+
+    const Measure* measure = segment->measure();
+    bool isAtSystemStart = segment->rtick().isZero() && measure && measure->system() && measure->isFirstInSystem();
+    bool searchForPrevBarline = start ? segment->rtick().isZero() && (measure->repeatStart() || !isAtSystemStart) : true;
+
+    SegmentType barlineType = start ? (SegmentType::StartRepeatBarLine | SegmentType::EndBarLine) : SegmentType::EndBarLine;
+
+    if (searchForPrevBarline) {
+        Segment* prev = segment;
+        while (prev && !prev->isType(barlineType) && prev->tick() == segment->tick()) {
+            prev = prev->prev1MMenabled();
+        }
+
+        if (prev && prev->isType(barlineType)) {
+            segment = prev;
+        }
+    }
+
+    if (start && !segment->isType(SegmentType::BarLineType) && style().styleB(Sid::voltaAlignStartBeforeKeySig)) {
+        Segment* prev = segment;
+        while (prev && !prev->isType(SegmentType::KeySig) && prev->tick() == segment->tick()) {
+            prev = prev->prev1MMenabled();
+        }
+        if (prev && prev->isType(SegmentType::KeySig)) {
+            segment = prev;
+        }
+    }
+
+    *system = segment->measure()->system();
+    double x = segment->x() + segment->measure()->x();
+
+    if (start) {
+        bool alignLeftOfRepeatBarLine = false;
+        if (segment->isChordRestType()) {
+            x -= style().styleMM(Sid::barNoteDistance);
+        } else if (segment->isKeySigType()) {
+            KeySig* sig = toKeySig(segment->element(track()));
+            if (sig && !sig->ldata()->keySymbols.empty()) {
+                KeySym keySym = sig->ldata()->keySymbols.front();
+                PointF cutoutNW = score()->engravingFont()->smuflAnchor(keySym.sym, SmuflAnchorId::cutOutNW, 1.0);
+                x += keySym.xPos + cutoutNW.x();
+            }
+        } else if (segment->segmentType() & SegmentType::BarLineType && !isAtSystemStart) {
+            x += segment->width();
+            const BarLine* barline = toBarLine(segment->element(track()));
+            alignLeftOfRepeatBarLine = barline && barline->barLineType() == BarLineType::END_REPEAT
+                                       && style().styleB(Sid::voltaAlignEndLeftOfBarline);
+            if (alignLeftOfRepeatBarLine) {
+                x -= style().styleMM(Sid::endBarWidth);
+            }
+        }
+        x += (isAtSystemStart || alignLeftOfRepeatBarLine ? 0.5 : -0.5) * absoluteFromSpatium(lineWidth());
+    } else {
+        if ((*system) && segment->tick() == (*system)->endTick()) {
+            staff_idx_t si = backSegment()->effectiveStaffIdx();
+            if (si == muse::nidx) {
+                return PointF(x, 0.0);
+            }
+            x += segment->staffShape(si).right();
+            x -= 0.5 * absoluteFromSpatium(lineWidth());
+        } else if (segment->segmentType() & SegmentType::BarLineType) {
+            BarLine* barLine = toBarLine(segment->elementAt(track()));
+            if (barLine->barLineType() == BarLineType::END_REPEAT || barLine->barLineType() == BarLineType::END_START_REPEAT) {
+                x += symWidth(SymId::repeatDot) + style().styleMM(Sid::repeatBarlineDotSeparation);
+            }
+            x += 0.5 * absoluteFromSpatium(lineWidth());
+        }
+    }
+
+    return PointF(x, 0.0);
 }
 
 //---------------------------------------------------------

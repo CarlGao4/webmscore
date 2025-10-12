@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -31,12 +31,12 @@
 #include "cloud/musescorecom/imusescorecomservice.h"
 
 namespace mu::project {
-class CloudScoresModel : public AbstractScoresModel, public async::Asyncable
+class CloudScoresModel : public AbstractScoresModel, public muse::async::Asyncable
 {
     Q_OBJECT
 
     INJECT(IProjectConfiguration, configuration)
-    INJECT(cloud::IMuseScoreComService, museScoreComService)
+    INJECT(muse::cloud::IMuseScoreComService, museScoreComService)
 
     Q_PROPERTY(State state READ state NOTIFY stateChanged)
     Q_PROPERTY(bool hasMore READ hasMore NOTIFY hasMoreChanged)
@@ -79,7 +79,7 @@ private:
     State m_state = State::Fine;
     bool m_isWaitingForPromise = false;
 
-    size_t m_totalItems = mu::nidx;
+    size_t m_totalItems = muse::nidx;
 
     int m_desiredRowCount = 0;
 };

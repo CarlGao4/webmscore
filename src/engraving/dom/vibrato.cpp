@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -29,6 +29,7 @@
 
 #include "score.h"
 #include "system.h"
+#include "trill.h"
 
 #include "log.h"
 
@@ -93,7 +94,7 @@ void VibratoSegment::symbolLine(SymId start, SymId fill, SymId end)
 
 EngravingItem* VibratoSegment::propertyDelegate(Pid pid)
 {
-    if (pid == Pid::VIBRATO_TYPE || pid == Pid::PLACEMENT || pid == Pid::PLAY) {
+    if (pid == Pid::VIBRATO_TYPE || pid == Pid::PLACEMENT) {
         return spanner();
     }
     return LineSegment::propertyDelegate(pid);
@@ -117,7 +118,6 @@ Vibrato::Vibrato(EngravingItem* parent)
 {
     initElementStyle(&vibratoStyle);
     m_vibratoType = VibratoType::GUITAR_VIBRATO;
-    setPlayArticulation(true);
 }
 
 Vibrato::~Vibrato()
@@ -142,6 +142,11 @@ LineSegment* Vibrato::createLineSegment(System* parent)
     return seg;
 }
 
+PointF Vibrato::linePos(Grip grip, System** system) const
+{
+    return Trill::trillLinePos(this, grip, system);
+}
+
 //---------------------------------------------------------
 //   vibratoTypeName
 //---------------------------------------------------------
@@ -149,6 +154,15 @@ LineSegment* Vibrato::createLineSegment(System* parent)
 String Vibrato::vibratoTypeUserName() const
 {
     return TConv::translatedUserName(vibratoType());
+}
+
+//---------------------------------------------------------
+//   subtypeUserName
+//---------------------------------------------------------
+
+muse::TranslatableString Vibrato::subtypeUserName() const
+{
+    return TConv::userName(vibratoType());
 }
 
 //---------------------------------------------------------
@@ -180,8 +194,6 @@ PropertyValue Vibrato::getProperty(Pid propertyId) const
     switch (propertyId) {
     case Pid::VIBRATO_TYPE:
         return int(vibratoType());
-    case Pid::PLAY:
-        return bool(playArticulation());
     default:
         break;
     }
@@ -198,11 +210,8 @@ bool Vibrato::setProperty(Pid propertyId, const PropertyValue& val)
     case Pid::VIBRATO_TYPE:
         setVibratoType(VibratoType(val.toInt()));
         break;
-    case Pid::PLAY:
-        setPlayArticulation(val.toBool());
-        break;
     case Pid::COLOR:
-        setColor(val.value<mu::draw::Color>());
+        setColor(val.value<Color>());
         [[fallthrough]];
     default:
         if (!SLine::setProperty(propertyId, val)) {
@@ -223,8 +232,6 @@ PropertyValue Vibrato::propertyDefault(Pid propertyId) const
     switch (propertyId) {
     case Pid::VIBRATO_TYPE:
         return 0;
-    case Pid::PLAY:
-        return true;
     case Pid::PLACEMENT:
         return style().styleV(Sid::vibratoPlacement);
     default:

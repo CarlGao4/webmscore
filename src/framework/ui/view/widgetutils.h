@@ -19,8 +19,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_UI_WIDGETUTILS_H
-#define MU_UI_WIDGETUTILS_H
+#ifndef MUSE_UI_WIDGETUTILS_H
+#define MUSE_UI_WIDGETUTILS_H
 
 #include <type_traits>
 
@@ -32,10 +32,10 @@
 class QToolButton;
 class QWidget;
 
-namespace mu::ui {
-class WidgetUtils
+namespace muse::ui {
+class WidgetUtils : public muse::Injectable
 {
-    INJECT_STATIC(IUiConfiguration, uiConfiguration)
+    static inline muse::GlobalInject<IUiConfiguration> uiConfiguration;
 
 public:
     template<class W>
@@ -56,4 +56,4 @@ public:
 };
 }
 
-#endif // MU_UI_WIDGETUTILS_H
+#endif // MUSE_UI_WIDGETUTILS_H

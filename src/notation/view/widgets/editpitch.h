@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -19,8 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_NOTATION_EDITPITCH_H
-#define MU_NOTATION_EDITPITCH_H
+#pragma once
 
 #include "ui_editpitch.h"
 
@@ -44,11 +43,10 @@ private slots:
     void reject() override { done(-1); }                               // return an invalid pitch MIDI code
 
 private:
+    virtual void showEvent(QShowEvent*) override;
     virtual void hideEvent(QHideEvent*) override;
     bool eventFilter(QObject* obj, QEvent* event) override;
 
     void setup();
 };
 }
-
-#endif // MU_NOTATION_EDITPITCH_H

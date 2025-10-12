@@ -19,12 +19,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include "types/uri.h"
+#include "uri.h"
+
+#include "global/stringutils.h"
 
 #include "log.h"
-#include "stringutils.h"
 
-using namespace mu;
+using namespace muse;
 
 const Uri::Scheme Uri::MuseScore("musescore");
 const Uri::Scheme Uri::Http("http");
@@ -33,7 +34,7 @@ const Uri::Scheme Uri::Https("https");
 static const std::string URI_VAL_TRUE("true");
 static const std::string URI_VAL_FALSE("false");
 
-// musescore://module/target/name
+// muse://module/target/name
 
 Uri::Uri(const std::string& str)
 {
@@ -47,6 +48,11 @@ Uri::Uri(const std::string& str)
     size_t pathN = (paramsPos != std::string::npos) ? (paramsPos - pathPos) : std::string::npos;
 
     m_path = str.substr(pathPos, pathN);
+}
+
+Uri::Uri(const String& str)
+    : Uri(str.toStdString())
+{
 }
 
 bool Uri::isValid() const
@@ -67,6 +73,11 @@ Uri::Scheme Uri::scheme() const
     return m_scheme;
 }
 
+void Uri::setScheme(const Scheme& scheme)
+{
+    m_scheme = scheme;
+}
+
 std::string Uri::path() const
 {
     return m_path;
@@ -77,12 +88,17 @@ std::string Uri::toString() const
     return m_scheme + "://" + m_path;
 }
 
-// musescore://module/target/name?param1=value1&paramn=valuen
+// muse://module/target/name?param1=value1&paramn=valuen
 
 UriQuery::UriQuery(const std::string& str)
     : m_uri(str)
 {
-    parceParams(str, m_params);
+    parseParams(str, m_params);
+}
+
+UriQuery::UriQuery(const String& str)
+    : UriQuery(str.toStdString())
+{
 }
 
 UriQuery::UriQuery(const Uri& uri)
@@ -90,7 +106,7 @@ UriQuery::UriQuery(const Uri& uri)
 {
 }
 
-void UriQuery::parceParams(const std::string& uri, Params& out) const
+void UriQuery::parseParams(const std::string& uri, Params& out) const
 {
     auto paramsPos = uri.find('?');
     if (paramsPos == std::string::npos) {
@@ -175,14 +191,9 @@ std::string UriQuery::toString() const
             str += it->first + "=" + it->second.toString() + "&";
         }
 
-        str.erase(str.size() - 2);
+        str.erase(str.size() - 1);
     }
     return str;
-}
-
-const Uri& UriQuery::uri() const
-{
-    return m_uri;
 }
 
 bool UriQuery::isValid() const
@@ -190,12 +201,22 @@ bool UriQuery::isValid() const
     return m_uri.isValid();
 }
 
+const Uri& UriQuery::uri() const
+{
+    return m_uri;
+}
+
+void UriQuery::setScheme(const Uri::Scheme& scheme)
+{
+    m_uri.setScheme(scheme);
+}
+
 const UriQuery::Params& UriQuery::params() const
 {
     return m_params;
 }
 
-mu::Val UriQuery::param(const std::string& key, const Val& def) const
+Val UriQuery::param(const std::string& key, const Val& def) const
 {
     auto it = m_params.find(key);
     if (it == m_params.end()) {
@@ -207,6 +228,18 @@ mu::Val UriQuery::param(const std::string& key, const Val& def) const
 void UriQuery::addParam(const std::string& key, const Val& val)
 {
     m_params[key] = val;
+}
+
+UriQuery& UriQuery::set(const ValMap& vals)
+{
+    m_params = vals;
+    return *this;
+}
+
+UriQuery& UriQuery::set(const std::string& key, const Val& val)
+{
+    m_params[key] = val;
+    return *this;
 }
 
 UriQuery UriQuery::addingParam(const std::string& key, const Val& val) const

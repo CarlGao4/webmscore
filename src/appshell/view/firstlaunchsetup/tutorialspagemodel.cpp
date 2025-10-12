@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2024 MuseScore BVBA and others
+ * Copyright (C) 2024 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -24,11 +24,11 @@
 using namespace mu::appshell;
 
 TutorialsPageModel::TutorialsPageModel(QObject* parent)
-    : QObject(parent)
+    : QObject(parent), muse::Injectable(muse::iocCtxForQmlObject(this))
 {
 }
 
-QVariant TutorialsPageModel::museScorePrivacyPolicyUrl() const
+QUrl TutorialsPageModel::museScorePrivacyPolicyUrl() const
 {
-    return QString::fromStdString(updateConfiguration()->museScorePrivacyPolicyUrl());
+    return QUrl(QString::fromStdString(updateConfiguration()->museScorePrivacyPolicyUrl()));
 }

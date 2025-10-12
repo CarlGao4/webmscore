@@ -21,12 +21,17 @@
  */
 #include <gtest/gtest.h>
 
+#include <cstdint>
 #include <cstring>
+#include <iostream>
+#include <string>
 
 #include "io/file.h"
+#include "io/path.h"
+#include "types/bytearray.h"
 
-using namespace mu;
-using namespace mu::io;
+using namespace muse;
+using namespace muse::io;
 
 class Global_IO_FileTests : public ::testing::Test
 {
@@ -68,7 +73,7 @@ TEST_F(Global_IO_FileTests, FileTests_RW)
     }
 }
 
-static void createFile(const mu::io::path_t& p, const std::string& content)
+static void createFile(const io::path_t& p, const std::string& content)
 {
     File f(p);
     EXPECT_TRUE(f.open(IODevice::WriteOnly));

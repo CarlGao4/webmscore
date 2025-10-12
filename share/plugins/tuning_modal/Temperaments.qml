@@ -14,12 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+
 import MuseScore 3.0
-import QtQuick 2.2
-import QtQuick.Controls 1.1
-import QtQuick.Controls.Styles 1.3
-import QtQuick.Layouts 1.1
-import QtQuick.Dialogs 1.1
 import FileIO 3.0
 
 MuseScore {
@@ -31,7 +30,7 @@ MuseScore {
     thumbnailName: "modal_tuning.png"
 
     width: 900
-    height: 722
+    height: 740
 
     property var offsetTextWidth: 40;
     property var offsetLabelAlignment: 0x02 | 0x80;
@@ -823,6 +822,13 @@ MuseScore {
     Item {
         anchors.fill: parent
 
+        ButtonGroup { id: temperamentTypeGroup }
+
+        component TuningItem: RadioButton {
+            padding: 2
+            ButtonGroup.group: temperamentTypeGroup
+        }
+
         GridLayout {
             columns: 2
             anchors.fill: parent
@@ -830,156 +836,130 @@ MuseScore {
             GroupBox {
                 title: "Temperament"
                 ColumnLayout {
-                    ExclusiveGroup { id: tempamentTypeGroup }
-                    RadioButton {
+                    TuningItem {
                         id: equal_button
                         text: "Equal"
                         checked: true
-                        exclusiveGroup: tempamentTypeGroup
                         onClicked: { temperamentClicked(equal) }
                     }
-                    RadioButton {
+                    TuningItem {
                         id: tuning01_button
                         text: "Meantone (1/4) 5 flats"
-                        exclusiveGroup: tempamentTypeGroup
                         onClicked: { temperamentClicked(tuning01) }
                     }
-                    RadioButton {
+                    TuningItem {
                         id: tuning02_button
                         text: "Meantone 1/4-comma"
-                        exclusiveGroup: tempamentTypeGroup
                         onClicked: { temperamentClicked(tuning02) }
                     }
-                    RadioButton {
+                    TuningItem {
                         id: tuning03_button
                         text: "Meantone (1/4) 5 sharps"
-                        exclusiveGroup: tempamentTypeGroup
                         onClicked: { temperamentClicked(tuning03) }
                     }
-                    RadioButton {
+                    TuningItem {
                         id: tuning04_button
                         text: "Meantone 1/5-comma"
-                        exclusiveGroup: tempamentTypeGroup
                         onClicked: { temperamentClicked(tuning04) }
                     }
-                    RadioButton {
+                    TuningItem {
                         id: tuning05_button
                         text: "Meantone 1/6-comma"
-                        exclusiveGroup: tempamentTypeGroup
                         onClicked: { temperamentClicked(tuning05) }
                     }
-                    RadioButton {
+                    TuningItem {
                         id: tuning06_button
                         text: "Werckmeister III"
-                        exclusiveGroup: tempamentTypeGroup
                         onClicked: { temperamentClicked(tuning06) }
                     }
-                    RadioButton {
+                    TuningItem {
                         id: tuning07_button
                         text: "Kirnberger III"
-                        exclusiveGroup: tempamentTypeGroup
                         onClicked: { temperamentClicked(tuning07) }
                     }
-                    RadioButton {
+                    TuningItem {
                         id: tuning08_button
                         text: "Vallotti"
-                        exclusiveGroup: tempamentTypeGroup
                         onClicked: { temperamentClicked(tuning08) }
                     }
-                    RadioButton {
+                    TuningItem {
                         id: tuning09_button
                         text: "Young I"
-                        exclusiveGroup: tempamentTypeGroup
                         onClicked: { temperamentClicked(tuning09) }
                     }
-                    RadioButton {
+                    TuningItem {
                         id: tuning10_button
                         text: "Kellner"
-                        exclusiveGroup: tempamentTypeGroup
                         onClicked: { temperamentClicked(tuning10) }
                     }
-                    RadioButton {
+                    TuningItem {
                         id: tuning11_button
                         text: "Fernando A. Martin 1/45-comma"
-                        exclusiveGroup: tempamentTypeGroup
                         onClicked: { temperamentClicked(tuning11) }
                     }
-                    RadioButton {
+                    TuningItem {
                         id: tuning12_button
                         text: "C Cm Db Dm Eb Ebm Em F Fm Ab Am Bb"
-                        exclusiveGroup: tempamentTypeGroup
                         onClicked: { temperamentClicked(tuning12) }
                     }
-                    RadioButton {
+                    TuningItem {
                         id: tuning13_button
                         text: "C Cm C#m D Dm E Em F F#m A Am Bb"
-                        exclusiveGroup: tempamentTypeGroup
                         onClicked: { temperamentClicked(tuning13) }
                     }
-                    RadioButton {
+                    TuningItem {
                         id: tuning14_button
                         text: "C Cm Db D Dm Em F Fm Ab Am Bb Bbm"
-                        exclusiveGroup: tempamentTypeGroup
                         onClicked: { temperamentClicked(tuning14) }
                     }
-                    RadioButton {
+                    TuningItem {
                         id: tuning15_button
                         text: "C Cm Db Eb Em F Fm G Gm Ab Am Bm"
-                        exclusiveGroup: tempamentTypeGroup
                         onClicked: { temperamentClicked(tuning15) }
                     }
-                    RadioButton {
+                    TuningItem {
                         id: tuning16_button
                         text: "C Cm D Dm Eb Em F#m G Gm Ab Bb Bm"
-                        exclusiveGroup: tempamentTypeGroup
                         onClicked: { temperamentClicked(tuning16) }
                     }
-                    RadioButton {
+                    TuningItem {
                         id: tuning17_button
                         text: "C D Ebm E Em F# F#m G G#m Bbm B Bm"
-                        exclusiveGroup: tempamentTypeGroup
                         onClicked: { temperamentClicked(tuning17) }
                     }
-                    RadioButton {
+                    TuningItem {
                         id: tuning18_button
                         text: "Simple Ratios"
-                        exclusiveGroup: tempamentTypeGroup
                         onClicked: { temperamentClicked(tuning18) }
                     }
-                    RadioButton {
+                    TuningItem {
                         id: tuning19_button
                         text: "Alternate Ratios"
-                        exclusiveGroup: tempamentTypeGroup
                         onClicked: { temperamentClicked(tuning19) }
                     }
-                    RadioButton {
+                    TuningItem {
                         id: tuning20_button
                         text: "Empty"
-                        exclusiveGroup: tempamentTypeGroup
                         onClicked: { temperamentClicked(tuning20) }
                     }
-                    RadioButton {
+                    TuningItem {
                         id: tuning21_button
                         text: "Empty"
-                        exclusiveGroup: tempamentTypeGroup
                         onClicked: { temperamentClicked(tuning21) }
                     }
-                    RadioButton {
+                    TuningItem {
                         id: tuning22_button
                         text: "Empty"
-                        exclusiveGroup: tempamentTypeGroup
                         onClicked: { temperamentClicked(tuning22) }
                     }
-                    RadioButton {
+                    TuningItem {
                         id: tuning23_button
                         text: "Empty"
-                        exclusiveGroup: tempamentTypeGroup
                         onClicked: { temperamentClicked(tuning23) }
                     }
-                    RadioButton {
+                    TuningItem {
                         id: tuning24_button
                         text: "Empty"
-                        exclusiveGroup: tempamentTypeGroup
                         onClicked: { temperamentClicked(tuning24) }
 
                     }
@@ -995,77 +975,77 @@ MuseScore {
                             GridLayout {
                                 columns: 4
                                 anchors.margins: 10
-                                ExclusiveGroup { id: rootNoteGroup }
+                                ButtonGroup { id: rootNoteGroup }
                                 RadioButton {
                                     text: "C"
                                     checked: true
-                                    exclusiveGroup: rootNoteGroup
+                                    ButtonGroup.group: rootNoteGroup
                                     id: root_c
                                     onClicked: { rootNoteClicked(0) }
                                 }
                                 RadioButton {
                                     text: "G"
-                                    exclusiveGroup: rootNoteGroup
+                                    ButtonGroup.group: rootNoteGroup
                                     id: root_g
                                     onClicked: { rootNoteClicked(1) }
                                 }
                                 RadioButton {
                                     text: "D"
-                                    exclusiveGroup: rootNoteGroup
+                                    ButtonGroup.group: rootNoteGroup
                                     id: root_d
                                     onClicked: { rootNoteClicked(2) }
                                 }
                                 RadioButton {
                                     text: "A"
-                                    exclusiveGroup: rootNoteGroup
+                                    ButtonGroup.group: rootNoteGroup
                                     id: root_a
                                     onClicked: { rootNoteClicked(3) }
                                 }
                                 RadioButton {
                                     text: "E"
-                                    exclusiveGroup: rootNoteGroup
+                                    ButtonGroup.group: rootNoteGroup
                                     id: root_e
                                     onClicked: { rootNoteClicked(4) }
                                 }
                                 RadioButton {
                                     text: "B"
-                                    exclusiveGroup: rootNoteGroup
+                                    ButtonGroup.group: rootNoteGroup
                                     id: root_b
                                     onClicked: { rootNoteClicked(5) }
                                 }
                                 RadioButton {
                                     text: "F#"
-                                    exclusiveGroup: rootNoteGroup
+                                    ButtonGroup.group: rootNoteGroup
                                     id: root_f_sharp
                                     onClicked: { rootNoteClicked(6) }
                                 }
                                 RadioButton {
                                     text: "C#"
-                                    exclusiveGroup: rootNoteGroup
+                                    ButtonGroup.group: rootNoteGroup
                                     id: root_c_sharp
                                     onClicked: { rootNoteClicked(7) }
                                 }
                                 RadioButton {
                                     text: "G#"
-                                    exclusiveGroup: rootNoteGroup
+                                    ButtonGroup.group: rootNoteGroup
                                     id: root_g_sharp
                                     onClicked: { rootNoteClicked(8) }
                                 }
                                 RadioButton {
                                     text: "Eb"
-                                    exclusiveGroup: rootNoteGroup
+                                    ButtonGroup.group: rootNoteGroup
                                     id: root_e_flat
                                     onClicked: { rootNoteClicked(9) }
                                 }
                                 RadioButton {
                                     text: "Bb"
-                                    exclusiveGroup: rootNoteGroup
+                                    ButtonGroup.group: rootNoteGroup
                                     id: root_b_flat
                                     onClicked: { rootNoteClicked(10) }
                                 }
                                 RadioButton {
                                     text: "F"
-                                    exclusiveGroup: rootNoteGroup
+                                    ButtonGroup.group: rootNoteGroup
                                     id: root_f
                                     onClicked: { rootNoteClicked(11) }
                                 }
@@ -1077,78 +1057,78 @@ MuseScore {
                             GridLayout {
                                 columns: 4
                                 anchors.margins: 10
-                                ExclusiveGroup { id: pureToneGroup }
+                                ButtonGroup { id: pureToneGroup }
                                 RadioButton {
                                     text: "C"
                                     checked: true
                                     id: pure_c
-                                    exclusiveGroup: pureToneGroup
+                                    ButtonGroup.group: pureToneGroup
                                     onClicked: { pureToneClicked(0) }
                                 }
                                 RadioButton {
                                     text: "G"
                                     id: pure_g
-                                    exclusiveGroup: pureToneGroup
+                                    ButtonGroup.group: pureToneGroup
                                     onClicked: { pureToneClicked(1) }
                                 }
                                 RadioButton {
                                     text: "D"
                                     id: pure_d
-                                    exclusiveGroup: pureToneGroup
+                                    ButtonGroup.group: pureToneGroup
                                     onClicked: { pureToneClicked(2) }
                                 }
                                 RadioButton {
                                     text: "A"
                                     id: pure_a
-                                    exclusiveGroup: pureToneGroup
+                                    ButtonGroup.group: pureToneGroup
                                     onClicked: { pureToneClicked(3) }
                                 }
                                 RadioButton {
                                     text: "E"
                                     id: pure_e
-                                    exclusiveGroup: pureToneGroup
+                                    ButtonGroup.group: pureToneGroup
                                     onClicked: { pureToneClicked(4) }
                                 }
                                 RadioButton {
                                     text: "B"
                                     id: pure_b
-                                    exclusiveGroup: pureToneGroup
+                                    ButtonGroup.group: pureToneGroup
                                     onClicked: { pureToneClicked(5) }
                                 }
                                 RadioButton {
                                     text: "F#"
                                     id: pure_f_sharp
-                                    exclusiveGroup: pureToneGroup
+                                    ButtonGroup.group: pureToneGroup
                                     onClicked: { pureToneClicked(6) }
                                 }
                                 RadioButton {
                                     text: "C#"
                                     id: pure_c_sharp
-                                    exclusiveGroup: pureToneGroup
+                                    ButtonGroup.group: pureToneGroup
                                     onClicked: { pureToneClicked(7) }
                                 }
                                 RadioButton {
                                     text: "G#"
                                     id: pure_g_sharp
-                                    exclusiveGroup: pureToneGroup
+                                    ButtonGroup.group: pureToneGroup
                                     onClicked: { pureToneClicked(8) }
                                 }
                                 RadioButton {
                                     text: "Eb"
                                     id: pure_e_flat
-                                    exclusiveGroup: pureToneGroup
+                                    ButtonGroup.group: pureToneGroup
                                     onClicked: { pureToneClicked(9) }
                                 }
                                 RadioButton {
                                     text: "Bb"
                                     id: pure_b_flat
-                                    exclusiveGroup: pureToneGroup
+                                    ButtonGroup.group: pureToneGroup
                                     onClicked: { pureToneClicked(10) }
                                 }
                                 RadioButton {
                                     text: "F"
                                     id: pure_f
-                                    exclusiveGroup: pureToneGroup
+                                    ButtonGroup.group: pureToneGroup
                                     onClicked: { pureToneClicked(11) }
                                 }
                             }
@@ -1363,7 +1343,7 @@ MuseScore {
                                 text: qsTranslate("PrefsDialogBase", "Save")
                                 onClicked: {
                                     // declaring this directly in the saveDialog's properties doesn't seem to work
-                                    saveDialog.folder = Qt.resolvedUrl("file://" + filePath)
+                                    saveDialog.folder = filePath
                                     saveDialog.visible = true
                                 }
                             }
@@ -1371,7 +1351,7 @@ MuseScore {
                                 id: loadButton
                                 text: qsTranslate("PrefsDialogBase", "Load")
                                 onClicked: {
-                                    loadDialog.folder = Qt.resolvedUrl("file://" + filePath)
+                                    loadDialog.folder = filePath
                                     loadDialog.visible = true
                                 }
                             }
@@ -1442,7 +1422,7 @@ MuseScore {
         title: "Quit?"
         text: "Do you want to quit the plugin?"
         detailedText: "It looks like you have made customisations to this tuning, you could save them to a file before quitting if you like."
-        standardButtons: StandardButton.Ok | StandardButton.Cancel
+        standardButtons: [StandardButton.Ok, StandardButton.Cancel]
         onAccepted: {
             quit()
         }
@@ -1462,7 +1442,7 @@ MuseScore {
     }
 
     function getFile(dialog) {
-        var source = dialog.fileUrl.toString().substring(7) // strip the 'file://' prefix
+        var source = dialog.filePath
         return source
     }
 
@@ -1511,8 +1491,9 @@ MuseScore {
 
     FileDialog {
         id: loadDialog
+        type: FileDialog.Load
         title: "Please choose a file"
-        sidebarVisible: true
+        //sidebarVisible: true
         onAccepted: {
             loadFile.source = getFile(loadDialog)
             var data = JSON.parse(loadFile.read())
@@ -1527,9 +1508,10 @@ MuseScore {
 
     FileDialog {
         id: saveDialog
+        type: FileDialog.Save
         title: "Please name a file"
-        sidebarVisible: true
-        selectExisting: false
+        //sidebarVisible: true
+        //selectExisting: false
         onAccepted: {
             saveFile.source = getFile(saveDialog)
             saveFile.write(formatCurrentValues())

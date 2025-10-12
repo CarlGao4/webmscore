@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -199,7 +199,7 @@ PropertyValue Jump::propertyDefault(Pid propertyId) const
     case Pid::JUMP_TO:
     case Pid::PLAY_UNTIL:
     case Pid::CONTINUE_AT:
-        return String(u"");
+        return String();
     case Pid::PLAY_REPEATS:
         return false;
     case Pid::PLACEMENT:
@@ -217,7 +217,7 @@ PropertyValue Jump::propertyDefault(Pid propertyId) const
 EngravingItem* Jump::nextSegmentElement()
 {
     Segment* seg = measure()->last();
-    return seg->firstElement(staffIdx());
+    return seg->firstElementForNavigation(staffIdx());
 }
 
 //---------------------------------------------------------
@@ -236,5 +236,14 @@ EngravingItem* Jump::prevSegmentElement()
 String Jump::accessibleInfo() const
 {
     return String(u"%1: %2").arg(EngravingItem::accessibleInfo(), this->jumpTypeUserName());
+}
+
+//---------------------------------------------------------
+//   subtypeUserName
+//---------------------------------------------------------
+
+muse::TranslatableString Jump::subtypeUserName() const
+{
+    return TConv::userName(jumpType());
 }
 }

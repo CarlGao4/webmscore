@@ -19,8 +19,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_VST_VSTTYPES_H
-#define MU_VST_VSTTYPES_H
+#ifndef MUSE_VST_VSTTYPES_H
+#define MUSE_VST_VSTTYPES_H
 
 #include <memory>
 #include <unordered_map>
@@ -38,15 +38,15 @@
 #include "pluginterfaces/gui/iplugviewcontentscalesupport.h"
 #include "pluginterfaces/vst/ivstaudioprocessor.h"
 #include "pluginterfaces/vst/ivsteditcontroller.h"
-#include "pluginterfaces/vst/ivstmidicontrollers.h"
+#include "pluginterfaces/vst/ivstmidicontrollers.h" // IWYU pragma: export
 
-#include "framework/midi/miditypes.h"
 #include "io/path.h"
 #include "log.h"
 
-namespace mu::vst {
-class VstPlugin;
-using VstPluginPtr = std::shared_ptr<VstPlugin>;
+namespace muse::vst {
+class IVstPluginInstance;
+using IVstPluginInstancePtr = std::shared_ptr<IVstPluginInstance>;
+using VstPluginInstanceId = int;
 using ClassInfo = VST3::Hosting::ClassInfo;
 
 using PluginId = std::string;
@@ -64,7 +64,7 @@ using PluginParamInfo = Steinberg::Vst::ParameterInfo;
 using PluginParamId = Steinberg::Vst::ParamID;
 using PluginParamValue = Steinberg::Vst::ParamValue;
 using PluginPreset = Steinberg::Vst::PresetFile;
-using ControllIdx = Steinberg::Vst::CtrlNumber;
+using ControlIdx = Steinberg::Vst::CtrlNumber;
 using IAudioProcessorPtr = Steinberg::FUnknownPtr<Steinberg::Vst::IAudioProcessor>;
 using IComponentHandler = Steinberg::Vst::IComponentHandler;
 using IAdvancedComponentHandler = Steinberg::Vst::IComponentHandler2;
@@ -75,7 +75,7 @@ using BusDirection = Steinberg::Vst::BusDirections;
 using BusType = Steinberg::Vst::BusTypes;
 using BusMediaType = Steinberg::Vst::MediaTypes;
 using PluginMidiMappingPtr = Steinberg::IPtr<Steinberg::Vst::IMidiMapping>;
-using ParamsMapping = std::unordered_map<ControllIdx, PluginParamId>;
+using ParamsMapping = std::unordered_map<ControlIdx, PluginParamId>;
 
 //@see https://developer.steinberg.help/pages/viewpage.action?pageId=9798275
 static const std::string VST3_PACKAGE_EXTENSION = "vst3";
@@ -130,16 +130,21 @@ inline PluginModulePtr createModule(const io::path_t& path)
 
     return result;
 }
+
+struct ParamChangeEvent {
+    PluginParamId paramId;
+    PluginParamValue value = 0.;
+};
 }
 
 template<>
-struct std::less<mu::vst::PluginParamInfo>
+struct std::less<muse::vst::ParamChangeEvent>
 {
-    bool operator()(const mu::vst::PluginParamInfo& first,
-                    const mu::vst::PluginParamInfo& second) const
+    bool operator()(const muse::vst::ParamChangeEvent& first,
+                    const muse::vst::ParamChangeEvent& second) const
     {
-        return first.id < second.id
-               && first.defaultNormalizedValue < second.defaultNormalizedValue;
+        return first.paramId < second.paramId
+               && first.value < second.value;
     }
 };
 
@@ -173,10 +178,10 @@ struct std::less<Steinberg::Vst::NoteOffEvent>
 };
 
 template<>
-struct std::less<mu::vst::VstEvent>
+struct std::less<muse::vst::VstEvent>
 {
-    bool operator()(const mu::vst::VstEvent& first,
-                    const mu::vst::VstEvent& second) const
+    bool operator()(const muse::vst::VstEvent& first,
+                    const muse::vst::VstEvent& second) const
     {
         if (first.type < second.type || first.busIndex < second.busIndex) {
             return true;
@@ -194,4 +199,4 @@ struct std::less<mu::vst::VstEvent>
     }
 };
 
-#endif // MU_VST_VSTTYPES_H
+#endif // MUSE_VST_VSTTYPES_H

@@ -26,8 +26,8 @@
 
 #include "log.h"
 
-using namespace mu;
-using namespace mu::draw;
+using namespace muse;
+using namespace muse::draw;
 
 RetVal<DrawDataPtr> DrawDataRW::readData(const io::path_t& filePath)
 {

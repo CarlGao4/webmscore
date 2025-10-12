@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -20,8 +20,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_ENGRAVING_SEGMENTLIST_H
-#define MU_ENGRAVING_SEGMENTLIST_H
+#pragma once
 
 #include "segment.h"
 
@@ -45,12 +44,16 @@ public:
     SegmentList clone() const;
     int size() const { return m_size; }
 
+    Segment* at(int index) const;
+
     Segment* first() const { return m_first; }
+    Segment* firstActive() const;
     Segment* first(SegmentType) const;
     Segment* first(ElementFlag) const;
 
     Segment* last() const { return m_last; }
     Segment* last(ElementFlag) const;
+    Segment* last(SegmentType) const;
     Segment* firstCRSegment() const;
     void remove(Segment*);
     void push_back(Segment*);
@@ -91,4 +94,3 @@ private:
 // Segment* begin(SegmentList& l) { return l.first(); }
 // Segment* end(SegmentList&) { return 0; }
 } // namespace mu::engraving
-#endif

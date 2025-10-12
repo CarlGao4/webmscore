@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,7 +22,7 @@
 
 #include "tempo.h"
 
-#include <cmath>
+#include "types/constants.h"
 
 #include "global/containers.h"
 
@@ -100,6 +100,9 @@ void TempoMap::setPause(int tick, double pause)
 
 void TempoMap::setTempo(int tick, BeatsPerSecond tempo)
 {
+    IF_ASSERT_FAILED(tempo > BeatsPerSecond(0.0)) {
+        tempo = BeatsPerSecond(0.01);
+    }
     auto e = find(tick);
     if (e != end()) {
         e->second.tempo = tempo;
@@ -189,35 +192,36 @@ void TempoMap::clearRange(int tick1, int tick2)
 
 BeatsPerSecond TempoMap::tempo(int tick) const
 {
-    auto findTempo = [this](int tick) -> BeatsPerSecond {
-        if (empty()) {
-            return 2.0;
-        }
+    if (empty()) {
+        return 2.0;
+    }
 
-        auto i = lower_bound(tick);
-        if (i == end()) {
-            --i;
-            return i->second.tempo;
-        }
-
-        if (i->first == tick) {
-            return i->second.tempo;
-        }
-
-        if (i == begin()) {
-            return 2.0;
-        }
-
+    auto i = lower_bound(tick);
+    if (i == end()) {
         --i;
         return i->second.tempo;
-    };
+    }
 
-    return findTempo(tick) * m_tempoMultiplier;
+    if (i->first == tick) {
+        return i->second.tempo;
+    }
+
+    if (i == begin()) {
+        return 2.0;
+    }
+
+    --i;
+    return i->second.tempo;
+}
+
+BeatsPerSecond TempoMap::multipliedTempo(int tick) const
+{
+    return tempo(tick) * m_tempoMultiplier;
 }
 
 double TempoMap::pauseSecs(int tick) const
 {
-    return mu::value(m_pauses, tick, 0.0);
+    return muse::value(m_pauses, tick, 0.0);
 }
 
 //---------------------------------------------------------

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -31,8 +31,8 @@ namespace mu::palette {
 template<class T>
 QByteArray toMimeData(T* t)
 {
-    io::Buffer buffer;
-    buffer.open(io::IODevice::WriteOnly);
+    muse::io::Buffer buffer;
+    buffer.open(muse::io::IODevice::WriteOnly);
     engraving::XmlWriter xml(&buffer);
     t->write(xml, true);
     buffer.close();
@@ -40,11 +40,11 @@ QByteArray toMimeData(T* t)
 }
 
 template<class T>
-std::shared_ptr<T> fromMimeData(const QByteArray& data, const AsciiStringView& tagName)
+std::shared_ptr<T> fromMimeData(const QByteArray& data, const muse::AsciiStringView& tagName)
 {
     engraving::XmlReader e(data);
     while (e.readNextStartElement()) {
-        const AsciiStringView tag(e.name());
+        const muse::AsciiStringView tag(e.name());
         if (tag == tagName) {
             std::shared_ptr<T> t(new T);
             if (!t->read(e, true)) {

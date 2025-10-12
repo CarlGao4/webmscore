@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -38,8 +38,9 @@
 #include "brailleinputparser.h"
 #include "louis.h"
 
+using namespace muse;
+using namespace muse::io;
 using namespace mu::braille;
-using namespace mu::io;
 using namespace mu::notation;
 
 namespace mu::engraving {
@@ -193,47 +194,47 @@ mu::engraving::Selection* NotationBraille::selection()
     return &score()->selection();
 }
 
-mu::ValCh<std::string> NotationBraille::brailleInfo() const
+ValCh<std::string> NotationBraille::brailleInfo() const
 {
     return m_brailleInfo;
 }
 
-mu::ValCh<int> NotationBraille::cursorPosition() const
+ValCh<int> NotationBraille::cursorPosition() const
 {
     return m_cursorPosition;
 }
 
-mu::ValCh<int> NotationBraille::currentItemPositionStart() const
+ValCh<int> NotationBraille::currentItemPositionStart() const
 {
     return m_currentItemPositionStart;
 }
 
-mu::ValCh<int> NotationBraille::currentItemPositionEnd() const
+ValCh<int> NotationBraille::currentItemPositionEnd() const
 {
     return m_currentItemPositionEnd;
 }
 
-mu::ValCh<std::string> NotationBraille::keys() const
+ValCh<std::string> NotationBraille::keys() const
 {
     return m_keys;
 }
 
-mu::ValCh<bool> NotationBraille::enabled() const
+ValCh<bool> NotationBraille::enabled() const
 {
     return m_enabled;
 }
 
-mu::ValCh<BrailleIntervalDirection> NotationBraille::intervalDirection() const
+ValCh<BrailleIntervalDirection> NotationBraille::intervalDirection() const
 {
     return m_intervalDirection;
 }
 
-mu::ValCh<int> NotationBraille::mode() const
+ValCh<int> NotationBraille::mode() const
 {
     return m_mode;
 }
 
-mu::ValCh<std::string> NotationBraille::cursorColor() const
+ValCh<std::string> NotationBraille::cursorColor() const
 {
     return m_cursorColor;
 }
@@ -494,8 +495,8 @@ void NotationBraille::setKeys(const QString& sequence)
         NoteName prevNoteName = NoteName::C;
         int prevNoteOctave = -1; // unknown octave
 
-        if (Segment* seg = interaction()->noteInput()->state().segment) {
-            const track_idx_t track = interaction()->noteInput()->state().currentTrack;
+        if (const Segment* seg = interaction()->noteInput()->state().segment()) {
+            const track_idx_t track = interaction()->noteInput()->state().track();
             Chord* prevChord = nullptr;
 
             for (Segment* s = seg->prev1(SegmentType::ChordRest); s; s = s->prev1(SegmentType::ChordRest)) {
@@ -547,7 +548,14 @@ void NotationBraille::setKeys(const QString& sequence)
             Duration duration = Duration(d);
             setInputNoteDuration(duration);
 
-            interaction()->noteInput()->addNote(brailleInput()->noteName(), NoteAddingMode::NextChord);
+            NoteInputParams params;
+            const int note = static_cast<int>(brailleInput()->noteName());
+            bool ok = score()->resolveNoteInputParams(note, /*addFlag*/ false, params);
+            if (!ok) {
+                return;
+            }
+
+            interaction()->noteInput()->addNote(params, NoteAddingMode::NextChord);
 
             if (brailleInput()->addedOctave() != -1) {
                 if (brailleInput()->addedOctave() < brailleInput()->octave()) {
@@ -565,8 +573,8 @@ void NotationBraille::setKeys(const QString& sequence)
             if (brailleInput()->longSlurStart()) {
                 if (brailleInput()->longSlurStartNote() == NULL) {
                     if (currentEngravingItem() != NULL && currentEngravingItem()->isNote()) {
-                        Note* note = toNote(currentEngravingItem());
-                        brailleInput()->setLongSlurStartNote(note);
+                        Note* currentNote = toNote(currentEngravingItem());
+                        brailleInput()->setLongSlurStartNote(currentNote);
                     }
                 }
             }
@@ -602,7 +610,15 @@ void NotationBraille::setKeys(const QString& sequence)
             if (brailleInput()->accidental() != mu::notation::AccidentalType::NONE) {
                 interaction()->noteInput()->setAccidental(brailleInput()->accidental());
             }
-            interaction()->noteInput()->addNote(brailleInput()->noteName(), NoteAddingMode::CurrentChord);
+
+            NoteInputParams params;
+            const int note = static_cast<int>(brailleInput()->noteName());
+            bool ok = score()->resolveNoteInputParams(note, /*addFlag*/ true, params);
+            if (!ok) {
+                return;
+            }
+
+            interaction()->noteInput()->addNote(params, NoteAddingMode::CurrentChord);
 
             if (brailleInput()->addedOctave() != -1) {
                 if (brailleInput()->addedOctave() < brailleInput()->octave()) {
@@ -622,13 +638,8 @@ void NotationBraille::setKeys(const QString& sequence)
         }
         case BieSequencePatternType::Tuplet: case BieSequencePatternType::Tuplet3: {
             LOGD() << "tuplet";
-            std::string stateTuplet;
-            stateTuplet = "Tuplet " + std::to_string(brailleInput()->tupletNumber());
-            auto notationAccessibility = notation()->accessibility();
-            if (!notationAccessibility) {
-                return;
-            }
-            notationAccessibility->setTriggeredCommand(stateTuplet);
+            const QString stateTuplet = muse::qtrc("braille/notation", "Tuplet %1").arg(brailleInput()->tupletNumber());
+            accessibilityController()->announce(stateTuplet);
             break;
         }
         case BieSequencePatternType::Tie: {
@@ -698,7 +709,7 @@ bool NotationBraille::addTie()
         return false;
     }
 
-    score()->startCmd();
+    score()->startCmd(TranslatableString("undoableAction", "Add tie"));
     Note* note = toNote(currentEngravingItem());
 
     Tie* tie = Factory::createTie(score()->dummy());
@@ -724,7 +735,7 @@ bool NotationBraille::addSlur()
             ChordRest* firstChordRest = toChordRest(note1->parent());
             ChordRest* secondChordRest = toChordRest(note2->parent());
 
-            score()->startCmd();
+            score()->startCmd(TranslatableString("undoableAction", "Add slur"));
 
             Slur* slur = Factory::createSlur(firstChordRest->measure()->system());
             slur->setScore(firstChordRest->score());
@@ -769,7 +780,7 @@ bool NotationBraille::addLongSlur()
             ChordRest* firstChordRest = toChordRest(note1->parent());
             ChordRest* secondChordRest = toChordRest(note2->parent());
 
-            score()->startCmd();
+            score()->startCmd(TranslatableString("undoableAction", "Add long slur"));
 
             Slur* slur = Factory::createSlur(firstChordRest->measure()->system());
             slur->setScore(firstChordRest->score());
@@ -852,27 +863,25 @@ void NotationBraille::setMode(const BrailleMode mode)
 
 void NotationBraille::toggleMode()
 {
-    std::string stateTitle;
-
     switch ((BrailleMode)mode().val) {
     case BrailleMode::Undefined:
     case BrailleMode::Navigation:
         setMode(BrailleMode::BrailleInput);
-        interaction()->noteInput()->startNoteInput();
-        stateTitle = trc("notation", "Note input mode");
         break;
     case BrailleMode::BrailleInput:
         setMode(BrailleMode::Navigation);
-        interaction()->noteInput()->endNoteInput();
-        stateTitle = trc("notation", "Normal mode");
         break;
     }
 
-    auto notationAccessibility = notation()->accessibility();
-    if (!notationAccessibility) {
-        return;
-    }
-    notationAccessibility->setTriggeredCommand(stateTitle);
+    dispatcher()->dispatch("note-input");
+
+    const QString stateTitle = interaction()->noteInput()->isNoteInputMode()
+                               //: Braille input with 6 keyboard keys (F,D,S & J,K,L) to represent the 6 dots in a braille cell.
+                               ? muse::qtrc("braille/notation", "Six-key input mode")
+                               //: Braille navigation.
+                               : muse::qtrc("braille/notation", "Navigation mode");
+
+    accessibilityController()->announce(stateTitle);
 }
 
 bool NotationBraille::isNavigationMode()

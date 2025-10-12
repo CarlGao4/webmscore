@@ -24,10 +24,10 @@
 
 #include <Windows.h>
 
-using namespace mu::uicomponents;
+using namespace muse::uicomponents;
 
-WinPopupViewCloseController::WinPopupViewCloseController(QObject* parent)
-    : PopupViewCloseController(parent)
+WinPopupViewCloseController::WinPopupViewCloseController(const muse::modularity::ContextPtr& iocCtx, QObject* parent)
+    : PopupViewCloseController(iocCtx, parent)
 {
 }
 
@@ -42,7 +42,7 @@ void WinPopupViewCloseController::doUpdateEventFilters()
     PopupViewCloseController::doUpdateEventFilters();
 }
 
-bool WinPopupViewCloseController::nativeEventFilter(const QByteArray& eventType, void* message, long*)
+bool WinPopupViewCloseController::nativeEventFilter(const QByteArray& eventType, void* message, qintptr*)
 {
     if (eventType != "windows_generic_MSG") {
         return false;
@@ -54,9 +54,7 @@ bool WinPopupViewCloseController::nativeEventFilter(const QByteArray& eventType,
     }
 
     if (msg->message == WM_NCLBUTTONDOWN || msg->message == WM_NCRBUTTONDOWN) {
-        if (!popupHasFocus()) {
-            doFocusOut();
-        }
+        doFocusOut(QCursor::pos());
     }
 
     return false;

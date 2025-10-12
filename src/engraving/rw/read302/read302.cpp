@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -55,7 +55,7 @@ using namespace mu::engraving::compat;
 bool Read302::readScore302(Score* score, XmlReader& e, ReadContext& ctx)
 {
     while (e.readNextStartElement()) {
-        ctx.setTrack(mu::nidx);
+        ctx.setTrack(muse::nidx);
         const AsciiStringView tag(e.name());
         if (tag == "Staff") {
             read400::StaffRead::readStaff(score, e, ctx);
@@ -95,13 +95,11 @@ bool Read302::readScore302(Score* score, XmlReader& e, ReadContext& ctx)
 
             ReadStyleHook::readStyleTag(score, e);
 
-            // if (_layoutMode == LayoutMode::FLOAT || _layoutMode == LayoutMode::SYSTEM) {
-            if (score->layoutOptions().isMode(LayoutMode::FLOAT)) {
-                // style should not change spatium in
-                // float mode
+            if (ctx.overrideSpatium()) {
+                ctx.setOriginalSpatium(score->style().spatium());
                 score->style().set(Sid::spatium, sp);
             }
-            score->m_engravingFont = engravingFonts()->fontByName(score->style().styleSt(Sid::MusicalSymbolFont).toStdString());
+            score->m_engravingFont = score->engravingFonts()->fontByName(score->style().styleSt(Sid::musicalSymbolFont).toStdString());
         } else if (tag == "copyright" || tag == "rights") {
             score->setMetaTag(u"copyright", Text::readXmlText(e, score));
         } else if (tag == "movement-number") {
@@ -174,7 +172,6 @@ bool Read302::readScore302(Score* score, XmlReader& e, ReadContext& ctx)
 
                 Score* curScore = ctx.score();
                 ctx.setScore(s);
-                ctx.setMasterCtx(&ctx);
 
                 readScore302(s, e, ctx);
 
@@ -203,11 +200,11 @@ bool Read302::readScore302(Score* score, XmlReader& e, ReadContext& ctx)
         }
     }
     ctx.reconnectBrokenConnectors();
-    if (e.error() != XmlStreamReader::NoError) {
-        if (e.error() == XmlStreamReader::CustomError) {
+    if (e.error() != muse::XmlStreamReader::NoError) {
+        if (e.error() == muse::XmlStreamReader::CustomError) {
             LOGE() << e.errorString();
         } else {
-            LOGE() << String(u"XML read error at line %1, column %2: %3").arg(e.lineNumber(), e.columnNumber())
+            LOGE() << String(u"XML read error at byte offset %1: %2").arg(e.byteOffset())
                 .arg(String::fromAscii(e.name().ascii()));
         }
         return false;
@@ -253,9 +250,17 @@ bool Read302::readScore302(Score* score, XmlReader& e, ReadContext& ctx)
     return true;
 }
 
-Err Read302::readScore(Score* score, XmlReader& e, ReadInOutData* out)
+muse::Ret Read302::readScore(Score* score, XmlReader& e, ReadInOutData* out)
 {
     ReadContext ctx(score);
+    if (out) {
+        if (out->overriddenSpatium.has_value()) {
+            ctx.setSpatium(out->overriddenSpatium.value());
+            ctx.setOverrideSpatium(true);
+        }
+
+        ctx.setPropertiesToSkip(out->propertiesToSkip);
+    }
 
     DEFER {
         if (out) {
@@ -271,17 +276,21 @@ Err Read302::readScore(Score* score, XmlReader& e, ReadInOutData* out)
             score->setMscoreRevision(e.readInt(nullptr, 16));
         } else if (tag == "Score") {
             if (!readScore302(score, e, ctx)) {
-                if (e.error() == XmlStreamReader::CustomError) {
-                    return Err::FileCriticallyCorrupted;
+                if (e.error() == muse::XmlStreamReader::CustomError) {
+                    return make_ret(Err::FileCriticallyCorrupted, e.errorString());
                 }
-                return Err::FileBadFormat;
+                return make_ret(Err::FileBadFormat, e.errorString());
+            }
+
+            if (ctx.overrideSpatium() && out) {
+                out->originalSpatium = ctx.originalSpatium();
             }
         } else if (tag == "Revision") {
             e.skipCurrentElement();
         }
     }
 
-    return Err::NoError;
+    return muse::make_ok();
 }
 
 void Read302::fixInstrumentId(Instrument* instrument)
@@ -310,6 +319,19 @@ void Read302::fixInstrumentId(Instrument* instrument)
         id = u"marching-cymbals";
     } else if (id == u"bass-drum" && trackName == u"bass drums") {
         id = u"marching-bass-drums";
+    } else if (id.startsWith(u"mdl-")) {
+        // See https://github.com/musescore/mdl/blob/master/resources/instruments/mdl_1_3_0.xml
+        if (id == u"mdl-snareline" || id == u"mdl-snareline-a" || id == u"mdl-snaresolo" || id == u"mdl-snaresolo-a") {
+            id = u"marching-snare";
+        } else if (id == u"mdl-tenorline" || id == u"mdl-tenorsolo" || id == u"mdl-flubs") {
+            id = u"marching-tenor-drums";
+        } else if (id == u"mdl-bassline-10" || id == u"mdl-bassline-5") {
+            id = u"marching-bass-drums";
+        } else if (id == u"mdl-cymballine") {
+            id = u"marching-cymbals";
+        } else if (id == u"mdl-showtenorline" || id == u"mdl-rail" || id == u"mdl-drumset" || id == u"mdl-sampler") {
+            id = u"drumset";
+        }
     }
 
     instrument->setId(id);
@@ -322,6 +344,11 @@ bool Read302::pasteStaff(XmlReader&, Segment*, staff_idx_t, Fraction)
 }
 
 void Read302::pasteSymbols(XmlReader&, ChordRest*)
+{
+    UNREACHABLE;
+}
+
+void Read302::readTremoloCompat(compat::TremoloCompat*, XmlReader&)
 {
     UNREACHABLE;
 }

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2024 MuseScore BVBA and others
+ * Copyright (C) 2024 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -27,14 +27,15 @@
 #include "undo.h"
 #include "linkedobjects.h"
 
+using namespace muse::draw;
 using namespace mu::engraving;
 
 SoundFlag::SoundFlag(EngravingItem* parent)
     : EngravingItem(ElementType::SOUND_FLAG, parent)
 {
-    String fontFamily = engravingConfiguration()->iconsFontFamily();
+    String fontFamily = configuration()->iconsFontFamily();
     m_iconFontValid = !fontFamily.empty();
-    m_iconFont = draw::Font(fontFamily, draw::Font::Type::Icon);
+    m_iconFont = Font(fontFamily, Font::Type::Icon);
 
     //! draw on top of all elements
     setZ(INT_MAX);
@@ -222,7 +223,7 @@ char16_t SoundFlag::iconCode() const
     return 0xEF4E;
 }
 
-draw::Font SoundFlag::iconFont() const
+Font SoundFlag::iconFont() const
 {
     return m_iconFont;
 }
@@ -234,7 +235,7 @@ void SoundFlag::setIconFontSize(double size)
 
 Color SoundFlag::iconBackgroundColor() const
 {
-    Color color = curColor();
+    Color color = curColor(true);
     if (!selected()) {
         color = Color("#CFD5DD");
         color.setAlpha(128);

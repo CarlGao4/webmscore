@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -23,10 +23,11 @@ import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
 
-import MuseScore.Ui 1.0
-import MuseScore.UiComponents 1.0
+import Muse.Ui 1.0
+import Muse.UiComponents 1.0
 import MuseScore.NotationScene 1.0
 import MuseScore.Braille 1.0
+import MuseScore.Playback 1.0
 
 import "internal"
 
@@ -44,7 +45,7 @@ FocusScope {
 
     property alias defaultNavigationControl: fakeNavCtrl
 
-    property NavigationPanel navigationPanel: tabPanel.navigationPanel // first panel
+    readonly property alias navigationSection: navSec
 
     NavigationSection {
         id: navSec
@@ -88,9 +89,15 @@ FocusScope {
 
             orientation: notationNavigator.orientation === Qt.Horizontal ? Qt.Vertical : Qt.Horizontal
 
-            NotationScrollAndZoomArea {
+            StyledViewScrollAndZoomArea {
                 SplitView.fillWidth: true
                 SplitView.fillHeight: true
+
+                horizontalScrollbarSize: view.horizontalScrollbarSize
+                startHorizontalScrollPosition: view.startHorizontalScrollPosition
+
+                verticalScrollbarSize: view.verticalScrollbarSize
+                startVerticalScrollPosition: view.startVerticalScrollPosition
 
                 NotationPaintView {
                     id: notationView
@@ -116,7 +123,7 @@ FocusScope {
                             if (fakeNavCtrl.active) {
                                 notationView.forceFocusIn()
 
-                                if (navigationPanel.highlight) {
+                                if (notationView.navigationPanel.highlight) {
                                     notationView.selectOnNavigationActive()
                                 }
                             } else {
@@ -128,6 +135,14 @@ FocusScope {
                     NavigationFocusBorder {
                         navigationCtrl: fakeNavCtrl
                         drawOutsideParent: false
+                    }
+
+                    Rectangle {
+                        id: playbackCursor
+
+                        Component.onCompleted: {
+                            notationView.setPlaybackCursorItem(playbackCursor)
+                        }
                     }
 
                     onActiveFocusRequested: {
@@ -143,12 +158,12 @@ FocusScope {
                         contextMenuLoader.close()
                     }
 
-                    onShowElementPopupRequested: function (popupType, elementRect) {
-                        Qt.callLater(popUpLoader.show, popupType, elementRect)
+                    onShowElementPopupRequested: function (popupType) {
+                        popUpLoader.updateShow(popupType);
                     }
 
                     onHideElementPopupRequested: {
-                        Qt.callLater(popUpLoader.close)
+                        popUpLoader.updateShow(AbstractElementPopupModel.TYPE_UNDEFINED);
                     }
 
                     onViewportChanged: {
@@ -172,9 +187,52 @@ FocusScope {
                         notationViewNavigationSection: navSec
                         navigationOrderStart: notationView.navigationPanel.order + 1
 
-                        onOpened: paintView.onElementPopupIsOpenChanged(true)
-                        onClosed: paintView.onElementPopupIsOpenChanged(false)
+                        property int popupType: AbstractElementPopupModel.TYPE_UNDEFINED
+                        property bool updateShowScheduled: false
+
+                        function updateShow(popupType) {
+                            this.popupType = popupType;
+                            if (!updateShowScheduled) {
+                                Qt.callLater(doUpdateShow)
+                                updateShowScheduled = true;
+                            }
+                        }
+
+                        function doUpdateShow() {
+                            if (popupType !== AbstractElementPopupModel.TYPE_UNDEFINED) {
+                                show(popupType);
+                            } else {
+                                close();
+                            }
+
+                            updateShowScheduled = false;
+                        }
+
+                        onOpened: function(popupType) {
+                            paintView.onElementPopupIsOpenChanged(popupType)
+                        }
+
+                        onClosed: {
+                            paintView.onElementPopupIsOpenChanged(AbstractElementPopupModel.TYPE_UNDEFINED)
+                        }
                     }
+
+                    NotationRegionsBeingProcessedView {
+                        notationViewRect: Qt.rect(notationView.x, notationView.y, notationView.width, notationView.height)
+                        notationViewMatrix: notationView.matrix
+                    }
+                }
+
+                onPinchToZoom: function(scale, pos) {
+                    view.pinchToZoom(scale, pos)
+                }
+
+                onScrollHorizontal: function(newPos) {
+                    view.scrollHorizontal(newPos)
+                }
+
+                onScrollVertical: function(newPos) {
+                    view.scrollVertical(newPos)
                 }
             }
 
@@ -215,7 +273,7 @@ FocusScope {
                     navigationPanel.section: navSec
                     navigationPanel.order: brailleViewLoader.navigationOrder
 
-                    navigationPanel.onActiveChanged: {
+                    navigationPanel.onActiveChanged: function (active) {
                         if (active) {
                             notationView.navigationPanel.setActive(false);
                             fakeNavCtrl.setActive(false);

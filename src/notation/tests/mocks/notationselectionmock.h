@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2024 MuseScore BVBA and others
+ * Copyright (C) 2024 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -34,19 +34,26 @@ public:
     MOCK_METHOD(bool, isRange, (), (const, override));
     MOCK_METHOD(SelectionState, state, (), (const, override));
 
-    MOCK_METHOD(mu::Ret, canCopy, (), (const, override));
-    MOCK_METHOD(QMimeData*, mimeData, (), (const, override));
+    MOCK_METHOD(muse::Ret, canCopy, (), (const, override));
+    MOCK_METHOD(muse::ByteArray, mimeData, (), (const, override));
+    MOCK_METHOD(QMimeData*, qMimeData, (), (const, override));
 
     MOCK_METHOD(EngravingItem*, element, (), (const, override));
     MOCK_METHOD(const std::vector<EngravingItem*>&, elements, (), (const, override));
 
     MOCK_METHOD(std::vector<Note*>, notes, (NoteFilter filter), (const, override));
 
-    MOCK_METHOD(RectF, canvasBoundingRect, (), (const, override));
+    MOCK_METHOD(muse::RectF, canvasBoundingRect, (), (const, override));
 
     MOCK_METHOD(INotationSelectionRangePtr, range, (), (const, override));
 
     MOCK_METHOD(EngravingItem*, lastElementHit, (), (const, override));
+
+    MOCK_METHOD(mu::engraving::MeasureBase*, startMeasureBase, (), (const, override));
+    MOCK_METHOD(mu::engraving::MeasureBase*, endMeasureBase, (), (const, override));
+    MOCK_METHOD(std::vector<System*>, selectedSystems, (), (const, override));
+
+    MOCK_METHOD(bool, elementsSelected, (const mu::engraving::ElementTypeSet&), (const, override));
 };
 }
 

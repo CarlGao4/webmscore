@@ -18,7 +18,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-set(MODULE midi)
+declare_module(muse_midi)
+set(MODULE_ALIAS muse::midi)
 
 include(GetPlatformInfo)
 if (OS_IS_WIN)
@@ -82,7 +83,7 @@ elseif (OS_IS_WIN)
     set(MODULE_LINK ${MODULE_LINK} winmm)
 elseif (OS_IS_LIN)
     find_package(ALSA REQUIRED)
-    set(MODULE_INCLUDE ${MODULE_INCLUDE} ${ALSA_INCLUDE_DIRS} )
+    set(MODULE_INCLUDE_PRIVATE ${MODULE_INCLUDE_PRIVATE} ${ALSA_INCLUDE_DIRS} )
     set(MODULE_LINK ${MODULE_LINK} ${ALSA_LIBRARIES} pthread )
 endif()
 
@@ -90,4 +91,8 @@ set(MODULE_QRC midi.qrc)
 
 set(MODULE_QML_IMPORT ${CMAKE_CURRENT_LIST_DIR}/qml )
 
-include(${PROJECT_SOURCE_DIR}/build/module.cmake)
+if (QT_SUPPORT)
+    list(APPEND MODULE_LINK Qt::Qml)
+endif()
+
+setup_module()

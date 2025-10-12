@@ -25,8 +25,8 @@
 
 #include "log.h"
 
-using namespace mu;
-using namespace mu::draw;
+using namespace muse;
+using namespace muse::draw;
 
 static int rtoi(double v)
 {
@@ -96,7 +96,7 @@ static void fromObj(const JsonObject& obj, Brush& brush)
 static JsonObject toObj(const Font& font)
 {
     JsonObject obj;
-    obj["family"] = font.family();
+    obj["family"] = font.family().id();
     obj["type"] = static_cast<int>(font.type());
     obj["pointSize"] = font.pointSizeF();
     obj["weight"] = font.weight();
@@ -512,7 +512,7 @@ ByteArray DrawDataJson::toJson(const DrawDataPtr& data, bool prettify)
     return JsonDocument(root).toJson(prettify ? JsonDocument::Format::Indented : JsonDocument::Format::Compact);
 }
 
-mu::RetVal<DrawDataPtr> DrawDataJson::fromJson(const ByteArray& json)
+RetVal<DrawDataPtr> DrawDataJson::fromJson(const ByteArray& json)
 {
     std::string err;
     JsonDocument doc = JsonDocument::fromJson(json, &err);

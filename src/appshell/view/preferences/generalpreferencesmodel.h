@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -19,8 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_APPSHELL_GENERALPREFERENCESMODEL_H
-#define MU_APPSHELL_GENERALPREFERENCESMODEL_H
+#pragma once
 
 #include <QObject>
 
@@ -34,18 +33,11 @@
 #include "languages/ilanguagesconfiguration.h"
 #include "languages/ilanguagesservice.h"
 #include "shortcuts/ishortcutsconfiguration.h"
-#include "project/iprojectconfiguration.h"
 
 namespace mu::appshell {
-class GeneralPreferencesModel : public QObject, public async::Asyncable
+class GeneralPreferencesModel : public QObject, public muse::Injectable, public muse::async::Asyncable
 {
     Q_OBJECT
-
-    INJECT(IAppShellConfiguration, configuration)
-    INJECT(framework::IInteractive, interactive)
-    INJECT(languages::ILanguagesConfiguration, languagesConfiguration)
-    INJECT(languages::ILanguagesService, languagesService)
-    INJECT(shortcuts::IShortcutsConfiguration, shortcutsConfiguration)
 
     Q_PROPERTY(QVariantList languages READ languages NOTIFY languagesChanged)
     Q_PROPERTY(QString currentLanguageCode READ currentLanguageCode WRITE setCurrentLanguageCode NOTIFY currentLanguageCodeChanged)
@@ -56,9 +48,20 @@ class GeneralPreferencesModel : public QObject, public async::Asyncable
     Q_PROPERTY(bool isOSCRemoteControl READ isOSCRemoteControl WRITE setIsOSCRemoteControl NOTIFY isOSCRemoteControlChanged)
     Q_PROPERTY(int oscPort READ oscPort WRITE setOscPort NOTIFY oscPortChanged)
 
-    Q_PROPERTY(bool isNeedRestart READ isNeedRestart WRITE setIsNeedRestart NOTIFY isNeedRestartChanged)
+    Q_PROPERTY(bool restartRequired READ restartRequired WRITE setRestartRequired NOTIFY restartRequiredChanged)
 
-    Q_PROPERTY(QVariantList startupModes READ startupModes NOTIFY startupModesChanged)
+    Q_PROPERTY(QVariantList startupModes READ startupModes CONSTANT)
+    Q_PROPERTY(int currentStartupMode READ currentStartupMode WRITE setCurrentStartupMode NOTIFY currentStartupModeChanged)
+    Q_PROPERTY(QString startupScorePath READ startupScorePath WRITE setStartupScorePath NOTIFY startupScorePathChanged)
+    Q_PROPERTY(QStringList scorePathFilter READ scorePathFilter CONSTANT)
+
+    Q_PROPERTY(bool showWelcomeDialog READ showWelcomeDialog WRITE setShowWelcomeDialog NOTIFY showWelcomeDialogChanged)
+
+    muse::Inject<IAppShellConfiguration> configuration = { this };
+    muse::Inject<muse::IInteractive> interactive = { this };
+    muse::Inject<muse::languages::ILanguagesConfiguration> languagesConfiguration = { this };
+    muse::Inject<muse::languages::ILanguagesService> languagesService = { this };
+    muse::Inject<muse::shortcuts::IShortcutsConfiguration> shortcutsConfiguration = { this };
 
 public:
     explicit GeneralPreferencesModel(QObject* parent = nullptr);
@@ -66,29 +69,32 @@ public:
     Q_INVOKABLE void load();
     Q_INVOKABLE void checkUpdateForCurrentLanguage();
 
-    Q_INVOKABLE void setCurrentStartupMode(int modeIndex);
-    Q_INVOKABLE void setStartupScorePath(const QString& scorePath);
-
-    Q_INVOKABLE QStringList scorePathFilter() const;
-
     QVariantList languages() const;
     QString currentLanguageCode() const;
 
     QStringList keyboardLayouts() const;
     QString currentKeyboardLayout() const;
 
-    QVariantList startupModes() const;
-
     bool isOSCRemoteControl() const;
     int oscPort() const;
-    bool isNeedRestart() const;
+    bool restartRequired() const;
+
+    QVariantList startupModes() const;
+    int currentStartupMode() const;
+    QString startupScorePath() const;
+    QStringList scorePathFilter() const;
+
+    bool showWelcomeDialog() const;
+    void setShowWelcomeDialog(bool show);
 
 public slots:
     void setCurrentLanguageCode(const QString& currentLanguageCode);
     void setCurrentKeyboardLayout(const QString& keyboardLayout);
     void setIsOSCRemoteControl(bool isOSCRemoteControl);
     void setOscPort(int oscPort);
-    void setIsNeedRestart(bool newIsNeedRestart);
+    void setRestartRequired(bool restartRequired);
+    void setCurrentStartupMode(int mode);
+    void setStartupScorePath(const QString& scorePath);
 
 signals:
     void languagesChanged(QVariantList languages);
@@ -98,28 +104,16 @@ signals:
     void oscPortChanged(int oscPort);
 
     void receivingUpdateForCurrentLanguage(int current, int total, QString status);
-    void isNeedRestartChanged();
+    void restartRequiredChanged();
 
-    void startupModesChanged();
+    void currentStartupModeChanged();
+    void startupScorePathChanged();
+
+    void showWelcomeDialogChanged();
 
 private:
-    framework::Progress m_languageUpdateProgress;
+    muse::Progress m_languageUpdateProgress;
 
-    bool m_isNeedRestart = false;
-
-    struct StartMode
-    {
-        StartupModeType type = StartupModeType::StartWithNewScore;
-        QString title;
-        bool checked = false;
-        bool canSelectScorePath = false;
-        QString scorePath;
-    };
-
-    using StartModeList = QList<StartMode>;
-
-    StartModeList allStartupModes() const;
+    bool m_restartRequired = false;
 };
 }
-
-#endif // MU_APPSHELL_GENERALPREFERENCESMODEL_H

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,13 +22,14 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 
-import MuseScore.Ui 1.0
-import MuseScore.UiComponents 1.0
+import Muse.Ui 1.0
+import Muse.UiComponents 1.0
 
 ColumnLayout {
     id: root
 
     property alias title: titleLabel.text
+    property alias isFreeLabelVisible: freeRect.visible
     property alias description: descriptionLabel.text
     property alias buttonText: button.text
 
@@ -71,13 +72,38 @@ ColumnLayout {
         ColumnLayout {
             anchors.fill: parent
             anchors.margins: 24
-            spacing: 24
+            spacing: 12
 
-            StyledTextLabel {
-                id: titleLabel
-                Layout.fillWidth: true
-                font: ui.theme.headerBoldFont
-                horizontalAlignment: Text.AlignLeft
+            Row {
+                spacing: 8
+
+                StyledTextLabel {
+                    id: titleLabel
+                    Layout.fillWidth: true
+                    font: ui.theme.headerBoldFont
+                    horizontalAlignment: Text.AlignLeft
+                }
+
+                Rectangle {
+                    id: freeRect
+                    implicitHeight: freeLabel.implicitHeight + 4 * 2
+                    implicitWidth: freeLabel.implicitWidth + 12 * 2
+
+                    color: ui.theme.accentColor
+                    radius: height / 2
+
+                    visible: false
+
+                    StyledTextLabel {
+                        id: freeLabel
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        text: qsTrc("project/save", "Free")
+                        font: ui.theme.tabBoldFont
+                        horizontalAlignment: Text.AlignLeft
+                    }
+                }
             }
 
             StyledTextLabel {

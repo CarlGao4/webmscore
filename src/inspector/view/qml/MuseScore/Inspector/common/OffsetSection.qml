@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -21,8 +21,8 @@
  */
 import QtQuick 2.15
 
-import MuseScore.Ui 1.0
-import MuseScore.UiComponents 1.0
+import Muse.Ui 1.0
+import Muse.UiComponents 1.0
 import MuseScore.Inspector 1.0
 
 InspectorPropertyView {
@@ -53,7 +53,7 @@ InspectorPropertyView {
             navigation.name: "HorizontalOffsetControl"
             navigation.panel: root.navigationPanel
             navigation.row: root.navigationRowStart + 1
-            navigation.accessible.name: root.titleText + " " + qsTrc("inspector", "Horizontal") + " " + currentValue
+            navigation.accessible.name: root.accessibleName + " " + qsTrc("inspector", "Horizontal") + " " + currentValue
 
             icon: IconCode.HORIZONTAL
 
@@ -75,7 +75,7 @@ InspectorPropertyView {
             navigation.name: "VerticalOffsetControl"
             navigation.panel: root.navigationPanel
             navigation.row: root.navigationRowStart + 2
-            navigation.accessible.name: root.titleText + " " + qsTrc("inspector", "Vertical") + " " + currentValue
+            navigation.accessible.name: root.accessibleName + " " + qsTrc("inspector", "Vertical") + " " + currentValue
 
             icon: IconCode.VERTICAL
 

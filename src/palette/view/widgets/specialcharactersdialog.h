@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -19,8 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_PALETTE_SPECIALCHARACTERSDIALOG_H
-#define MU_PALETTE_SPECIALCHARACTERSDIALOG_H
+#pragma once
 
 #include "ui_specialcharactersdialog.h"
 
@@ -39,7 +38,7 @@ class TextBase;
 namespace mu::palette {
 class PaletteWidget;
 
-class SpecialCharactersDialog : public mu::uicomponents::TopLevelDialog, public Ui::SpecialCharactersDialog
+class SpecialCharactersDialog : public muse::uicomponents::TopLevelDialog, public Ui::SpecialCharactersDialog
 {
     Q_OBJECT
 
@@ -47,21 +46,19 @@ class SpecialCharactersDialog : public mu::uicomponents::TopLevelDialog, public 
 
 public:
     SpecialCharactersDialog(QWidget* parent = nullptr);
-    SpecialCharactersDialog(const SpecialCharactersDialog& other);
-
-    static int static_metaTypeId();
 
 private slots:
     void populateSmufl();
     void populateUnicode();
 
 private:
+    void showEvent(QShowEvent*) override;
     void hideEvent(QHideEvent*) override;
 
-    void setFont(const mu::draw::Font& font);
+    void setFont(const muse::draw::Font& font);
     void populateCommon();
 
-    mu::draw::Font m_font;
+    muse::draw::Font m_font;
     PaletteWidget* m_pCommon = nullptr;
     PaletteWidget* m_pSmufl = nullptr;
     PaletteWidget* m_pUnicode = nullptr;
@@ -69,7 +66,3 @@ private:
     QListWidget* m_lwu = nullptr;
 };
 }
-
-Q_DECLARE_METATYPE(mu::palette::SpecialCharactersDialog)
-
-#endif // MU_PALETTE_SPECIALCHARACTERSDIALOG_H

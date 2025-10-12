@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -23,6 +23,8 @@
 #include "playtechannotation.h"
 
 #include "segment.h"
+
+#include "types/typesconv.h"
 
 #include "log.h"
 
@@ -49,11 +51,23 @@ PlayingTechniqueType PlayTechAnnotation::techniqueType() const
 void PlayTechAnnotation::setTechniqueType(const PlayingTechniqueType techniqueType)
 {
     m_techniqueType = techniqueType;
+    resetProperty(Pid::TEXT_STYLE);
 }
 
 PlayTechAnnotation* PlayTechAnnotation::clone() const
 {
     return new PlayTechAnnotation(*this);
+}
+
+TranslatableString PlayTechAnnotation::subtypeUserName() const
+{
+    return TConv::userName(m_techniqueType);
+}
+
+bool PlayTechAnnotation::isHandbellsSymbol() const
+{
+    return static_cast<int>(m_techniqueType) >= static_cast<int>(PlayingTechniqueType::HandbellsSwing)
+           && static_cast<int>(m_techniqueType) <= static_cast<int>(PlayingTechniqueType::HandbellsR);
 }
 
 PropertyValue PlayTechAnnotation::getProperty(Pid id) const
@@ -70,7 +84,7 @@ bool PlayTechAnnotation::setProperty(Pid propertyId, const PropertyValue& val)
 {
     switch (propertyId) {
     case Pid::PLAY_TECH_TYPE:
-        m_techniqueType = PlayingTechniqueType(val.toInt());
+        setTechniqueType(PlayingTechniqueType(val.toInt()));
         break;
     default:
         if (!StaffTextBase::setProperty(propertyId, val)) {
@@ -87,7 +101,7 @@ PropertyValue PlayTechAnnotation::propertyDefault(Pid id) const
 {
     switch (id) {
     case Pid::TEXT_STYLE:
-        return TextStyleType::STAFF;
+        return isHandbellsSymbol() ? TextStyleType::ARTICULATION : TextStyleType::STAFF;
     case Pid::PLAY_TECH_TYPE:
         return PlayingTechniqueType::Natural;
     default:

@@ -21,9 +21,12 @@
  */
 #include <gtest/gtest.h>
 
-#include "types/datetime.h"
+#include <locale>
 
-using namespace mu;
+#include "types/datetime.h"
+#include "types/string.h"
+
+using namespace muse;
 
 class Global_Types_DateTimeTests : public ::testing::Test
 {

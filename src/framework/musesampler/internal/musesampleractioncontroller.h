@@ -19,8 +19,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_MUSESAMPLER_MUSESAMPLERACTIONCONTROLLER_H
-#define MU_MUSESAMPLER_MUSESAMPLERACTIONCONTROLLER_H
+#ifndef MUSE_MUSESAMPLER_MUSESAMPLERACTIONCONTROLLER_H
+#define MUSE_MUSESAMPLER_MUSESAMPLERACTIONCONTROLLER_H
 
 #include "actions/actionable.h"
 #include "async/asyncable.h"
@@ -28,21 +28,28 @@
 #include "modularity/ioc.h"
 #include "actions/iactionsdispatcher.h"
 #include "iinteractive.h"
-#include "imusesamplerinfo.h"
+#include "musesamplerresolver.h"
+#include "imusesamplerconfiguration.h"
 
-namespace mu::musesampler {
-class MuseSamplerActionController : public actions::Actionable, public async::Asyncable
+namespace muse::musesampler {
+class MuseSamplerActionController : public Injectable, public actions::Actionable, public async::Asyncable
 {
-    INJECT(actions::IActionsDispatcher, dispatcher)
-    INJECT(framework::IInteractive, interactive)
-    INJECT(IMuseSamplerInfo, museSamplerInfo)
+    Inject<actions::IActionsDispatcher> dispatcher = { this };
+    Inject<IInteractive> interactive = { this };
+    Inject<IMuseSamplerConfiguration> configuration = { this };
 
 public:
-    void init();
+    MuseSamplerActionController(const modularity::ContextPtr& iocCtx)
+        : Injectable(iocCtx) {}
+
+    void init(std::weak_ptr<MuseSamplerResolver> resolver);
 
 private:
     void checkLibraryIsDetected();
+    void reloadMuseSampler();
+
+    std::weak_ptr<MuseSamplerResolver> m_museSamplerResolver;
 };
 }
 
-#endif // MU_MUSESAMPLER_MUSESAMPLERACTIONCONTROLLER_H
+#endif // MUSE_MUSESAMPLER_MUSESAMPLERACTIONCONTROLLER_H

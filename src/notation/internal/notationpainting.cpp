@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -26,14 +26,14 @@
 #include "engraving/dom/score.h"
 
 #include "notation.h"
-// #include "notationinteraction.h"
+#include "notationinteraction.h"
 
 #include "log.h"
 
 using namespace mu;
 using namespace mu::notation;
 using namespace mu::engraving;
-using namespace mu::draw;
+using namespace muse::draw;
 
 NotationPainting::NotationPainting(Notation* notation)
     : m_notation(notation)
@@ -71,7 +71,7 @@ ViewMode NotationPainting::viewMode() const
     return score()->layoutMode();
 }
 
-async::Notification NotationPainting::viewModeChanged() const
+muse::async::Notification NotationPainting::viewModeChanged() const
 {
     return m_viewModeChanged;
 }
@@ -110,7 +110,7 @@ bool NotationPainting::isPaintPageBorder() const
     return false;
 }
 
-void NotationPainting::doPaint(draw::Painter* painter, const Options& opt)
+void NotationPainting::doPaint(Painter* painter, const Options& opt)
 {
     TRACEFUNC;
     if (!score()) {
@@ -119,15 +119,15 @@ void NotationPainting::doPaint(draw::Painter* painter, const Options& opt)
 
     Options myopt = opt;
     bool printPageBackground = myopt.printPageBackground;
-    myopt.onPaintPageSheet = [this, printPageBackground](draw::Painter* painter, const Page* page, const RectF& pageRect) {
+    myopt.onPaintPageSheet = [this, printPageBackground](Painter* painter, const Page* page, const RectF& pageRect) {
         paintPageSheet(painter, page, pageRect, printPageBackground);
     };
 
     scoreRenderer()->paintScore(painter, score(), myopt);
 
-    // if (!myopt.isPrinting) {
-    //     static_cast<NotationInteraction*>(m_notation->interaction().get())->paint(painter);
-    // }
+    if (!myopt.isPrinting) {
+        static_cast<NotationInteraction*>(m_notation->interaction().get())->paint(painter);
+    }
 }
 
 void NotationPainting::paintPageSheet(Painter* painter, const Page* page, const RectF& pageRect, bool printPageBackground) const
@@ -170,7 +170,7 @@ void NotationPainting::paintPageSheet(Painter* painter, const Page* page, const 
     RectF pageContentRect = page->ldata()->bbox().adjusted(page->lm(), page->tm(), -page->rm(), -page->bm());
 
     painter->setBrush(BrushStyle::NoBrush);
-    painter->setPen(engravingConfiguration()->formattingMarksColor());
+    painter->setPen(engravingConfiguration()->scoreGreyColor());
     painter->drawRect(pageContentRect);
 
     if (!page->isOdd()) {
@@ -180,8 +180,6 @@ void NotationPainting::paintPageSheet(Painter* painter, const Page* page, const 
 
 void NotationPainting::paintView(Painter* painter, const RectF& frameRect, bool isPrinting)
 {
-    NOT_IMPLEMENTED;
-#if 0
     Options opt;
     opt.isSetViewport = false;
     opt.isMultiPage = true;
@@ -189,10 +187,9 @@ void NotationPainting::paintView(Painter* painter, const RectF& frameRect, bool 
     opt.deviceDpi = uiConfiguration()->logicalDpi();
     opt.isPrinting = isPrinting;
     doPaint(painter, opt);
-#endif
 }
 
-void NotationPainting::paintPdf(draw::Painter* painter, const Options& opt)
+void NotationPainting::paintPdf(Painter* painter, const Options& opt)
 {
     Q_ASSERT(opt.deviceDpi > 0);
     Options myopt = opt;
@@ -202,7 +199,7 @@ void NotationPainting::paintPdf(draw::Painter* painter, const Options& opt)
     doPaint(painter, myopt);
 }
 
-void NotationPainting::paintPrint(draw::Painter* painter, const Options& opt)
+void NotationPainting::paintPrint(Painter* painter, const Options& opt)
 {
     Q_ASSERT(opt.deviceDpi > 0);
     Options myopt = opt;

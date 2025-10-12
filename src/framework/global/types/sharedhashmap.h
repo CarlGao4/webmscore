@@ -20,18 +20,23 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_FRAMEWORK_SHAREDHASHMAP_H
-#define MU_FRAMEWORK_SHAREDHASHMAP_H
+#ifndef MUSE_GLOBAL_SHAREDHASHMAP_H
+#define MUSE_GLOBAL_SHAREDHASHMAP_H
 
 #include <memory>
 #include <unordered_map>
 
-namespace mu {
+namespace muse {
 template<typename KeyType, typename ValType>
 class SharedHashMap
 {
 public:
-    using PairType = std::pair<KeyType, ValType>;
+    // like std
+    using key_type = KeyType;
+    using mapped_type = ValType;
+    using value_type = std::pair<KeyType, ValType>;
+
+    using PairType = value_type;
     using Data = std::unordered_map<KeyType, ValType>;
     using DataPtr = std::shared_ptr<Data>;
     typedef typename Data::iterator iterator;
@@ -123,6 +128,12 @@ public:
         return m_dataPtr->find(key);
     }
 
+    iterator find(const KeyType& key) noexcept
+    {
+        ensureDetach();
+        return m_dataPtr->find(key);
+    }
+
     bool contains(const KeyType& key) const noexcept
     {
         return find(key) != end();
@@ -160,6 +171,12 @@ public:
     {
         ensureDetach();
         m_dataPtr->insert(std::forward<PairType>(pair));
+    }
+
+    void insert(iterator first, iterator last)
+    {
+        ensureDetach();
+        m_dataPtr->insert(first, last);
     }
 
     void insert_or_assign(const KeyType& key, ValType&& val)
@@ -227,4 +244,4 @@ protected:
 };
 }
 
-#endif // MU_FRAMEWORK_SHAREDHASHMAP_H
+#endif // MUSE_GLOBAL_SHAREDHASHMAP_H

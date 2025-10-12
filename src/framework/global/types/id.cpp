@@ -20,9 +20,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "types/id.h"
+#include "id.h"
 
-using namespace mu;
+using namespace muse;
 
 ID::ID()
     : m_id(0)

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -129,9 +129,11 @@ static void setTempo(mu::engraving::Score* score, int tempo)
     mu::engraving::TempoText* tt = new mu::engraving::TempoText(segment);
     tt->setTempo(double(tempo) / 60.0);
     tt->setTrack(0);
-    QString tempoText = mu::engraving::TempoText::duration2tempoTextString(mu::engraving::DurationType::V_QUARTER);
-    tempoText += QString(" = %1").arg(tempo);
-    tt->setPlainText(tempoText);
+    tt->setFollowText(true);
+    muse::String tempoText = mu::engraving::TempoText::duration2tempoTextString(mu::engraving::DurationType::V_QUARTER);
+    tempoText += u" = ";
+    tempoText += muse::String::number(tempo);
+    tt->setXmlText(tempoText);
     segment->add(tt);
 }
 
@@ -222,7 +224,7 @@ void MsScWriter::beginMeasure(const Bww::MeasureBeginFlags mbf)
     currentMeasure->setTick(tick);
     currentMeasure->setTimesig(mu::engraving::Fraction(beats, beat));
     currentMeasure->setNo(measureNumber);
-    score->measures()->add(currentMeasure);
+    score->measures()->append(currentMeasure);
 
     if (mbf.repeatBegin) {
         currentMeasure->setRepeatStart(true);
@@ -253,7 +255,7 @@ void MsScWriter::beginMeasure(const Bww::MeasureBeginFlags mbf)
     // set clef, key and time signature in the first measure
     if (measureNumber == 1) {
         // clef
-        mu::engraving::Segment* s = currentMeasure->getSegment(mu::engraving::SegmentType::Clef, tick);
+        mu::engraving::Segment* s = currentMeasure->getSegment(mu::engraving::SegmentType::HeaderClef, tick);
         mu::engraving::Clef* clef = Factory::createClef(s);
         clef->setClefType(mu::engraving::ClefType::G);
         clef->setTrack(0);
@@ -455,7 +457,7 @@ void MsScWriter::header(const QString title, const QString type,
     // addText(vbox, score, strTranslator, mu::engraving::TextStyleName::TRANSLATOR);
     if (vbox) {
         vbox->setTick(mu::engraving::Fraction(0, 1));
-        score->measures()->add(vbox);
+        score->measures()->append(vbox);
     }
     if (!footer.isEmpty()) {
         score->style().set(mu::engraving::Sid::oddFooterC, footer);

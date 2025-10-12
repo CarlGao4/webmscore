@@ -19,8 +19,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_NETWORK_NETWORKMANAGER_H
-#define MU_NETWORK_NETWORKMANAGER_H
+#ifndef MUSE_NETWORK_NETWORKMANAGER_H
+#define MUSE_NETWORK_NETWORKMANAGER_H
+
+#include <QIODevice>
+
+#include "modularity/ioc.h"
+#include "../inetworkconfiguration.h"
 
 #include "inetworkmanager.h"
 
@@ -28,10 +33,12 @@ class QNetworkAccessManager;
 class QNetworkRequest;
 class QNetworkReply;
 
-namespace mu::network {
-class NetworkManager : public QObject, public INetworkManager
+namespace muse::network {
+class NetworkManager : public QObject, public INetworkManager, public Injectable
 {
     Q_OBJECT
+
+    Inject<INetworkConfiguration> configuration = { this };
 
 public:
     explicit NetworkManager(QObject* parent = nullptr);
@@ -47,7 +54,7 @@ public:
               const RequestHeaders& headers = RequestHeaders()) override;
     Ret del(const QUrl& url, IncomingDevice* incomingData, const RequestHeaders& headers = RequestHeaders()) override;
 
-    framework::Progress progress() const override;
+    Progress progress() const override;
 
     void abort() override;
 
@@ -81,10 +88,10 @@ private:
     QNetworkAccessManager* m_manager = nullptr;
     IncomingDevice* m_incomingData = nullptr;
     QNetworkReply* m_reply = nullptr;
-    framework::Progress m_progress;
+    Progress m_progress;
 
     bool m_isAborted = false;
 };
 }
 
-#endif // MU_NETWORK_NETWORKMANAGER_H
+#endif // MUSE_NETWORK_NETWORKMANAGER_H

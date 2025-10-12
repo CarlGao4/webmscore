@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -66,7 +66,7 @@ std::vector<EngravingItem*> Page::items(const RectF& rect)
     return bspTree.items(rect);
 }
 
-std::vector<EngravingItem*> Page::items(const mu::PointF& point)
+std::vector<EngravingItem*> Page::items(const PointF& point)
 {
     if (!m_bspTreeValid) {
         doRebuildBspTree();
@@ -88,15 +88,15 @@ void Page::appendSystem(System* s)
 //   layoutHeaderFooter
 //---------------------------------------------------------
 
-Text* Page::layoutHeaderFooter(int area, const String& ss) const
+Text* Page::layoutHeaderFooter(int area, const String& s) const
 {
-    String s = replaceTextMacros(ss);
-    if (s.isEmpty()) {
+    if (s.empty()) {
         return nullptr;
     }
 
+    bool isHeader = area < MAX_HEADERS;
     Text* text;
-    if (area < MAX_HEADERS) {
+    if (isHeader) {
         text = score()->headerText(area);
         if (!text) {
             text = Factory::createText((Page*)this, TextStyleType::HEADER);
@@ -116,6 +116,7 @@ Text* Page::layoutHeaderFooter(int area, const String& ss) const
         }
     }
     text->setParent((Page*)this);
+
     Align align = { AlignH::LEFT, AlignV::TOP };
     switch (area) {
     case 0: align = { AlignH::LEFT, AlignV::TOP };
@@ -132,8 +133,53 @@ Text* Page::layoutHeaderFooter(int area, const String& ss) const
         break;
     }
     text->setAlign(align);
-    text->setXmlText(s);
+
+    // Hack: we can't use toXmlEscaped on the entire string because this would erase any manual XML
+    // formatting, but we do want to be able to use a plain '&' in favour of XML character entities ...
+    // ... also, opening less-than characters are escaped if they are followed by a space or a digit,
+    // to avoid confusion with XML tags, but not if they are followed by a letter
+    String escaped;
+    for (size_t i = 0, n = s.size(); i < n; ++i) {
+        const Char c = s.at(i);
+        if (c == '&') {
+            escaped += u"&amp;";
+            continue;
+        } else if (c == '<' && (i + 1 < n) && (s.at(i + 1).isSpace() || s.at(i + 1).isDigit())) {
+            escaped += u"&lt;";
+            continue;
+        }
+        escaped += c;
+    }
+
+    // first formatting pass - apply TextStyleType formatting and any manual XML formatting
+    text->setXmlText(escaped);
+    text->createBlocks();
+
+    // second formatting pass - replace macros and apply their unique formatting (if any)
+    int emptyBlocks = 0;
+    const TextStyleType style = isHeader ? TextStyleType::HEADER : TextStyleType::FOOTER;
+    std::vector<TextBlock> newBlocks;
+    for (const TextBlock& oldBlock : text->ldata()->blocks) {
+        Text* dummyText = Factory::createText(score()->dummy(), style);
+        dummyText->mutldata()->blocks = { replaceTextMacros(oldBlock) };
+        dummyText->genText();
+        dummyText->createBlocks();
+        if (dummyText->xmlText().isEmpty()) {
+            emptyBlocks++;                                 // count empty blocks to remove them later if there is only 1 empty block
+        }
+        newBlocks.insert(newBlocks.end(), dummyText->ldata()->blocks.cbegin(), dummyText->ldata()->blocks.cend());
+        delete dummyText;
+    }
+
+    if (newBlocks.empty() || (newBlocks.size() == 1 && emptyBlocks == 1)) {
+        // If there is no block, or the only block is empty.
+        // This preserves empty lines if and only if there also is some text anywhere in the header/footer.
+        return nullptr;
+    }
+
+    text->mutldata()->blocks = newBlocks;
     renderer()->layoutItem(text);
+
     return text;
 }
 
@@ -152,7 +198,8 @@ AccessibleItemPtr Page::createAccessible()
 
 double Page::headerExtension() const
 {
-    if (!score()->isLayoutMode(LayoutMode::PAGE)) {
+    bool shouldLayoutHeader = score()->isLayoutMode(LayoutMode::PAGE) || score()->isLayoutMode(LayoutMode::FLOAT);
+    if (!shouldLayoutHeader) {
         return 0.0;
     }
 
@@ -195,7 +242,8 @@ double Page::headerExtension() const
 
 double Page::footerExtension() const
 {
-    if (!score()->isLayoutMode(LayoutMode::PAGE)) {
+    bool shouldLayoutFooter = score()->isLayoutMode(LayoutMode::PAGE) || score()->isLayoutMode(LayoutMode::FLOAT);
+    if (!shouldLayoutFooter) {
         return 0.0;
     }
 
@@ -283,7 +331,7 @@ void Page::doRebuildBspTree()
         }
         r = RectF(0.0, 0.0, w, h);
     } else {
-        r = abbox();
+        r = pageBoundingRect();
     }
 
     bspTree.initialize(r, n);
@@ -324,135 +372,194 @@ void Page::doRebuildBspTree()
 //       workTitle
 //---------------------------------------------------------
 
-String Page::replaceTextMacros(const String& s) const
+TextBlock Page::replaceTextMacros(const TextBlock& tb) const
 {
-    String d;
-    for (size_t i = 0, n = s.size(); i < n; ++i) {
-        Char c = s.at(i);
-        if (c == '$' && (i < (n - 1))) {
-            Char nc = s.at(i + 1);
-            switch (nc.toAscii()) {
-            case 'p': // not on first page 1
-                if (!m_no) {
-                    break;
-                }
-            // FALLTHROUGH
-            case 'N': // on page 1 only if there are multiple pages
-                if ((score()->npages() + score()->pageNumberOffset()) <= 1) {
-                    break;
-                }
-            // FALLTHROUGH
-            case 'P': // on all pages
-            {
-                int no = static_cast<int>(m_no) + 1 + score()->pageNumberOffset();
-                if (no > 0) {
-                    d += String::number(no);
-                }
-            }
-            break;
-            case 'n':
-                d += String::number(score()->npages() + score()->pageNumberOffset());
-                break;
-            case 'i': // not on first page
-                if (!m_no) {
-                    break;
-                }
-            // FALLTHROUGH
-            case 'I':
-                d += score()->metaTag(u"partName").toXmlEscaped();
-                break;
-            case 'f':
-                d += masterScore()->fileInfo()->fileName(false).toString().toXmlEscaped();
-                break;
-            case 'F':
-                d += masterScore()->fileInfo()->path().toString().toXmlEscaped();
-                break;
-            case 'd':
-                d += Date::currentDate().toString(DateFormat::ISODate);
-                break;
-            case 'D':
-            {
-                String creationDate = score()->metaTag(u"creationDate");
-                if (creationDate.isEmpty()) {
-                    d += masterScore()->fileInfo()->birthTime().date().toString(DateFormat::ISODate);
-                } else {
-                    d += Date::fromStringISOFormat(creationDate).toString(DateFormat::ISODate);
-                }
-            }
-            break;
-            case 'm':
-                if (score()->dirty() || !masterScore()->saved()) {
-                    d += Time::currentTime().toString(DateFormat::ISODate);
-                } else {
-                    d += masterScore()->fileInfo()->lastModified().time().toString(DateFormat::ISODate);
-                }
-                break;
-            case 'M':
-                if (score()->dirty() || !masterScore()->saved()) {
-                    d += Date::currentDate().toString(DateFormat::ISODate);
-                } else {
-                    d += masterScore()->fileInfo()->lastModified().date().toString(DateFormat::ISODate);
-                }
-                break;
-            case 'C': // only on first page
-                if (m_no) {
-                    break;
-                }
-            // FALLTHROUGH
-            case 'c':
-                d += score()->metaTag(u"copyright").toXmlEscaped();
-                break;
-            case 'v':
-                if (score()->dirty()) {
-                    d += String::fromAscii(MUSESCORE_VERSION);
-                } else {
-                    d += score()->mscoreVersion();
-                }
-                break;
-            case 'r':
-                if (score()->dirty()) {
-                    d += revision;
-                } else {
-                    int rev = score()->mscoreRevision();
-                    if (rev > 99999) { // MuseScore 1.3 is decimal 5702, 2.0 and later uses a 7-digit hex SHA
-                        d += String::number(rev, 16);
-                    } else {
-                        d += String::number(rev, 10);
-                    }
-                }
-                break;
-            case '$':
-                d += '$';
-                break;
-            case ':':
-            {
-                String tag;
-                size_t k = i + 2;
-                for (; k < n; ++k) {
-                    if (s.at(k) == u':') {
+    std::list<TextFragment> newFragments;
+    for (const TextFragment& tf: tb.fragments()) {
+        const CharFormat defaultFormat = tf.format;
+        const String& s = tf.text;
+
+        // if this is the first fragment, or the current fragment has a different format, we need to start a new fragment
+        if (newFragments.size() == 0 || newFragments.back().format != defaultFormat) {
+            newFragments.emplace_back(TextFragment());
+            newFragments.back().format = defaultFormat;
+        }
+
+        for (size_t i = 0, n = s.size(); i < n; ++i) {
+            Char c = s.at(i);
+            if (c == '$' && (i < (n - 1))) {
+                Char nc = s.at(i + 1);
+                switch (nc.toAscii()) {
+                case 'p': // not on first page 1
+                    if (!m_no) {
                         break;
                     }
-                    tag += s.at(k);
+                    [[fallthrough]];
+                case 'N': // on page 1 only if there are multiple pages
+                    if ((score()->npages() + score()->pageNumberOffset()) <= 1) {
+                        break;
+                    }
+                    [[fallthrough]];
+                case 'P': // on all pages
+                {
+                    int no = static_cast<int>(m_no) + 1 + score()->pageNumberOffset();
+                    if (no > 0) {
+                        const String pageNumberString = String::number(no);
+                        const CharFormat pageNumberFormat = formatForMacro(String('$' + nc));
+                        // If the default format equals the format for this macro, we don't need to create a new fragment...
+                        if (defaultFormat == pageNumberFormat) {
+                            newFragments.back().text += pageNumberString;
+                            break;
+                        }
+                        TextFragment pageNumberFragment(pageNumberString);
+                        pageNumberFragment.format = pageNumberFormat;
+                        newFragments.emplace_back(pageNumberFragment);
+                        newFragments.emplace_back(TextFragment());    // Start next fragment
+                        newFragments.back().format = defaultFormat;   // reset to default for next fragment
+                    }
                 }
-                if (k != n) {       // found ':' ?
-                    d += score()->metaTag(tag).toXmlEscaped();
-                    i = k - 1;
-                }
-            }
-            break;
-            default:
-                d += '$';
-                d += nc;
                 break;
+                case 'n':
+                    newFragments.back().text += String::number(score()->npages() + score()->pageNumberOffset());
+                    break;
+                case 'i': // not on first page
+                    if (!m_no) {
+                        break;
+                    }
+                    [[fallthrough]];
+                case 'I':
+                    newFragments.back().text += score()->metaTag(u"partName");
+                    break;
+                case 'f':
+                    newFragments.back().text += masterScore()->fileInfo()->fileName(false).toString();
+                    break;
+                case 'F':
+                    newFragments.back().text += masterScore()->fileInfo()->path().toString();
+                    break;
+                case 'd':
+                    newFragments.back().text += muse::Date::currentDate().toString(muse::DateFormat::ISODate);
+                    break;
+                case 'D':
+                {
+                    String creationDate = score()->metaTag(u"creationDate");
+                    if (creationDate.isEmpty()) {
+                        newFragments.back().text += masterScore()->fileInfo()->birthTime().date().toString(
+                            muse::DateFormat::ISODate);
+                    } else {
+                        newFragments.back().text += muse::Date::fromStringISOFormat(creationDate).toString(
+                            muse::DateFormat::ISODate);
+                    }
+                }
+                break;
+                case 'm':
+                    if (score()->dirty() || !masterScore()->saved()) {
+                        newFragments.back().text += muse::Time::currentTime().toString(muse::DateFormat::ISODate);
+                    } else {
+                        newFragments.back().text += masterScore()->fileInfo()->lastModified().time().toString(
+                            muse::DateFormat::ISODate);
+                    }
+                    break;
+                case 'M':
+                    if (score()->dirty() || !masterScore()->saved()) {
+                        newFragments.back().text += muse::Date::currentDate().toString(muse::DateFormat::ISODate);
+                    } else {
+                        newFragments.back().text += masterScore()->fileInfo()->lastModified().date().toString(
+                            muse::DateFormat::ISODate);
+                    }
+                    break;
+                case 'C': // only on first page
+                    if (m_no) {
+                        break;
+                    }
+                    [[fallthrough]];
+                case 'c':
+                {
+                    const String copyrightString = score()->metaTag(u"copyright");
+                    const CharFormat copyrightFormat = formatForMacro(String('$' + nc));
+                    // If the default format equals the format for this macro, we don't need to create a new fragment...
+                    if (defaultFormat == copyrightFormat) {
+                        newFragments.back().text += copyrightString;
+                        break;
+                    }
+                    TextFragment copyrightFragment(copyrightString);
+                    copyrightFragment.format = copyrightFormat;
+                    newFragments.emplace_back(copyrightFragment);
+                    newFragments.emplace_back(TextFragment());    // Start next fragment
+                    newFragments.back().format = defaultFormat;   // reset to default for next fragment
+                }
+                break;
+                case 'v':
+                    if (score()->dirty()) {
+                        newFragments.back().text += score()->appVersion();
+                    } else {
+                        newFragments.back().text += score()->mscoreVersion();
+                    }
+                    break;
+                case 'r':
+                    if (score()->dirty()) {
+                        newFragments.back().text += revision;
+                    } else {
+                        int rev = score()->mscoreRevision();
+                        if (rev > 99999) { // MuseScore 1.3 is decimal 5702, 2.0 and later uses a 7-digit hex SHA
+                            newFragments.back().text += String::number(rev, 16);
+                        } else {
+                            newFragments.back().text += String::number(rev, 10);
+                        }
+                    }
+                    break;
+                case '$':
+                    newFragments.back().text += '$';
+                    break;
+                case ':':
+                {
+                    String tag;
+                    size_t k = i + 2;
+                    for (; k < n; ++k) {
+                        if (s.at(k) == u':') {
+                            break;
+                        }
+                        tag += s.at(k);
+                    }
+                    if (k != n) {      // found ':' ?
+                        newFragments.back().text += score()->metaTag(tag);
+                        i = k - 1;
+                    }
+                }
+                break;
+                default:
+                    newFragments.back().text += '$';
+                    newFragments.back().text += nc;
+                    break;
+                }
+                ++i;
+            } else {
+                newFragments.back().text += c;
             }
-            ++i;
-        } else if (c == '&') {
-            d += u"&amp;";
-        } else {
-            d += c;
         }
     }
-    return d;
+
+    TextBlock newBlock;
+    newBlock.fragments() = newFragments;
+    return newBlock;
+}
+
+//---------------------------------------------------------
+//   formatForMacro
+//---------------------------------------------------------
+
+const CharFormat Page::formatForMacro(const String& s) const
+{
+    CharFormat format;
+    if (s == "$c" || s == "$C") {
+        format.setStyle(style().styleV(Sid::copyrightFontStyle).value<FontStyle>());
+        format.setFontSize(style().styleD(Sid::copyrightFontSize));
+        format.setFontFamily(style().styleSt(Sid::copyrightFontFace));
+    } else if (s == "$p" || s == "$P" || s == "$n" || s == "$N") {
+        format.setStyle(style().styleV(Sid::pageNumberFontStyle).value<FontStyle>());
+        format.setFontSize(style().styleD(Sid::pageNumberFontSize));
+        format.setFontFamily(style().styleSt(Sid::pageNumberFontFace));
+    }
+    return format;
 }
 
 //---------------------------------------------------------
@@ -547,7 +654,7 @@ RectF Page::tbbox() const
     if (x1 < x2 && y1 < y2) {
         return RectF(x1, y1, x2 - x1, y2 - y1);
     } else {
-        return abbox();
+        return pageBoundingRect();
     }
 }
 

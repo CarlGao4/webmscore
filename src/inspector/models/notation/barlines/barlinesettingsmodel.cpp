@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -32,20 +32,36 @@ BarlineSettingsModel::BarlineSettingsModel(QObject* parent, IElementRepositorySe
     : AbstractInspectorModel(parent, repository)
 {
     setModelType(InspectorModelType::TYPE_BARLINE);
-    setTitle(qtrc("inspector", "Barline"));
-    setIcon(ui::IconCode::Code::SECTION_BREAK);
+    setTitle(muse::qtrc("inspector", "Barline"));
+    setIcon(muse::ui::IconCode::Code::SECTION_BREAK);
     createProperties();
 }
 
 void BarlineSettingsModel::createProperties()
 {
     m_type = buildPropertyItem(Pid::BARLINE_TYPE);
+    m_playCount = buildPropertyItem(Pid::REPEAT_COUNT, [this](const mu::engraving::Pid propertyId, const QVariant& newValue) {
+        onPropertyValueChanged(propertyId, newValue);
+        emit requestReloadInspectorListModel();
+    });
+    m_playCountText = buildPropertyItem(Pid::PLAY_COUNT_TEXT);
+    m_playCountTextSetting = buildPropertyItem(Pid::PLAY_COUNT_TEXT_SETTING);
     m_isSpanToNextStaff = buildPropertyItem(Pid::BARLINE_SPAN);
     m_spanFrom = buildPropertyItem(Pid::BARLINE_SPAN_FROM);
     m_spanTo = buildPropertyItem(Pid::BARLINE_SPAN_TO);
     m_hasToShowTips = buildPropertyItem(Pid::BARLINE_SHOW_TIPS);
 
     connect(m_type, &PropertyItem::valueChanged, this, &BarlineSettingsModel::isRepeatStyleChangingAllowedChanged);
+    connect(m_type, &PropertyItem::valueChanged, this, [this]() {
+        updateShowPlayCount();
+        updateShowPlayCountSettings();
+    });
+
+    connect(m_playCount, &PropertyItem::resetToDefaultRequested, this, [this]() {
+        m_playCountTextSetting->resetToDefault();
+        BarLine* bl = toBarLine(m_elementList.front());
+        bl->score()->undoResetPlayCountTextSettings(bl);
+    });
 }
 
 void BarlineSettingsModel::requestElements()
@@ -57,6 +73,9 @@ void BarlineSettingsModel::loadProperties()
 {
     static const PropertyIdSet propertyIdSet {
         Pid::BARLINE_TYPE,
+        Pid::REPEAT_COUNT,
+        Pid::PLAY_COUNT_TEXT,
+        Pid::PLAY_COUNT_TEXT_SETTING,
         Pid::BARLINE_SPAN,
         Pid::BARLINE_SPAN_FROM,
         Pid::BARLINE_SPAN_TO,
@@ -69,6 +88,9 @@ void BarlineSettingsModel::loadProperties()
 void BarlineSettingsModel::resetProperties()
 {
     m_type->resetToDefault();
+    m_playCount->resetToDefault();
+    m_playCountText->resetToDefault();
+    m_playCountTextSetting->resetToDefault();
     m_isSpanToNextStaff->resetToDefault();
     m_spanFrom->resetToDefault();
     m_spanTo->resetToDefault();
@@ -83,32 +105,92 @@ void BarlineSettingsModel::onNotationChanged(const mu::engraving::PropertyIdSet&
 
 void BarlineSettingsModel::loadProperties(const mu::engraving::PropertyIdSet& propertyIdSet)
 {
-    if (mu::contains(propertyIdSet, Pid::BARLINE_TYPE)) {
+    if (muse::contains(propertyIdSet, Pid::BARLINE_TYPE)) {
         loadPropertyItem(m_type, [](const QVariant& elementPropertyValue) -> QVariant {
             return elementPropertyValue.toInt();
         });
     }
 
-    if (mu::contains(propertyIdSet, Pid::BARLINE_SPAN)) {
+    if (muse::contains(propertyIdSet, Pid::REPEAT_COUNT)) {
+        loadPropertyItem(m_playCount, [](const QVariant& elementPropertyValue) -> QVariant {
+            return elementPropertyValue.toInt();
+        });
+    }
+    if (muse::contains(propertyIdSet, Pid::PLAY_COUNT_TEXT)) {
+        loadPropertyItem(m_playCountText, [](const QVariant& elementPropertyValue) -> QVariant {
+            return elementPropertyValue.toString();
+        });
+    }
+    if (muse::contains(propertyIdSet, Pid::PLAY_COUNT_TEXT_SETTING)) {
+        loadPropertyItem(m_playCountTextSetting, [](const QVariant& elementPropertyValue) -> QVariant {
+            return elementPropertyValue.toInt();
+        });
+    }
+
+    if (muse::contains(propertyIdSet, Pid::BARLINE_SPAN)) {
         loadPropertyItem(m_isSpanToNextStaff, [](const QVariant& elementPropertyValue) -> QVariant {
             return elementPropertyValue.toBool();
         });
     }
 
-    if (mu::contains(propertyIdSet, Pid::BARLINE_SPAN_FROM)) {
+    if (muse::contains(propertyIdSet, Pid::BARLINE_SPAN_FROM)) {
         loadPropertyItem(m_spanFrom, [](const QVariant& elementPropertyValue) -> QVariant {
             return elementPropertyValue.toInt();
         });
     }
 
-    if (mu::contains(propertyIdSet, Pid::BARLINE_SPAN_TO)) {
+    if (muse::contains(propertyIdSet, Pid::BARLINE_SPAN_TO)) {
         loadPropertyItem(m_spanTo, [](const QVariant& elementPropertyValue) -> QVariant {
             return elementPropertyValue.toInt();
         });
     }
 
-    if (mu::contains(propertyIdSet, Pid::BARLINE_SHOW_TIPS)) {
+    if (muse::contains(propertyIdSet, Pid::BARLINE_SHOW_TIPS)) {
         loadPropertyItem(m_hasToShowTips);
+    }
+
+    updateShowPlayCount();
+    updateShowPlayCountSettings();
+}
+
+void BarlineSettingsModel::updateShowPlayCount()
+{
+    using LineType = BarlineTypes::LineType;
+
+    static const QList<LineType> allowedLineTypes {
+        LineType::TYPE_END_REPEAT,
+        LineType::TYPE_END_START_REPEAT
+    };
+
+    LineType currentType = static_cast<LineType>(m_type->value().toInt());
+
+    bool showPlayCount = allowedLineTypes.contains(currentType);
+    if (showPlayCount != m_showPlayCount) {
+        m_showPlayCount = showPlayCount;
+        emit showPlayCountChanged(m_showPlayCount);
+    }
+}
+
+void BarlineSettingsModel::updateShowPlayCountSettings()
+{
+    bool systemObjectStaff = false;
+    for (mu::engraving::EngravingItem* item : m_elementList) {
+        if (!item->isBarLine()) {
+            continue;
+        }
+
+        mu::engraving::BarLine* barline = mu::engraving::toBarLine(item);
+        mu::engraving::Staff* staff = barline->staff();
+
+        if (staff->idx() == 0 || staff->isSystemObjectStaff()) {
+            systemObjectStaff = true;
+            break;
+        }
+    }
+
+    if (m_showPlayCountSettings != systemObjectStaff) {
+        m_showPlayCountSettings = systemObjectStaff;
+        emit showPlayCountSettingsChanged(m_showPlayCountSettings);
     }
 }
 
@@ -148,7 +230,7 @@ void BarlineSettingsModel::applySpanPreset(const int presetType)
 
 void BarlineSettingsModel::setSpanIntervalAsStaffDefault()
 {
-    undoStack()->prepareChanges();
+    undoStack()->prepareChanges(muse::TranslatableString("undoableAction", "Set barline span interval as staff default"));
 
     std::vector<mu::engraving::EngravingItem*> staves;
 
@@ -186,6 +268,21 @@ PropertyItem* BarlineSettingsModel::type() const
     return m_type;
 }
 
+PropertyItem* BarlineSettingsModel::playCount() const
+{
+    return m_playCount;
+}
+
+PropertyItem* BarlineSettingsModel::playCountText() const
+{
+    return m_playCountText;
+}
+
+PropertyItem* BarlineSettingsModel::playCountTextSetting() const
+{
+    return m_playCountTextSetting;
+}
+
 PropertyItem* BarlineSettingsModel::isSpanToNextStaff() const
 {
     return m_isSpanToNextStaff;
@@ -218,4 +315,14 @@ bool BarlineSettingsModel::isRepeatStyleChangingAllowed() const
 
     LineType currentType = static_cast<LineType>(m_type->value().toInt());
     return allowedLineTypes.contains(currentType);
+}
+
+bool BarlineSettingsModel::showPlayCountSettings() const
+{
+    return m_showPlayCountSettings;
+}
+
+bool BarlineSettingsModel::showPlayCount() const
+{
+    return m_showPlayCount;
 }

@@ -19,24 +19,39 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <QWindow>
+#include <memory>
+
 #include <QKeyEvent>
+#include <QRect>
+#include <QString>
+#include <QVariant>
+#include <QWindow>
 
+#include "async/channel.h"
+#include "iapplication.h"
+
+#include "accessibility/iaccessible.h"
 #include "accessibility/internal/accessibilitycontroller.h"
+#include "global/tests/mocks/applicationmock.h"
+#include "mocks/accessibilityconfigurationmock.h"
 
+#include "modularity/ioc.h"
 #include "ui/tests/mocks/mainwindowmock.h"
 #include "global/tests/mocks/applicationmock.h"
 #include "mocks/accessibilityconfigurationmock.h"
+
+class QEvent;
 
 using ::testing::Return;
 using ::testing::_;
 using ::testing::SaveArg;
 using ::testing::DoAll;
 
-using namespace mu;
-using namespace mu::accessibility;
+using namespace muse;
+using namespace muse::accessibility;
 
 class Accessibility_ControllerTests : public ::testing::Test
 {
@@ -44,19 +59,21 @@ public:
 
     void SetUp() override
     {
-        m_controller = std::make_shared<AccessibilityController>();
+        m_controller = std::make_shared<AccessibilityController>(muse::modularity::globalCtx());
 
-        m_mainWindow = std::make_shared<ui::MainWindowMock>();
-        m_controller->setmainWindow(m_mainWindow);
+        m_controller->setAccesibilityEnabled(true);
 
-        m_application = std::make_shared<framework::ApplicationMock>();
-        m_controller->setapplication(m_application);
+        m_mainWindow = std::make_shared<muse::ui::MainWindowMock>();
+        m_controller->mainWindow.set(m_mainWindow);
+
+        m_application = std::make_shared<ApplicationMock>();
+        m_controller->application.set(m_application);
 
         m_configuration = std::make_shared<AccessibilityConfigurationMock>();
-        m_controller->setconfiguration(m_configuration);
+        m_controller->configuration.set(m_configuration);
     }
 
-    class AccessibleItem : public accessibility::IAccessible
+    class AccessibleItem : public IAccessible
     {
     public:
         void setParent(AccessibleItem* parent) { m_parent = parent; }
@@ -65,10 +82,11 @@ public:
         size_t accessibleChildCount() const override { return 0; }
         const IAccessible* accessibleChild(size_t) const override { return nullptr; }
         QWindow* accessibleWindow() const override { return nullptr; }
+        muse::modularity::ContextPtr iocContext() const override { return muse::modularity::globalCtx(); }
         IAccessible::Role accessibleRole() const override { return IAccessible::NoRole; }
         QString accessibleName() const override { return QString(); }
         QString accessibleDescription() const override { return QString(); }
-        bool accessibleState(State) const override { return false; }
+        bool accessibleState(State) const override { return true; }
         QRect accessibleRect() const override { return QRect(); }
         bool accessibleIgnored() const override { return false; }
 
@@ -151,9 +169,9 @@ public:
 #endif
 
     std::shared_ptr<AccessibilityController> m_controller;
-    std::shared_ptr<ui::MainWindowMock> m_mainWindow;
+    std::shared_ptr<muse::ui::MainWindowMock> m_mainWindow;
     std::shared_ptr<AccessibilityConfigurationMock> m_configuration;
-    std::shared_ptr<framework::ApplicationMock> m_application;
+    std::shared_ptr<ApplicationMock> m_application;
 };
 
 TEST_F(Accessibility_ControllerTests, SendEventOnFocusChanged)

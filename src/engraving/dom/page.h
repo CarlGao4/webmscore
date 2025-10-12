@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -27,6 +27,7 @@
 
 #include "engravingitem.h"
 #include "bsp.h"
+#include "text.h"
 
 namespace mu::engraving {
 class RootItem;
@@ -56,8 +57,8 @@ public:
     Page* clone() const override { return new Page(*this); }
     const std::vector<System*>& systems() const { return m_systems; }
     std::vector<System*>& systems() { return m_systems; }
-    System* system(int idx) { return m_systems[idx]; }
-    const System* system(int idx) const { return m_systems.at(idx); }
+    System* system(size_t idx) { return m_systems[idx]; }
+    const System* system(size_t idx) const { return m_systems.at(idx); }
 
     void appendSystem(System* s);
 
@@ -73,19 +74,19 @@ public:
 
     void scanElements(void* data, void (* func)(void*, EngravingItem*), bool all=true) override;
 
-    std::vector<EngravingItem*> items(const mu::RectF& r);
-    std::vector<EngravingItem*> items(const mu::PointF& p);
+    std::vector<EngravingItem*> items(const RectF& r);
+    std::vector<EngravingItem*> items(const PointF& p);
     void invalidateBspTree() { m_bspTreeValid = false; }
-    mu::PointF pagePos() const override { return mu::PointF(); }       ///< position in page coordinates
+    PointF pagePos() const override { return PointF(); }       ///< position in page coordinates
     std::vector<EngravingItem*> elements() const;              ///< list of visible elements
-    mu::RectF tbbox() const;                             // tight bounding box, excluding white space
+    RectF tbbox() const;                             // tight bounding box, excluding white space
     Fraction endTick() const;
 
 #ifndef ENGRAVING_NO_ACCESSIBILITY
     AccessibleItemPtr createAccessible() override;
 #endif
 
-    Text* layoutHeaderFooter(int area, const String& ss) const;
+    Text* layoutHeaderFooter(int area, const String& s) const;
 
 private:
 
@@ -93,7 +94,8 @@ private:
     Page(RootItem* parent);
 
     void doRebuildBspTree();
-    String replaceTextMacros(const String&) const;
+    TextBlock replaceTextMacros(const TextBlock&) const;
+    const CharFormat formatForMacro(const String&) const;
 
     std::vector<System*> m_systems;
     page_idx_t m_no = 0;                        // page number

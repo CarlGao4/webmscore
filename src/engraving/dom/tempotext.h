@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -61,8 +61,7 @@ public:
     BeatsPerSecond tempo() const { return m_tempo; }
     double tempoBpm() const;
     void setTempo(BeatsPerSecond v);
-    void undoSetTempo(double v);
-    bool isRelative() { return m_isRelative; }
+    bool isRelative() const { return m_isRelative; }
     void setRelative(double v) { m_isRelative = true; m_relative = v; }
 
     bool isNormal() const { return m_tempoTextType == TempoTextType::NORMAL; }
@@ -74,9 +73,13 @@ public:
     bool isTempoPrimo() const { return m_tempoTextType == TempoTextType::TEMPO_PRIMO; }
     void setTempoPrimo() { setTempoTextType(TempoTextType::TEMPO_PRIMO); }
 
+    bool playTempoText() const { return m_playTempoText; }
+    void setPlayTempoText(bool v) { m_playTempoText = v; }
+
     bool followText() const { return m_followText; }
     void setFollowText(bool v) { m_followText = v; }
-    void undoSetFollowText(bool v);
+
+    void updateTempo();
     void updateRelative();
 
     TDuration duration() const;
@@ -90,6 +93,10 @@ public:
     PropertyValue propertyDefault(Pid id) const override;
     String accessibleInfo() const override;
 
+    String tempoInfo() const;
+
+    static constexpr double DEFAULT_SYM_SIZE_RATIO = 5.0 / 3.0;
+
 protected:
     void added() override;
     void removed() override;
@@ -98,13 +105,14 @@ protected:
     void undoChangeProperty(Pid id, const PropertyValue&, PropertyFlags ps) override;
 
     void updateScore();
-    void updateTempo();
 
     TempoTextType m_tempoTextType;
     BeatsPerSecond m_tempo;             // beats per second
     bool m_followText = false;          // parse text to determine tempo
+    bool m_playTempoText = true;
     double m_relative = 0.0;
     bool m_isRelative = false;
+    bool m_alignRightOfRehearsalMark = true;
 };
 } // namespace mu::engraving
 #endif

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -27,8 +27,9 @@
 #include "notation.h"
 
 using namespace mu;
-using namespace mu::draw;
 using namespace mu::notation;
+using namespace muse;
+using namespace muse::draw;
 
 static ViewMode viewModeFromString(const QString& str)
 {
@@ -77,7 +78,7 @@ NotationViewState::NotationViewState(Notation* notation)
     });
 }
 
-Ret NotationViewState::read(const engraving::MscReader& reader, const io::path_t& pathPrefix)
+Ret NotationViewState::read(const engraving::MscReader& reader, const muse::io::path_t& pathPrefix)
 {
     ByteArray json = reader.readViewSettingsJsonFile(pathPrefix);
     QJsonObject rootObj = QJsonDocument::fromJson(json.toQByteArrayNoCopy()).object();
@@ -88,7 +89,7 @@ Ret NotationViewState::read(const engraving::MscReader& reader, const io::path_t
     return make_ret(Ret::Code::Ok);
 }
 
-Ret NotationViewState::write(engraving::MscWriter& writer, const io::path_t& pathPrefix)
+Ret NotationViewState::write(engraving::MscWriter& writer, const muse::io::path_t& pathPrefix)
 {
     QJsonObject notationObj;
     notationObj["viewMode"] = viewModeToString(m_viewMode);
@@ -117,21 +118,24 @@ Transform NotationViewState::matrix() const
     return m_matrix;
 }
 
-async::Channel<Transform, NotationPaintView*> NotationViewState::matrixChanged() const
+muse::async::Channel<Transform, NotationPaintView*> NotationViewState::matrixChanged() const
 {
     return m_matrixChanged;
 }
 
 void NotationViewState::setMatrix(const Transform& matrix, NotationPaintView* sender)
 {
-    int newZoomPercentage = configuration()->zoomPercentageFromScaling(matrix.m11());
-    if (m_matrix == matrix && m_zoomPercentage.val == newZoomPercentage) {
+    if (m_matrix == matrix) {
         return;
     }
 
     m_matrix = matrix;
     m_matrixChanged.send(matrix, sender);
-    m_zoomPercentage.set(newZoomPercentage);
+
+    int newZoomPercentage = configuration()->zoomPercentageFromScaling(matrix.m11());
+    if (m_zoomPercentage.val != newZoomPercentage) {
+        m_zoomPercentage.set(newZoomPercentage);
+    }
 }
 
 ValCh<int> NotationViewState::zoomPercentage() const
@@ -171,7 +175,7 @@ void NotationViewState::makeDefault()
     m_viewMode = ViewMode::PAGE;
 }
 
-async::Notification NotationViewState::stateChanged() const
+muse::async::Notification NotationViewState::stateChanged() const
 {
     return m_stateChanged;
 }

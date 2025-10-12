@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -46,7 +46,7 @@ inline QVariantMap buildItem(const QString& title, const QString& uri)
 }
 
 MainToolBarModel::MainToolBarModel(QObject* parent)
-    : QAbstractListModel(parent)
+    : QAbstractListModel(parent), muse::Injectable(muse::iocCtxForQmlObject(this))
 {
 }
 
@@ -87,12 +87,12 @@ void MainToolBarModel::load()
     beginResetModel();
 
     m_items.clear();
-    m_items << buildItem(mu::qtrc("appshell", "Home"), HOME_PAGE);
-    m_items << buildItem(mu::qtrc("appshell", "Score"), NOTATION_PAGE);
-    m_items << buildItem(mu::qtrc("appshell", "Publish"), PUBLISH_PAGE);
+    m_items << buildItem(muse::qtrc("appshell", "Home"), HOME_PAGE);
+    m_items << buildItem(muse::qtrc("appshell", "Score"), NOTATION_PAGE);
+    m_items << buildItem(muse::qtrc("appshell", "Publish"), PUBLISH_PAGE);
 
     if (globalConfiguration()->devModeEnabled()) {
-        m_items << buildItem(mu::qtrc("appshell", "DevTools"), DEVTOOLS_PAGE);
+        m_items << buildItem(muse::qtrc("appshell", "DevTools"), DEVTOOLS_PAGE);
     }
 
     endResetModel();

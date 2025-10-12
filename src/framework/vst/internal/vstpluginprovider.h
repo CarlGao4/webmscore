@@ -19,18 +19,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
-#ifndef MU_VST_VSTPLUGINPROVIDER_H
-#define MU_VST_VSTPLUGINPROVIDER_H
+#pragma once
 
 #include "vst/vsttypes.h"
 
-namespace mu::vst {
+namespace muse::vst {
 class VstPluginProvider
 {
 public:
     VstPluginProvider(const PluginFactory& factory, const ClassInfo& info);
     ~VstPluginProvider();
+
+    bool init();
 
     PluginComponentPtr component() const;
     PluginControllerPtr controller() const;
@@ -41,5 +41,3 @@ private:
     std::unique_ptr<Impl> m_impl;
 };
 }
-
-#endif // VstPluginProvider

@@ -19,15 +19,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_GLOBAL_JSON_H
-#define MU_GLOBAL_JSON_H
+#ifndef MUSE_GLOBAL_JSON_H
+#define MUSE_GLOBAL_JSON_H
 
 #include <memory>
 
-#include "types/bytearray.h"
-#include "types/string.h"
+#include "../types/bytearray.h"
+#include "../types/string.h"
 
-namespace mu {
+namespace muse {
 struct JsonData;
 class JsonArray;
 class JsonObject;
@@ -109,6 +109,8 @@ public:
     size_t size() const;
     void resize(size_t i);
 
+    bool empty() const;
+
     JsonValue at(size_t i) const;
 
     JsonArray& set(size_t i, bool v);
@@ -158,7 +160,7 @@ public:
     size_t size() const;
     std::vector<std::string> keys() const;
     bool contains(const std::string& key) const;
-    JsonValue value(const std::string& key) const;
+    JsonValue value(const std::string& key, JsonValue def = JsonValue()) const;
 
     JsonObject& set(const std::string& key, bool v);
     JsonObject& set(const std::string& key, int v);
@@ -207,4 +209,4 @@ private:
 };
 }
 
-#endif // MU_GLOBAL_JSON_H
+#endif // MUSE_GLOBAL_JSON_H

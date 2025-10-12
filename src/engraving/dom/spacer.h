@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -55,27 +55,32 @@ public:
     SpacerType spacerType() const { return m_spacerType; }
     void setSpacerType(SpacerType t) { m_spacerType = t; }
 
+    int subtype() const override { return int(m_spacerType); }
+    TranslatableString subtypeUserName() const override;
+
     bool isEditable() const override { return true; }
     void startEditDrag(EditData&) override;
     void editDrag(EditData&) override;
-    void spatiumChanged(double, double) override;
 
-    void setGap(Millimetre sp);
-    Millimetre gap() const { return m_gap; }
+    void setGap(Spatium sp);
+    Spatium gap() const { return m_gap; }
 
-    const draw::PainterPath& path() const { return m_path; }
+    double absoluteGap() const { return absoluteFromSpatium(m_gap); }
 
     bool needStartEditingAfterSelecting() const override { return true; }
     int gripsCount() const override { return 1; }
     Grip initialEditModeGrip() const override { return Grip::START; }
     Grip defaultGrip() const override { return Grip::START; }
-    std::vector<mu::PointF> gripsPositions(const EditData&) const override;
+    std::vector<PointF> gripsPositions(const EditData&) const override;
 
     PropertyValue getProperty(Pid propertyId) const override;
     bool setProperty(Pid propertyId, const PropertyValue&) override;
     PropertyValue propertyDefault(Pid id) const override;
 
-    void layout0();
+    struct LayoutData : public EngravingItem::LayoutData {
+        PainterPath path;
+    };
+    DECLARE_LAYOUTDATA_METHODS(Spacer)
 
 private:
 
@@ -84,8 +89,7 @@ private:
     Spacer(const Spacer&);
 
     SpacerType m_spacerType = SpacerType::UP;
-    Millimetre m_gap;
-    mu::draw::PainterPath m_path;
+    Spatium m_gap;
 };
 } // namespace mu::engraving
 #endif

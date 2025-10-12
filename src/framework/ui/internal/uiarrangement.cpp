@@ -26,29 +26,35 @@
 #include <QJsonValue>
 #include <QJsonArray>
 
+#include "uitypes.h"
+
 #include "log.h"
 
-using namespace mu::ui;
-using namespace mu::workspace;
+using namespace muse::ui;
+using namespace muse::workspace;
 
 void UiArrangement::load()
 {
+    if (!workspacesDataProvider()) {
+        return;
+    }
+
     workspacesDataProvider()->workspaceChanged().onNotify(this, [this]() {
-        updateData(DataKey::UiSettings, m_settings, m_valuesNotifications);
-        updateData(DataKey::UiStates, m_states, m_statesNotifications);
-        updateData(DataKey::UiToolConfigs, m_toolconfigs, m_toolconfigsNotifications);
+        updateData(WS_UiSettings, m_settings, m_valuesNotifications);
+        updateData(WS_UiStates, m_states, m_statesNotifications);
+        updateData(WS_UiToolConfigs, m_toolconfigs, m_toolconfigsNotifications);
     });
 
-    updateData(DataKey::UiSettings, m_settings, m_valuesNotifications);
-    updateData(DataKey::UiStates, m_states, m_statesNotifications);
-    updateData(DataKey::UiToolConfigs, m_toolconfigs, m_toolconfigsNotifications);
+    updateData(WS_UiSettings, m_settings, m_valuesNotifications);
+    updateData(WS_UiStates, m_states, m_statesNotifications);
+    updateData(WS_UiToolConfigs, m_toolconfigs, m_toolconfigsNotifications);
 }
 
 void UiArrangement::updateData(DataKey key, QJsonObject& obj, Notifications& notifications) const
 {
     RetVal<QByteArray> data = workspacesDataProvider()->rawData(key);
     if (!data.ret) {
-        LOGD() << "no data: " << key_to_string(key);
+        LOGD() << "no data: " << key;
         obj = QJsonObject();
         return;
     }
@@ -66,7 +72,7 @@ void UiArrangement::updateData(DataKey key, QJsonObject& obj, Notifications& not
     }
 }
 
-void UiArrangement::saveData(workspace::DataKey key, const QJsonObject& obj)
+void UiArrangement::saveData(DataKey key, const QJsonObject& obj)
 {
     QByteArray data = QJsonDocument(obj).toJson();
 
@@ -82,13 +88,13 @@ QString UiArrangement::value(const QString& key) const
 void UiArrangement::setValue(const QString& key, const QString& val)
 {
     m_settings[key] = val;
-    saveData(DataKey::UiSettings, m_settings);
+    saveData(WS_UiSettings, m_settings);
     if (m_valuesNotifications.contains(key)) {
         m_valuesNotifications[key].notify();
     }
 }
 
-mu::async::Notification UiArrangement::valueChanged(const QString& key) const
+muse::async::Notification UiArrangement::valueChanged(const QString& key) const
 {
     return m_valuesNotifications[key];
 }
@@ -103,13 +109,13 @@ QByteArray UiArrangement::state(const QString& key) const
 void UiArrangement::setState(const QString& key, const QByteArray& data)
 {
     m_states[key] = QString::fromLocal8Bit(data);
-    saveData(DataKey::UiStates, m_states);
+    saveData(WS_UiStates, m_states);
     if (m_statesNotifications.contains(key)) {
         m_statesNotifications[key].notify();
     }
 }
 
-mu::async::Notification UiArrangement::stateChanged(const QString& key) const
+muse::async::Notification UiArrangement::stateChanged(const QString& key) const
 {
     return m_statesNotifications[key];
 }
@@ -156,13 +162,13 @@ void UiArrangement::setToolConfig(const QString& toolName, const ToolConfig& con
     confObj["items"] = itemsArr;
 
     m_toolconfigs[toolName] = confObj;
-    saveData(DataKey::UiToolConfigs, m_toolconfigs);
+    saveData(WS_UiToolConfigs, m_toolconfigs);
     if (m_toolconfigsNotifications.contains(toolName)) {
         m_toolconfigsNotifications[toolName].notify();
     }
 }
 
-mu::async::Notification UiArrangement::toolConfigChanged(const QString& toolName) const
+muse::async::Notification UiArrangement::toolConfigChanged(const QString& toolName) const
 {
     return m_toolconfigsNotifications[toolName];
 }

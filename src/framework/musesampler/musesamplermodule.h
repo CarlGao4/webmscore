@@ -20,12 +20,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_MUSESAMPLERMODULE_H
-#define MU_MUSESAMPLERMODULE_H
+#ifndef MUSE_MUSESAMPLERMODULE_H
+#define MUSE_MUSESAMPLERMODULE_H
 
 #include "modularity/imodulesetup.h"
 
-namespace mu::musesampler {
+namespace muse::musesampler {
 class MuseSamplerConfiguration;
 class MuseSamplerActionController;
 class MuseSamplerResolver;
@@ -35,7 +35,7 @@ public:
     std::string moduleName() const override;
     void registerExports() override;
     void resolveImports() override;
-    void onInit(const framework::IApplication::RunMode& mode) override;
+    void onInit(const IApplication::RunMode& mode) override;
 
 private:
 
@@ -45,4 +45,4 @@ private:
 };
 }
 
-#endif // MU_MUSESAMPLERMODULE_H
+#endif // MUSE_MUSESAMPLERMODULE_H

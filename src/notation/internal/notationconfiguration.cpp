@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -27,13 +27,14 @@
 #include "settings.h"
 #include "io/path.h"
 
-#include "../notationtypes.h"
+#include "notationtypes.h"
 
 using namespace mu;
 using namespace mu::notation;
-using namespace mu::framework;
-using namespace mu::async;
-// using namespace mu::ui;
+using namespace muse;
+using namespace muse::async;
+using namespace muse::draw;
+using namespace muse::ui;
 
 static const std::string module_name("notation");
 
@@ -48,6 +49,13 @@ static const Settings::Key FOREGROUND_COLOR(module_name, "ui/canvas/foreground/c
 static const Settings::Key FOREGROUND_WALLPAPER_PATH(module_name, "ui/canvas/foreground/wallpaper");
 static const Settings::Key FOREGROUND_USE_COLOR(module_name, "ui/canvas/foreground/useColor");
 
+static const Settings::Key NOTE_INPUT_PREVIEW_COLOR(module_name, "ui/canvas/noteInputPreviewColor");
+
+static const Settings::Key USE_NOTE_INPUT_CURSOR_IN_INPUT_BY_DURATION(module_name,
+                                                                      "ui/canvas/useNoteInputCursorInInputByDuration");
+
+static const Settings::Key THIN_NOTE_INPUT_CURSOR(module_name, "ui/canvas/thinNoteInputCursor");
+
 static const Settings::Key SELECTION_PROXIMITY(module_name, "ui/canvas/misc/selectionProximity");
 
 static const Settings::Key DEFAULT_ZOOM_TYPE(module_name, "ui/canvas/zoomDefaultType");
@@ -56,12 +64,24 @@ static const Settings::Key KEYBOARD_ZOOM_PRECISION(module_name, "ui/canvas/zoomP
 static const Settings::Key MOUSE_ZOOM_PRECISION(module_name, "ui/canvas/zoomPrecisionMouse");
 
 static const Settings::Key USER_STYLES_PATH(module_name, "application/paths/myStyles");
+static const Settings::Key USER_MUSIC_FONTS_PATH(module_name, "application/paths/myMusicFonts");
+
+static const Settings::Key DEFAULT_NOTE_INPUT_METHOD(module_name, "score/defaultInputMethod");
+
+static const Settings::Key ADD_ACCIDENTAL_ARTICULATIONS_DOTS_TO_NEXT_NOTE_ENTERED(module_name,
+                                                                                  "score/addAccidentalDotsArticulationsToNextNoteEntered");
 
 static const Settings::Key IS_MIDI_INPUT_ENABLED(module_name, "io/midi/enableInput");
+static const Settings::Key START_NOTE_INPUT_AT_SELECTED_NOTE_REST_WHEN_PRESSING_MIDI_KEY(module_name,
+                                                                                         "score/startNoteInputAtSelectionWhenPressingMidiKey");
+static const Settings::Key USE_MIDI_INPUT_WRITTEN_PITCH(module_name, "io/midi/useWrittenPitch");
 static const Settings::Key IS_AUTOMATICALLY_PAN_ENABLED(module_name, "application/playback/panPlayback");
 static const Settings::Key PLAYBACK_SMOOTH_PANNING(module_name, "application/playback/smoothPan");
 static const Settings::Key IS_PLAY_REPEATS_ENABLED(module_name, "application/playback/playRepeats");
 static const Settings::Key IS_PLAY_CHORD_SYMBOLS_ENABLED(module_name, "application/playback/playChordSymbols");
+static const Settings::Key IS_PLAY_PREVIEW_NOTES_IN_INPUT_BY_DURATION_ENABLED(module_name,
+                                                                              "application/playback/playPreviewNotesInInputByDuration");
+static const Settings::Key PLAY_PREVIEW_NOTES_WITH_SCORE_DYNAMICS(module_name, "application/playback/playPreviewNotesWithScoreDynamics");
 static const Settings::Key IS_METRONOME_ENABLED(module_name, "application/playback/metronomeEnabled");
 static const Settings::Key IS_COUNT_IN_ENABLED(module_name, "application/playback/countInEnabled");
 
@@ -73,6 +93,8 @@ static const Settings::Key IS_LIMIT_CANVAS_SCROLL_AREA_KEY(module_name, "ui/canv
 static const Settings::Key COLOR_NOTES_OUTSIDE_OF_USABLE_PITCH_RANGE(module_name, "score/note/warnPitchRange");
 static const Settings::Key WARN_GUITAR_BENDS(module_name, "score/note/warnGuitarBends");
 static const Settings::Key REALTIME_DELAY(module_name, "io/midi/realtimeDelay");
+static const Settings::Key USE_MIDI_VELOCITY_AND_DURATION_DURING_NOTE_INPUT(module_name,
+                                                                            "io/midi/useMidiVelocityAndDurationDuringNoteInput");
 static const Settings::Key NOTE_DEFAULT_PLAY_DURATION(module_name, "score/note/defaultPlayDuration");
 
 static const Settings::Key FIRST_SCORE_ORDER_LIST_KEY(module_name, "application/paths/scoreOrderList1");
@@ -89,9 +111,28 @@ static const Settings::Key NEED_TO_SHOW_ADD_GUITAR_BEND_ERROR_MESSAGE_KEY(module
 
 static const Settings::Key PIANO_KEYBOARD_NUMBER_OF_KEYS(module_name,  "pianoKeyboard/numberOfKeys");
 
+static const Settings::Key USE_NEW_PERCUSSION_PANEL_KEY(module_name,  "ui/useNewPercussionPanel");
+static const Settings::Key PERCUSSION_PANEL_USE_NOTATION_PREVIEW_KEY(module_name,  "ui/percussionPanelUseNotationPreview");
+static const Settings::Key PERCUSSION_PANEL_AUTO_SHOW_MODE_KEY(module_name,  "ui/percussionPanelAutoShowMode");
+static const Settings::Key AUTO_CLOSE_PERCUSSION_PANEL_KEY(module_name, "ui/autoClosePercussionPanel");
+static const Settings::Key SHOW_PERCUSSION_PANEL_SWAP_DIALOG(module_name,  "ui/showPercussionPanelPadSwapDialog");
+static const Settings::Key PERCUSSION_PANEL_MOVE_MIDI_NOTES_AND_SHORTCUTS(module_name,  "ui/percussionPanelMoveMidiNotesAndShortcuts");
+
 static const Settings::Key STYLE_FILE_IMPORT_PATH_KEY(module_name, "import/style/styleFile");
 
 static constexpr int DEFAULT_GRID_SIZE_SPATIUM = 2;
+
+static const std::string BY_NOTE_NAME_INPUT_METHOD("BY_NOTE_NAME");
+
+static const std::map<NoteInputMethod, std::string> NOTE_INPUT_METHOD_TO_STR {
+    { NoteInputMethod::BY_NOTE_NAME, BY_NOTE_NAME_INPUT_METHOD },
+    { NoteInputMethod::BY_DURATION, "BY_DURATION" },
+    { NoteInputMethod::REPITCH, "REPITCH" },
+    { NoteInputMethod::RHYTHM, "RHYTHM" },
+    { NoteInputMethod::REALTIME_AUTO, "REALTIME_AUTO" },
+    { NoteInputMethod::REALTIME_MANUAL, "REALTIME_MANUAL" },
+    { NoteInputMethod::TIMEWISE, "TIMEWISE" },
+};
 
 void NotationConfiguration::init()
 {
@@ -100,10 +141,9 @@ void NotationConfiguration::init()
         m_backgroundChanged.notify();
     });
 
-    // uiConfiguration()->currentThemeChanged().onNotify(this, [this]()
-    // {
-    //     m_backgroundChanged.notify();
-    // });
+    uiConfiguration()->currentThemeChanged().onNotify(this, [this]() {
+        m_backgroundChanged.notify();
+    });
 
     settings()->setDefaultValue(LIGHT_SCORE_BACKGROUND_COLOR, Val(QColor("#BCC1CC")));
     settings()->valueChanged(LIGHT_SCORE_BACKGROUND_COLOR).onReceive(nullptr, [this](const Val&) {
@@ -140,15 +180,35 @@ void NotationConfiguration::init()
         m_foregroundChanged.notify();
     });
 
+    settings()->setDefaultValue(NOTE_INPUT_PREVIEW_COLOR, Val(selectionColor()));
+    settings()->setCanBeManuallyEdited(NOTE_INPUT_PREVIEW_COLOR, true);
+    settings()->setDescription(NOTE_INPUT_PREVIEW_COLOR, muse::trc("notation", "Note input preview note color"));
+
+    settings()->setDefaultValue(USE_NOTE_INPUT_CURSOR_IN_INPUT_BY_DURATION, Val(false));
+    settings()->valueChanged(USE_NOTE_INPUT_CURSOR_IN_INPUT_BY_DURATION).onReceive(nullptr, [this](const Val&) {
+        m_useNoteInputCursorInInputByDurationChanged.notify();
+    });
+
+    settings()->setDefaultValue(THIN_NOTE_INPUT_CURSOR, Val(false)); // accessible via DevTools/Settings
+
     settings()->setDefaultValue(FOREGROUND_WALLPAPER_PATH, Val());
     settings()->valueChanged(FOREGROUND_WALLPAPER_PATH).onReceive(nullptr, [this](const Val&) {
         m_foregroundChanged.notify();
     });
 
     settings()->setDefaultValue(DEFAULT_ZOOM_TYPE, Val(ZoomType::Percentage));
+    settings()->valueChanged(DEFAULT_ZOOM_TYPE).onReceive(this, [this](const Val&) {
+        m_defaultZoomChanged.notify();
+    });
     settings()->setDefaultValue(DEFAULT_ZOOM, Val(100));
+    settings()->valueChanged(DEFAULT_ZOOM).onReceive(this, [this](const Val&) {
+        m_defaultZoomChanged.notify();
+    });
     settings()->setDefaultValue(KEYBOARD_ZOOM_PRECISION, Val(2));
     settings()->setDefaultValue(MOUSE_ZOOM_PRECISION, Val(6));
+    settings()->valueChanged(MOUSE_ZOOM_PRECISION).onReceive(this, [this](const Val&) {
+        m_mouseZoomPrecisionChanged.notify();
+    });
 
     settings()->setDefaultValue(USER_STYLES_PATH, Val(globalConfiguration()->userDataPath() + "/Styles"));
     settings()->valueChanged(USER_STYLES_PATH).onReceive(nullptr, [this](const Val& val) {
@@ -157,22 +217,76 @@ void NotationConfiguration::init()
 
     if (!userStylesPath().empty()) {
         fileSystem()->makePath(userStylesPath());
+
+#if !defined(Q_OS_LINUX)
+        // Create shortcut or symlink to global styles folder. Doesn't overwrite an existing file
+        // or link, which means it won't work on Linux because the global styles folder is inside
+        // the AppImage, and the AppImage mountpoint changes on each run. TODO: Check for existing
+        // link, read it, and if necessary update it. This would make it work on Linux too.
+        fileSystem()->makeLink(
+            globalConfiguration()->appDataPath() + "/styles",
+            userStylesPath() + "/Built-in styles"
+            );
+#endif
     }
 
+    settings()->setDefaultValue(USER_MUSIC_FONTS_PATH, Val(io::path_t {}));
+    settings()->valueChanged(USER_MUSIC_FONTS_PATH).onReceive(this, [this](const Val& val) {
+        m_userMusicFontsPathChanged.send(val.toString());
+    });
+
+    settings()->setDefaultValue(DEFAULT_NOTE_INPUT_METHOD, Val(BY_NOTE_NAME_INPUT_METHOD));
+    settings()->valueChanged(DEFAULT_NOTE_INPUT_METHOD).onReceive(this, [this](const Val&) {
+        m_defaultNoteInputMethodChanged.notify();
+    });
+
+    settings()->setDefaultValue(ADD_ACCIDENTAL_ARTICULATIONS_DOTS_TO_NEXT_NOTE_ENTERED, Val(true));
+    settings()->valueChanged(ADD_ACCIDENTAL_ARTICULATIONS_DOTS_TO_NEXT_NOTE_ENTERED).onReceive(this, [this](const Val&) {
+        m_addAccidentalDotsArticulationsToNextNoteEnteredChanged.notify();
+    });
+
     settings()->setDefaultValue(SELECTION_PROXIMITY, Val(2));
+    settings()->valueChanged(SELECTION_PROXIMITY).onReceive(this, [this](const Val& val) {
+        m_selectionProximityChanged.send(val.toInt());
+    });
+
     settings()->setDefaultValue(IS_MIDI_INPUT_ENABLED, Val(true));
+    settings()->valueChanged(IS_MIDI_INPUT_ENABLED).onReceive(this, [this](const Val&) {
+        m_isMidiInputEnabledChanged.notify();
+    });
+
+    settings()->setDefaultValue(START_NOTE_INPUT_AT_SELECTED_NOTE_REST_WHEN_PRESSING_MIDI_KEY, Val(true));
+    settings()->valueChanged(START_NOTE_INPUT_AT_SELECTED_NOTE_REST_WHEN_PRESSING_MIDI_KEY).onReceive(this, [this](const Val&) {
+        m_startNoteInputAtSelectedNoteRestWhenPressingMidiKeyChanged.notify();
+    });
+
     settings()->setDefaultValue(IS_AUTOMATICALLY_PAN_ENABLED, Val(true));
     settings()->setDefaultValue(IS_PLAY_REPEATS_ENABLED, Val(true));
-    settings()->setDefaultValue(IS_PLAY_CHORD_SYMBOLS_ENABLED, Val(true));
+
     settings()->setDefaultValue(IS_METRONOME_ENABLED, Val(false));
+    settings()->valueChanged(IS_METRONOME_ENABLED).onReceive(this, [this](const Val&) {
+        m_isMetronomeEnabledChanged.notify();
+    });
+
     settings()->setDefaultValue(IS_COUNT_IN_ENABLED, Val(false));
 
     settings()->setDefaultValue(PLAYBACK_SMOOTH_PANNING, Val(false));
-    settings()->setDescription(PLAYBACK_SMOOTH_PANNING, trc("notation", "Smooth panning"));
+    settings()->setDescription(PLAYBACK_SMOOTH_PANNING, muse::trc("notation", "Smooth panning"));
     settings()->setCanBeManuallyEdited(PLAYBACK_SMOOTH_PANNING, true);
 
+    settings()->setDefaultValue(IS_PLAY_CHORD_SYMBOLS_ENABLED, Val(true));
     settings()->valueChanged(IS_PLAY_CHORD_SYMBOLS_ENABLED).onReceive(nullptr, [this](const Val&) {
         m_isPlayChordSymbolsChanged.notify();
+    });
+
+    settings()->setDefaultValue(IS_PLAY_PREVIEW_NOTES_IN_INPUT_BY_DURATION_ENABLED, Val(true));
+    settings()->valueChanged(IS_PLAY_PREVIEW_NOTES_IN_INPUT_BY_DURATION_ENABLED).onReceive(nullptr, [this](const Val&) {
+        m_isPlayNotesPreviewInInputByDurationChanged.notify();
+    });
+
+    settings()->setDefaultValue(PLAY_PREVIEW_NOTES_WITH_SCORE_DYNAMICS, Val(true));
+    settings()->valueChanged(PLAY_PREVIEW_NOTES_WITH_SCORE_DYNAMICS).onReceive(nullptr, [this](const Val&) {
+        m_playPreviewNotesWithScoreDynamicsChanged.notify();
     });
 
     settings()->setDefaultValue(IS_CANVAS_ORIENTATION_VERTICAL_KEY, Val(false));
@@ -186,12 +300,34 @@ void NotationConfiguration::init()
     });
 
     settings()->setDefaultValue(COLOR_NOTES_OUTSIDE_OF_USABLE_PITCH_RANGE, Val(true));
+    settings()->valueChanged(COLOR_NOTES_OUTSIDE_OF_USABLE_PITCH_RANGE).onReceive(this, [this](const Val& val) {
+        m_colorNotesOutsideOfUsablePitchRangeChanged.send(val.toBool());
+    });
     settings()->setDefaultValue(WARN_GUITAR_BENDS, Val(true));
+    settings()->valueChanged(WARN_GUITAR_BENDS).onReceive(this, [this](const Val& val) {
+        m_warnGuitarBendsChanged.send(val.toBool());
+    });
     settings()->setDefaultValue(REALTIME_DELAY, Val(750));
-    settings()->setDefaultValue(NOTE_DEFAULT_PLAY_DURATION, Val(500));
+    settings()->valueChanged(REALTIME_DELAY).onReceive(this, [this](const Val& val) {
+        m_delayBetweenNotesInRealTimeModeMillisecondsChanged.send(val.toInt());
+    });
 
-    settings()->setDefaultValue(FIRST_SCORE_ORDER_LIST_KEY,
-                                Val(globalConfiguration()->appDataPath().toStdString() + "instruments/orders.xml"));
+    settings()->setDefaultValue(USE_MIDI_VELOCITY_AND_DURATION_DURING_NOTE_INPUT, Val(true));
+    settings()->valueChanged(USE_MIDI_VELOCITY_AND_DURATION_DURING_NOTE_INPUT).onReceive(this, [this](const Val& val) {
+        m_useMidiVelocityAndDurationDuringNoteInputChanged.send(val.toBool());
+    });
+
+    settings()->setDefaultValue(NOTE_DEFAULT_PLAY_DURATION, Val(500));
+    settings()->valueChanged(NOTE_DEFAULT_PLAY_DURATION).onReceive(this, [this](const Val& val) {
+        m_notePlayDurationMillisecondsChanged.send(val.toInt());
+    });
+
+    settings()->setDefaultValue(STYLE_FILE_IMPORT_PATH_KEY, Val(""));
+    settings()->valueChanged(STYLE_FILE_IMPORT_PATH_KEY).onReceive(this, [this](const Val& val) {
+        m_styleFileImportPathChanged.send(val.toString());
+    });
+
+    settings()->setDefaultValue(FIRST_SCORE_ORDER_LIST_KEY, Val(":/engraving/instruments/orders.xml"));
     settings()->valueChanged(FIRST_SCORE_ORDER_LIST_KEY).onReceive(nullptr, [this](const Val&) {
         m_scoreOrderListPathsChanged.notify();
     });
@@ -214,27 +350,80 @@ void NotationConfiguration::init()
         m_pianoKeyboardNumberOfKeys.set(val.toInt());
     });
 
+    settings()->setDefaultValue(USE_MIDI_INPUT_WRITTEN_PITCH, Val(true));
+    m_midiInputUseWrittenPitch.val = settings()->value(USE_MIDI_INPUT_WRITTEN_PITCH).toBool();
+    settings()->valueChanged(USE_MIDI_INPUT_WRITTEN_PITCH).onReceive(this, [this](const Val& val) {
+        m_midiInputUseWrittenPitch.set(val.toBool());
+    });
+
+    settings()->setDefaultValue(USE_NEW_PERCUSSION_PANEL_KEY, Val(true));
+    settings()->valueChanged(USE_NEW_PERCUSSION_PANEL_KEY).onReceive(this, [this](const Val&) {
+        m_useNewPercussionPanelChanged.notify();
+    });
+
+    settings()->setDefaultValue(PERCUSSION_PANEL_USE_NOTATION_PREVIEW_KEY, Val(false));
+    settings()->valueChanged(PERCUSSION_PANEL_USE_NOTATION_PREVIEW_KEY).onReceive(this, [this](const Val&) {
+        m_percussionPanelUseNotationPreviewChanged.notify();
+    });
+
+    settings()->setDefaultValue(PERCUSSION_PANEL_AUTO_SHOW_MODE_KEY, Val(PercussionPanelAutoShowMode::UNPITCHED_STAFF));
+    settings()->valueChanged(PERCUSSION_PANEL_AUTO_SHOW_MODE_KEY).onReceive(this, [this](const Val&) {
+        m_percussionPanelAutoShowModeChanged.notify();
+    });
+
+    settings()->setDefaultValue(AUTO_CLOSE_PERCUSSION_PANEL_KEY, Val(true));
+    settings()->valueChanged(AUTO_CLOSE_PERCUSSION_PANEL_KEY).onReceive(this, [this](const Val&) {
+        m_autoClosePercussionPanelChanged.notify();
+    });
+
+    settings()->setDefaultValue(SHOW_PERCUSSION_PANEL_SWAP_DIALOG, Val(true));
+    settings()->valueChanged(SHOW_PERCUSSION_PANEL_SWAP_DIALOG).onReceive(this, [this](const Val&) {
+        m_showPercussionPanelPadSwapDialogChanged.notify();
+    });
+
+    settings()->setDefaultValue(PERCUSSION_PANEL_MOVE_MIDI_NOTES_AND_SHORTCUTS, Val(true));
+    settings()->valueChanged(PERCUSSION_PANEL_MOVE_MIDI_NOTES_AND_SHORTCUTS).onReceive(this, [this](const Val&) {
+        m_percussionPanelMoveMidiNotesAndShortcutsChanged.notify();
+    });
+
     engravingConfiguration()->scoreInversionChanged().onNotify(this, [this]() {
+        m_foregroundChanged.notify();
+    });
+
+    engravingConfiguration()->formattingColorChanged().onReceive(this, [this](const Color&) {
+        m_foregroundChanged.notify();
+    });
+
+    engravingConfiguration()->invisibleColorChanged().onReceive(this, [this](const Color&) {
+        m_foregroundChanged.notify();
+    });
+
+    engravingConfiguration()->unlinkedColorChanged().onReceive(this, [this](const Color&) {
         m_foregroundChanged.notify();
     });
 
     mu::engraving::MScore::warnPitchRange = colorNotesOutsideOfUsablePitchRange();
     mu::engraving::MScore::warnGuitarBends = warnGuitarBends();
-    mu::engraving::MScore::defaultPlayDuration = notePlayDurationMilliseconds();
 
     mu::engraving::MScore::setHRaster(DEFAULT_GRID_SIZE_SPATIUM);
     mu::engraving::MScore::setVRaster(DEFAULT_GRID_SIZE_SPATIUM);
+
+    context()->currentProjectChanged().onNotify(this, [this]() {
+        resetStyleDialogPageIndices();
+    });
 }
 
-QColor NotationConfiguration::anchorLineColor() const
+QColor NotationConfiguration::notationColor() const
 {
-    return selectionColor(3);
+    if (engravingConfiguration()->scoreInversionEnabled()) {
+        return engravingConfiguration()->scoreInversionColor().toQColor();
+    }
+
+    return engravingConfiguration()->defaultColor().toQColor();
 }
 
 QColor NotationConfiguration::backgroundColor() const
 {
-    NOT_IMPLEMENTED;
-#if 0
     if (uiConfiguration()->currentTheme().codeKey == LIGHT_THEME_CODE) {
         return settings()->value(LIGHT_SCORE_BACKGROUND_COLOR).toQColor();
     } else if (uiConfiguration()->currentTheme().codeKey == DARK_THEME_CODE) {
@@ -244,13 +433,10 @@ QColor NotationConfiguration::backgroundColor() const
     } else {
         return settings()->value(HC_WHITE_SCORE_BACKGROUND_COLOR).toQColor();
     }
-#endif
 }
 
 void NotationConfiguration::setBackgroundColor(const QColor& color)
 {
-    NOT_IMPLEMENTED;
-#if 0
     if (uiConfiguration()->currentTheme().codeKey == LIGHT_THEME_CODE) {
         settings()->setSharedValue(LIGHT_SCORE_BACKGROUND_COLOR, Val(color));
     } else if (uiConfiguration()->currentTheme().codeKey == DARK_THEME_CODE) {
@@ -260,20 +446,19 @@ void NotationConfiguration::setBackgroundColor(const QColor& color)
     } else {
         settings()->setSharedValue(HC_WHITE_SCORE_BACKGROUND_COLOR, Val(color));
     }
-#endif
 }
 
-io::path_t NotationConfiguration::backgroundWallpaperPath() const
+muse::io::path_t NotationConfiguration::backgroundWallpaperPath() const
 {
     return settings()->value(BACKGROUND_WALLPAPER_PATH).toString();
 }
 
 const QPixmap& NotationConfiguration::backgroundWallpaper() const
 {
-    io::path_t path = backgroundWallpaperPath();
+    muse::io::path_t path = backgroundWallpaperPath();
 
     static QPixmap wallpaper;
-    static io::path_t lastPath;
+    static muse::io::path_t lastPath;
 
     if (path.empty()) {
         wallpaper = QPixmap();
@@ -286,7 +471,7 @@ const QPixmap& NotationConfiguration::backgroundWallpaper() const
     return wallpaper;
 }
 
-void NotationConfiguration::setBackgroundWallpaperPath(const io::path_t& path)
+void NotationConfiguration::setBackgroundWallpaperPath(const muse::io::path_t& path)
 {
     settings()->setSharedValue(BACKGROUND_WALLPAPER_PATH, Val(path.toStdString()));
 }
@@ -313,7 +498,7 @@ void NotationConfiguration::resetBackground()
     settings()->setSharedValue(BACKGROUND_WALLPAPER_PATH, settings()->defaultValue(BACKGROUND_WALLPAPER_PATH));
 }
 
-async::Notification NotationConfiguration::backgroundChanged() const
+muse::async::Notification NotationConfiguration::backgroundChanged() const
 {
     return m_backgroundChanged;
 }
@@ -332,17 +517,17 @@ void NotationConfiguration::setForegroundColor(const QColor& color)
     settings()->setSharedValue(FOREGROUND_COLOR, Val(color));
 }
 
-io::path_t NotationConfiguration::foregroundWallpaperPath() const
+muse::io::path_t NotationConfiguration::foregroundWallpaperPath() const
 {
     return settings()->value(FOREGROUND_WALLPAPER_PATH).toString();
 }
 
 const QPixmap& NotationConfiguration::foregroundWallpaper() const
 {
-    io::path_t path = foregroundWallpaperPath();
+    muse::io::path_t path = foregroundWallpaperPath();
 
     static QPixmap wallpaper;
-    static io::path_t lastPath;
+    static muse::io::path_t lastPath;
 
     if (path.empty()) {
         wallpaper = QPixmap();
@@ -355,7 +540,7 @@ const QPixmap& NotationConfiguration::foregroundWallpaper() const
     return wallpaper;
 }
 
-void NotationConfiguration::setForegroundWallpaperPath(const io::path_t& path)
+void NotationConfiguration::setForegroundWallpaperPath(const muse::io::path_t& path)
 {
     return settings()->setSharedValue(FOREGROUND_WALLPAPER_PATH, Val(path.toStdString()));
 }
@@ -379,40 +564,32 @@ void NotationConfiguration::resetForeground()
     engravingConfiguration()->setScoreInversionEnabled(false);
 }
 
-async::Notification NotationConfiguration::foregroundChanged() const
+muse::async::Notification NotationConfiguration::foregroundChanged() const
 {
     return m_foregroundChanged;
 }
 
-io::path_t NotationConfiguration::wallpapersDefaultDirPath() const
+muse::io::path_t NotationConfiguration::wallpapersDefaultDirPath() const
 {
     return globalConfiguration()->appDataPath() + "/wallpapers";
 }
 
 QColor NotationConfiguration::borderColor() const
 {
-    NOT_IMPLEMENTED;
-#if 0
     if (uiConfiguration()->isHighContrast()) {
         return QColorConstants::White;
     } else {
         return QColor(0, 0, 0, 102);
     }
-#endif
-    return QColor(0, 0, 0, 102);
 }
 
 int NotationConfiguration::borderWidth() const
 {
-    NOT_IMPLEMENTED;
-#if 0
     if (uiConfiguration()->isHighContrast()) {
         return 10;
     } else {
         return 1;
     }
-#endif
-    return 1;
 }
 
 QColor NotationConfiguration::playbackCursorColor() const
@@ -427,6 +604,11 @@ int NotationConfiguration::cursorOpacity() const
     return 50;
 }
 
+bool NotationConfiguration::thinNoteInputCursor() const
+{
+    return settings()->value(THIN_NOTE_INPUT_CURSOR).toBool();
+}
+
 QColor NotationConfiguration::loopMarkerColor() const
 {
     return QColor(0x2456AA);
@@ -437,9 +619,36 @@ QColor NotationConfiguration::selectionColor(engraving::voice_idx_t voiceIndex) 
     return engravingConfiguration()->selectionColor(voiceIndex).toQColor();
 }
 
+QColor NotationConfiguration::highlightSelectionColor(engraving::voice_idx_t voiceIndex) const
+{
+    return engravingConfiguration()->highlightSelectionColor(voiceIndex).toQColor();
+}
+
 QColor NotationConfiguration::dropRectColor() const
 {
-    return QColor(80, 0, 0, 80);
+    QColor color = selectionColor();
+    color.setAlpha(80);
+    return color;
+}
+
+muse::draw::Color NotationConfiguration::noteInputPreviewColor() const
+{
+    return settings()->value(NOTE_INPUT_PREVIEW_COLOR).toQColor();
+}
+
+bool NotationConfiguration::useNoteInputCursorInInputByDuration() const
+{
+    return settings()->value(USE_NOTE_INPUT_CURSOR_IN_INPUT_BY_DURATION).toBool();
+}
+
+void NotationConfiguration::setUseNoteInputCursorInInputByDuration(bool use)
+{
+    settings()->setSharedValue(USE_NOTE_INPUT_CURSOR_IN_INPUT_BY_DURATION, Val(use));
+}
+
+muse::async::Notification NotationConfiguration::useNoteInputCursorInInputByDurationChanged() const
+{
+    return m_useNoteInputCursorInInputByDurationChanged;
 }
 
 int NotationConfiguration::selectionProximity() const
@@ -450,6 +659,11 @@ int NotationConfiguration::selectionProximity() const
 void NotationConfiguration::setSelectionProximity(int proximity)
 {
     settings()->setSharedValue(SELECTION_PROXIMITY, Val(proximity));
+}
+
+Channel<int> NotationConfiguration::selectionProximityChanged() const
+{
+    return m_selectionProximityChanged;
 }
 
 ZoomType NotationConfiguration::defaultZoomType() const
@@ -470,6 +684,11 @@ int NotationConfiguration::defaultZoom() const
 void NotationConfiguration::setDefaultZoom(int zoomPercentage)
 {
     settings()->setSharedValue(DEFAULT_ZOOM, Val(zoomPercentage));
+}
+
+Notification NotationConfiguration::defaultZoomChanged() const
+{
+    return m_defaultZoomChanged;
 }
 
 qreal NotationConfiguration::scalingFromZoomPercentage(int zoomPercentage) const
@@ -499,51 +718,111 @@ void NotationConfiguration::setMouseZoomPrecision(int precision)
     settings()->setSharedValue(MOUSE_ZOOM_PRECISION, Val(precision));
 }
 
+Notification NotationConfiguration::mouseZoomPrecisionChanged() const
+{
+    return m_mouseZoomPrecisionChanged;
+}
+
 std::string NotationConfiguration::fontFamily() const
 {
-    NOT_IMPLEMENTED;
-    // return uiConfiguration()->fontFamily();
+    return uiConfiguration()->fontFamily();
 }
 
 int NotationConfiguration::fontSize() const
 {
-    NOT_IMPLEMENTED;
-    // return uiConfiguration()->fontSize(FontSizeType::BODY);
+    return uiConfiguration()->fontSize(FontSizeType::BODY);
 }
 
-io::path_t NotationConfiguration::userStylesPath() const
+muse::io::path_t NotationConfiguration::userStylesPath() const
 {
     return settings()->value(USER_STYLES_PATH).toPath();
 }
 
-void NotationConfiguration::setUserStylesPath(const io::path_t& path)
+void NotationConfiguration::setUserStylesPath(const muse::io::path_t& path)
 {
     settings()->setSharedValue(USER_STYLES_PATH, Val(path));
 }
 
-async::Channel<io::path_t> NotationConfiguration::userStylesPathChanged() const
+muse::async::Channel<muse::io::path_t> NotationConfiguration::userStylesPathChanged() const
 {
     return m_userStylesPathChanged;
 }
 
-io::path_t NotationConfiguration::defaultStyleFilePath() const
+muse::io::path_t NotationConfiguration::defaultStyleFilePath() const
 {
     return engravingConfiguration()->defaultStyleFilePath();
 }
 
-void NotationConfiguration::setDefaultStyleFilePath(const io::path_t& path)
+void NotationConfiguration::setDefaultStyleFilePath(const muse::io::path_t& path)
 {
     engravingConfiguration()->setDefaultStyleFilePath(path.toQString());
 }
 
-io::path_t NotationConfiguration::partStyleFilePath() const
+async::Channel<muse::io::path_t> NotationConfiguration::defaultStyleFilePathChanged() const
+{
+    return engravingConfiguration()->defaultStyleFilePathChanged();
+}
+
+muse::io::path_t NotationConfiguration::partStyleFilePath() const
 {
     return engravingConfiguration()->partStyleFilePath();
 }
 
-void NotationConfiguration::setPartStyleFilePath(const io::path_t& path)
+void NotationConfiguration::setPartStyleFilePath(const muse::io::path_t& path)
 {
     engravingConfiguration()->setPartStyleFilePath(path.toQString());
+}
+
+async::Channel<muse::io::path_t> NotationConfiguration::partStyleFilePathChanged() const
+{
+    return engravingConfiguration()->partStyleFilePathChanged();
+}
+
+muse::io::path_t NotationConfiguration::userMusicFontsPath() const
+{
+    return settings()->value(USER_MUSIC_FONTS_PATH).toPath();
+}
+
+void NotationConfiguration::setUserMusicFontsPath(const muse::io::path_t& path)
+{
+    settings()->setSharedValue(USER_MUSIC_FONTS_PATH, Val(path));
+}
+
+muse::async::Channel<muse::io::path_t> NotationConfiguration::userMusicFontsPathChanged() const
+{
+    return m_userMusicFontsPathChanged;
+}
+
+NoteInputMethod NotationConfiguration::defaultNoteInputMethod() const
+{
+    std::string str = settings()->value(DEFAULT_NOTE_INPUT_METHOD).toString();
+    return muse::key(NOTE_INPUT_METHOD_TO_STR, str, NoteInputMethod::BY_NOTE_NAME);
+}
+
+void NotationConfiguration::setDefaultNoteInputMethod(NoteInputMethod method)
+{
+    std::string str = muse::value(NOTE_INPUT_METHOD_TO_STR, method);
+    settings()->setSharedValue(DEFAULT_NOTE_INPUT_METHOD, Val(str));
+}
+
+async::Notification NotationConfiguration::defaultNoteInputMethodChanged() const
+{
+    return m_defaultNoteInputMethodChanged;
+}
+
+bool NotationConfiguration::addAccidentalDotsArticulationsToNextNoteEntered() const
+{
+    return settings()->value(ADD_ACCIDENTAL_ARTICULATIONS_DOTS_TO_NEXT_NOTE_ENTERED).toBool();
+}
+
+void NotationConfiguration::setAddAccidentalDotsArticulationsToNextNoteEntered(bool value)
+{
+    settings()->setSharedValue(ADD_ACCIDENTAL_ARTICULATIONS_DOTS_TO_NEXT_NOTE_ENTERED, Val(value));
+}
+
+muse::async::Notification NotationConfiguration::addAccidentalDotsArticulationsToNextNoteEnteredChanged() const
+{
+    return m_addAccidentalDotsArticulationsToNextNoteEnteredChanged;
 }
 
 bool NotationConfiguration::isMidiInputEnabled() const
@@ -554,6 +833,26 @@ bool NotationConfiguration::isMidiInputEnabled() const
 void NotationConfiguration::setIsMidiInputEnabled(bool enabled)
 {
     settings()->setSharedValue(IS_MIDI_INPUT_ENABLED, Val(enabled));
+}
+
+async::Notification NotationConfiguration::isMidiInputEnabledChanged() const
+{
+    return m_isMidiInputEnabledChanged;
+}
+
+bool NotationConfiguration::startNoteInputAtSelectedNoteRestWhenPressingMidiKey() const
+{
+    return settings()->value(START_NOTE_INPUT_AT_SELECTED_NOTE_REST_WHEN_PRESSING_MIDI_KEY).toBool();
+}
+
+void NotationConfiguration::setStartNoteInputAtSelectedNoteRestWhenPressingMidiKey(bool value)
+{
+    settings()->setSharedValue(START_NOTE_INPUT_AT_SELECTED_NOTE_REST_WHEN_PRESSING_MIDI_KEY, Val(value));
+}
+
+async::Notification NotationConfiguration::startNoteInputAtSelectedNoteRestWhenPressingMidiKeyChanged() const
+{
+    return m_startNoteInputAtSelectedNoteRestWhenPressingMidiKeyChanged;
 }
 
 bool NotationConfiguration::isAutomaticallyPanEnabled() const
@@ -602,9 +901,39 @@ void NotationConfiguration::setIsPlayChordSymbolsEnabled(bool enabled)
     settings()->setSharedValue(IS_PLAY_CHORD_SYMBOLS_ENABLED, Val(enabled));
 }
 
-async::Notification NotationConfiguration::isPlayChordSymbolsChanged() const
+muse::async::Notification NotationConfiguration::isPlayChordSymbolsChanged() const
 {
     return m_isPlayChordSymbolsChanged;
+}
+
+bool NotationConfiguration::isPlayPreviewNotesInInputByDuration() const
+{
+    return settings()->value(IS_PLAY_PREVIEW_NOTES_IN_INPUT_BY_DURATION_ENABLED).toBool();
+}
+
+void NotationConfiguration::setIsPlayPreviewNotesInInputByDuration(bool play)
+{
+    settings()->setSharedValue(IS_PLAY_PREVIEW_NOTES_IN_INPUT_BY_DURATION_ENABLED, Val(play));
+}
+
+muse::async::Notification NotationConfiguration::isPlayPreviewNotesInInputByDurationChanged() const
+{
+    return m_isPlayNotesPreviewInInputByDurationChanged;
+}
+
+bool NotationConfiguration::playPreviewNotesWithScoreDynamics() const
+{
+    return settings()->value(PLAY_PREVIEW_NOTES_WITH_SCORE_DYNAMICS).toBool();
+}
+
+void NotationConfiguration::setPlayPreviewNotesWithScoreDynamics(bool use)
+{
+    settings()->setSharedValue(PLAY_PREVIEW_NOTES_WITH_SCORE_DYNAMICS, Val(use));
+}
+
+muse::async::Notification NotationConfiguration::playPreviewNotesWithScoreDynamicsChanged() const
+{
+    return m_playPreviewNotesWithScoreDynamicsChanged;
 }
 
 bool NotationConfiguration::isMetronomeEnabled() const
@@ -615,6 +944,11 @@ bool NotationConfiguration::isMetronomeEnabled() const
 void NotationConfiguration::setIsMetronomeEnabled(bool enabled)
 {
     settings()->setSharedValue(IS_METRONOME_ENABLED, Val(enabled));
+}
+
+muse::async::Notification NotationConfiguration::isMetronomeEnabledChanged() const
+{
+    return m_isMetronomeEnabledChanged;
 }
 
 bool NotationConfiguration::isCountInEnabled() const
@@ -629,29 +963,27 @@ void NotationConfiguration::setIsCountInEnabled(bool enabled)
 
 double NotationConfiguration::guiScaling() const
 {
-    NOT_IMPLEMENTED;
-    // return uiConfiguration()->guiScaling();
+    return uiConfiguration()->guiScaling();
 }
 
 double NotationConfiguration::notationScaling() const
 {
-    NOT_IMPLEMENTED;
-    // return uiConfiguration()->physicalDpi() / mu::engraving::DPI;
+    return uiConfiguration()->physicalDpi() / mu::engraving::DPI;
 }
 
-ValCh<framework::Orientation> NotationConfiguration::canvasOrientation() const
+ValCh<muse::Orientation> NotationConfiguration::canvasOrientation() const
 {
-    ValCh<framework::Orientation> orientation;
+    ValCh<muse::Orientation> orientation;
     orientation.ch = m_canvasOrientationChanged;
     bool isVertical = settings()->value(IS_CANVAS_ORIENTATION_VERTICAL_KEY).toBool();
-    orientation.val = isVertical ? framework::Orientation::Vertical : framework::Orientation::Horizontal;
+    orientation.val = isVertical ? muse::Orientation::Vertical : muse::Orientation::Horizontal;
 
     return orientation;
 }
 
-void NotationConfiguration::setCanvasOrientation(framework::Orientation orientation)
+void NotationConfiguration::setCanvasOrientation(muse::Orientation orientation)
 {
-    bool isVertical = orientation == framework::Orientation::Vertical;
+    bool isVertical = orientation == muse::Orientation::Vertical;
     mu::engraving::MScore::setVerticalOrientation(isVertical);
 
     settings()->setSharedValue(IS_CANVAS_ORIENTATION_VERTICAL_KEY, Val(isVertical));
@@ -683,6 +1015,11 @@ void NotationConfiguration::setColorNotesOutsideOfUsablePitchRange(bool value)
     settings()->setSharedValue(COLOR_NOTES_OUTSIDE_OF_USABLE_PITCH_RANGE, Val(value));
 }
 
+async::Channel<bool> NotationConfiguration::colorNotesOutsideOfUsablePitchRangeChanged() const
+{
+    return m_colorNotesOutsideOfUsablePitchRangeChanged;
+}
+
 bool NotationConfiguration::warnGuitarBends() const
 {
     return settings()->value(WARN_GUITAR_BENDS).toBool();
@@ -692,6 +1029,11 @@ void NotationConfiguration::setWarnGuitarBends(bool value)
 {
     mu::engraving::MScore::warnGuitarBends = value;
     settings()->setSharedValue(WARN_GUITAR_BENDS, Val(value));
+}
+
+async::Channel<bool> NotationConfiguration::warnGuitarBendsChanged() const
+{
+    return m_warnGuitarBendsChanged;
 }
 
 int NotationConfiguration::delayBetweenNotesInRealTimeModeMilliseconds() const
@@ -704,6 +1046,26 @@ void NotationConfiguration::setDelayBetweenNotesInRealTimeModeMilliseconds(int d
     settings()->setSharedValue(REALTIME_DELAY, Val(delayMs));
 }
 
+async::Channel<int> NotationConfiguration::delayBetweenNotesInRealTimeModeMillisecondsChanged() const
+{
+    return m_delayBetweenNotesInRealTimeModeMillisecondsChanged;
+}
+
+bool NotationConfiguration::useMidiVelocityAndDurationDuringNoteInput() const
+{
+    return settings()->value(USE_MIDI_VELOCITY_AND_DURATION_DURING_NOTE_INPUT).toBool();
+}
+
+void NotationConfiguration::setUseMidiVelocityAndDurationDuringNoteInput(bool use)
+{
+    settings()->setSharedValue(USE_MIDI_VELOCITY_AND_DURATION_DURING_NOTE_INPUT, Val(use));
+}
+
+muse::async::Channel<bool> NotationConfiguration::useMidiVelocityAndDurationDuringNoteInputChanged() const
+{
+    return m_useMidiVelocityAndDurationDuringNoteInputChanged;
+}
+
 int NotationConfiguration::notePlayDurationMilliseconds() const
 {
     return settings()->value(NOTE_DEFAULT_PLAY_DURATION).toInt();
@@ -711,8 +1073,12 @@ int NotationConfiguration::notePlayDurationMilliseconds() const
 
 void NotationConfiguration::setNotePlayDurationMilliseconds(int durationMs)
 {
-    mu::engraving::MScore::defaultPlayDuration = durationMs;
     settings()->setSharedValue(NOTE_DEFAULT_PLAY_DURATION, Val(durationMs));
+}
+
+async::Channel<int> NotationConfiguration::notePlayDurationMillisecondsChanged() const
+{
+    return m_notePlayDurationMillisecondsChanged;
 }
 
 void NotationConfiguration::setTemplateModeEnabled(std::optional<bool> enabled)
@@ -725,19 +1091,19 @@ void NotationConfiguration::setTestModeEnabled(std::optional<bool> enabled)
     mu::engraving::MScore::testMode = enabled ? enabled.value() : false;
 }
 
-io::path_t NotationConfiguration::instrumentListPath() const
+muse::io::path_t NotationConfiguration::instrumentListPath() const
 {
-    return globalConfiguration()->appDataPath() + "instruments/instruments.xml";
+    return ":/engraving/instruments/instruments.xml";
 }
 
 io::paths_t NotationConfiguration::scoreOrderListPaths() const
 {
     io::paths_t paths;
 
-    io::path_t firstScoreOrderListPath = this->firstScoreOrderListPath();
+    muse::io::path_t firstScoreOrderListPath = this->firstScoreOrderListPath();
     paths.push_back(firstScoreOrderListPath);
 
-    io::path_t secondScoreOrderListPath = this->secondScoreOrderListPath();
+    muse::io::path_t secondScoreOrderListPath = this->secondScoreOrderListPath();
     if (!secondScoreOrderListPath.empty()) {
         paths.push_back(secondScoreOrderListPath);
     }
@@ -745,7 +1111,7 @@ io::paths_t NotationConfiguration::scoreOrderListPaths() const
     return paths;
 }
 
-async::Notification NotationConfiguration::scoreOrderListPathsChanged() const
+muse::async::Notification NotationConfiguration::scoreOrderListPathsChanged() const
 {
     return m_scoreOrderListPathsChanged;
 }
@@ -772,51 +1138,51 @@ void NotationConfiguration::setUserScoreOrderListPaths(const io::paths_t& paths)
     }
 }
 
-io::path_t NotationConfiguration::stringTuningsPresetsPath() const
+muse::io::path_t NotationConfiguration::stringTuningsPresetsPath() const
 {
-    return globalConfiguration()->appDataPath() + "instruments/string_tunings_presets.json";
+    return ":/engraving/instruments/string_tunings_presets.json";
 }
 
-bool NotationConfiguration::isSnappedToGrid(framework::Orientation gridOrientation) const
+bool NotationConfiguration::isSnappedToGrid(muse::Orientation gridOrientation) const
 {
     switch (gridOrientation) {
-    case framework::Orientation::Horizontal: return settings()->value(IS_SNAPPED_TO_HORIZONTAL_GRID_KEY).toBool();
-    case framework::Orientation::Vertical: return settings()->value(IS_SNAPPED_TO_VERTICAL_GRID_KEY).toBool();
+    case muse::Orientation::Horizontal: return settings()->value(IS_SNAPPED_TO_HORIZONTAL_GRID_KEY).toBool();
+    case muse::Orientation::Vertical: return settings()->value(IS_SNAPPED_TO_VERTICAL_GRID_KEY).toBool();
     }
 
     return false;
 }
 
-void NotationConfiguration::setIsSnappedToGrid(framework::Orientation gridOrientation, bool isSnapped)
+void NotationConfiguration::setIsSnappedToGrid(muse::Orientation gridOrientation, bool isSnapped)
 {
     switch (gridOrientation) {
-    case framework::Orientation::Horizontal:
+    case muse::Orientation::Horizontal:
         settings()->setSharedValue(IS_SNAPPED_TO_HORIZONTAL_GRID_KEY, Val(isSnapped));
         break;
-    case framework::Orientation::Vertical:
+    case muse::Orientation::Vertical:
         settings()->setSharedValue(IS_SNAPPED_TO_VERTICAL_GRID_KEY, Val(isSnapped));
         break;
     }
 }
 
-int NotationConfiguration::gridSizeSpatium(framework::Orientation gridOrientation) const
+int NotationConfiguration::gridSizeSpatium(muse::Orientation gridOrientation) const
 {
     switch (gridOrientation) {
-    case framework::Orientation::Horizontal: return settings()->value(HORIZONTAL_GRID_SIZE_KEY).toInt();
-    case framework::Orientation::Vertical: return settings()->value(VERTICAL_GRID_SIZE_KEY).toInt();
+    case muse::Orientation::Horizontal: return settings()->value(HORIZONTAL_GRID_SIZE_KEY).toInt();
+    case muse::Orientation::Vertical: return settings()->value(VERTICAL_GRID_SIZE_KEY).toInt();
     }
 
     return DEFAULT_GRID_SIZE_SPATIUM;
 }
 
-void NotationConfiguration::setGridSize(framework::Orientation gridOrientation, int sizeSpatium)
+void NotationConfiguration::setGridSize(muse::Orientation gridOrientation, int sizeSpatium)
 {
     switch (gridOrientation) {
-    case framework::Orientation::Horizontal:
+    case muse::Orientation::Horizontal:
         mu::engraving::MScore::setHRaster(sizeSpatium);
         settings()->setSharedValue(HORIZONTAL_GRID_SIZE_KEY, Val(sizeSpatium));
         break;
-    case framework::Orientation::Vertical:
+    case muse::Orientation::Vertical:
         mu::engraving::MScore::setVRaster(sizeSpatium);
         settings()->setSharedValue(VERTICAL_GRID_SIZE_KEY, Val(sizeSpatium));
         break;
@@ -873,37 +1239,168 @@ ValCh<int> NotationConfiguration::pianoKeyboardNumberOfKeys() const
     return m_pianoKeyboardNumberOfKeys;
 }
 
+bool NotationConfiguration::useNewPercussionPanel() const
+{
+    return settings()->value(USE_NEW_PERCUSSION_PANEL_KEY).toBool();
+}
+
+void NotationConfiguration::setUseNewPercussionPanel(bool use)
+{
+    settings()->setSharedValue(USE_NEW_PERCUSSION_PANEL_KEY, Val(use));
+}
+
+Notification NotationConfiguration::useNewPercussionPanelChanged() const
+{
+    return m_useNewPercussionPanelChanged;
+}
+
+bool NotationConfiguration::percussionPanelUseNotationPreview() const
+{
+    return settings()->value(PERCUSSION_PANEL_USE_NOTATION_PREVIEW_KEY).toBool();
+}
+
+void NotationConfiguration::setPercussionPanelUseNotationPreview(bool use)
+{
+    settings()->setSharedValue(PERCUSSION_PANEL_USE_NOTATION_PREVIEW_KEY, Val(use));
+}
+
+Notification NotationConfiguration::percussionPanelUseNotationPreviewChanged() const
+{
+    return m_percussionPanelUseNotationPreviewChanged;
+}
+
+PercussionPanelAutoShowMode NotationConfiguration::percussionPanelAutoShowMode() const
+{
+    return settings()->value(PERCUSSION_PANEL_AUTO_SHOW_MODE_KEY).toEnum<PercussionPanelAutoShowMode>();
+}
+
+void NotationConfiguration::setPercussionPanelAutoShowMode(PercussionPanelAutoShowMode autoShowMode)
+{
+    settings()->setSharedValue(PERCUSSION_PANEL_AUTO_SHOW_MODE_KEY, Val(autoShowMode));
+}
+
+Notification NotationConfiguration::percussionPanelAutoShowModeChanged() const
+{
+    return m_percussionPanelAutoShowModeChanged;
+}
+
+bool NotationConfiguration::autoClosePercussionPanel() const
+{
+    return settings()->value(AUTO_CLOSE_PERCUSSION_PANEL_KEY).toBool();
+}
+
+void NotationConfiguration::setAutoClosePercussionPanel(bool autoClose)
+{
+    settings()->setSharedValue(AUTO_CLOSE_PERCUSSION_PANEL_KEY, Val(autoClose));
+}
+
+Notification NotationConfiguration::autoClosePercussionPanelChanged() const
+{
+    return m_autoClosePercussionPanelChanged;
+}
+
+bool NotationConfiguration::showPercussionPanelPadSwapDialog() const
+{
+    return settings()->value(SHOW_PERCUSSION_PANEL_SWAP_DIALOG).toBool();
+}
+
+void NotationConfiguration::setShowPercussionPanelPadSwapDialog(bool show)
+{
+    settings()->setSharedValue(SHOW_PERCUSSION_PANEL_SWAP_DIALOG, Val(show));
+}
+
+Notification NotationConfiguration::showPercussionPanelPadSwapDialogChanged() const
+{
+    return m_showPercussionPanelPadSwapDialogChanged;
+}
+
+bool NotationConfiguration::percussionPanelMoveMidiNotesAndShortcuts() const
+{
+    return settings()->value(PERCUSSION_PANEL_MOVE_MIDI_NOTES_AND_SHORTCUTS).toBool();
+}
+
+void NotationConfiguration::setPercussionPanelMoveMidiNotesAndShortcuts(bool move)
+{
+    settings()->setSharedValue(PERCUSSION_PANEL_MOVE_MIDI_NOTES_AND_SHORTCUTS, Val(move));
+}
+
+Notification NotationConfiguration::percussionPanelMoveMidiNotesAndShortcutsChanged() const
+{
+    return m_percussionPanelMoveMidiNotesAndShortcutsChanged;
+}
+
 void NotationConfiguration::setPianoKeyboardNumberOfKeys(int number)
 {
     settings()->setSharedValue(PIANO_KEYBOARD_NUMBER_OF_KEYS, Val(number));
 }
 
-io::path_t NotationConfiguration::firstScoreOrderListPath() const
+ValCh<bool> NotationConfiguration::midiUseWrittenPitch() const
+{
+    return m_midiInputUseWrittenPitch;
+}
+
+void NotationConfiguration::setMidiUseWrittenPitch(bool useWrittenPitch)
+{
+    settings()->setSharedValue(USE_MIDI_INPUT_WRITTEN_PITCH, Val(useWrittenPitch));
+}
+
+muse::io::path_t NotationConfiguration::firstScoreOrderListPath() const
 {
     return settings()->value(FIRST_SCORE_ORDER_LIST_KEY).toString();
 }
 
-void NotationConfiguration::setFirstScoreOrderListPath(const io::path_t& path)
+void NotationConfiguration::setFirstScoreOrderListPath(const muse::io::path_t& path)
 {
     settings()->setSharedValue(FIRST_SCORE_ORDER_LIST_KEY, Val(path.toStdString()));
 }
 
-io::path_t NotationConfiguration::secondScoreOrderListPath() const
+muse::io::path_t NotationConfiguration::secondScoreOrderListPath() const
 {
     return settings()->value(SECOND_SCORE_ORDER_LIST_KEY).toString();
 }
 
-void NotationConfiguration::setSecondScoreOrderListPath(const io::path_t& path)
+void NotationConfiguration::setSecondScoreOrderListPath(const muse::io::path_t& path)
 {
     settings()->setSharedValue(SECOND_SCORE_ORDER_LIST_KEY, Val(path.toStdString()));
 }
 
-mu::io::path_t NotationConfiguration::styleFileImportPath() const
+muse::io::path_t NotationConfiguration::styleFileImportPath() const
 {
     return settings()->value(STYLE_FILE_IMPORT_PATH_KEY).toString();
 }
 
-void NotationConfiguration::setStyleFileImportPath(const io::path_t& path)
+void NotationConfiguration::setStyleFileImportPath(const muse::io::path_t& path)
 {
     settings()->setSharedValue(STYLE_FILE_IMPORT_PATH_KEY, Val(path.toStdString()));
+}
+
+async::Channel<std::string> NotationConfiguration::styleFileImportPathChanged() const
+{
+    return m_styleFileImportPathChanged;
+}
+
+int NotationConfiguration::styleDialogLastPageIndex() const
+{
+    return m_styleDialogLastPageIndex;
+}
+
+void NotationConfiguration::setStyleDialogLastPageIndex(int value)
+{
+    m_styleDialogLastPageIndex = value;
+}
+
+int NotationConfiguration::styleDialogLastSubPageIndex() const
+{
+    return m_styleDialogLastSubPageIndex;
+}
+
+void NotationConfiguration::setStyleDialogLastSubPageIndex(int value)
+{
+    m_styleDialogLastSubPageIndex = value;
+}
+
+void NotationConfiguration::resetStyleDialogPageIndices()
+{
+    setStyleDialogLastPageIndex(0);
+    setStyleDialogLastSubPageIndex(0);
 }

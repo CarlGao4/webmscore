@@ -19,20 +19,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef PROCESS_H
-#define PROCESS_H
+#ifndef MUSE_GLOBAL_PROCESS_H
+#define MUSE_GLOBAL_PROCESS_H
 
 #include "../iprocess.h"
 
-namespace mu {
+namespace muse {
 class Process : public IProcess
 {
 public:
     Process() = default;
 
-    int execute(const std::string& program, const std::vector<std::string>& arguments) override;
-    bool startDetached(const std::string& program, const std::vector<std::string>& arguments) override;
+    int execute(const std::string& program, const std::vector<std::string>& arguments = {}) override;
+    bool startDetached(const std::string& program, const std::vector<std::string>& arguments = {}) override;
 };
 }
 
-#endif // PROCESS_H
+#endif // MUSE_GLOBAL_PROCESS_H

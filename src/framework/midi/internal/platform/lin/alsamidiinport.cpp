@@ -26,18 +26,18 @@
 #include <alsa/seq_midi_event.h>
 
 #include "midierrors.h"
-#include "stringutils.h"
-#include "translation.h"
-#include "defer.h"
+#include "global/translation.h"
+#include "global/defer.h"
 #include "log.h"
 
-struct mu::midi::AlsaMidiInPort::Alsa {
+struct muse::midi::AlsaMidiInPort::Alsa {
     snd_seq_t* midiIn = nullptr;
     int client = -1;
     int port = -1;
 };
 
-using namespace mu::midi;
+using namespace muse;
+using namespace muse::midi;
 
 void AlsaMidiInPort::init()
 {
@@ -75,12 +75,13 @@ MidiDeviceList AlsaMidiInPort::availableDevices() const
     std::lock_guard lock(m_devicesMutex);
 
     int streams = SND_SEQ_OPEN_INPUT;
-    unsigned int cap = SND_SEQ_PORT_CAP_SUBS_READ | SND_SEQ_PORT_CAP_READ;
-    unsigned int type = SND_SEQ_PORT_TYPE_PORT | SND_SEQ_PORT_TYPE_HARDWARE;
+    const unsigned int cap = SND_SEQ_PORT_CAP_SUBS_READ | SND_SEQ_PORT_CAP_READ;
+    const unsigned int type_hw = SND_SEQ_PORT_TYPE_HARDWARE;
+    const unsigned int type_sw = SND_SEQ_PORT_TYPE_SOFTWARE;
 
     MidiDeviceList ret;
 
-    ret.push_back({ NONE_DEVICE_ID, trc("midi", "No device") });
+    ret.push_back({ NONE_DEVICE_ID, muse::trc("midi", "No device") });
 
     snd_seq_client_info_t* cinfo;
     snd_seq_port_info_t* pinfo;
@@ -112,7 +113,7 @@ MidiDeviceList AlsaMidiInPort::availableDevices() const
             uint32_t types = snd_seq_port_info_get_type(pinfo);
             uint32_t caps = snd_seq_port_info_get_capability(pinfo);
 
-            bool canConnect = ((caps & cap) == cap) && ((types & type) == type);
+            bool canConnect = ((caps & cap) == cap) && (((types & type_hw) == type_hw) || ((types & type_sw) == type_sw));
 
             if (canConnect) {
                 MidiDevice dev;
@@ -132,12 +133,12 @@ MidiDeviceList AlsaMidiInPort::availableDevices() const
     return ret;
 }
 
-mu::async::Notification AlsaMidiInPort::availableDevicesChanged() const
+async::Notification AlsaMidiInPort::availableDevicesChanged() const
 {
     return m_availableDevicesChanged;
 }
 
-mu::Ret AlsaMidiInPort::connect(const MidiDeviceID& deviceID)
+Ret AlsaMidiInPort::connect(const MidiDeviceID& deviceID)
 {
     if (!deviceExists(deviceID)) {
         return make_ret(Err::MidiFailedConnect, "not found device, id: " + deviceID);
@@ -151,7 +152,7 @@ mu::Ret AlsaMidiInPort::connect(const MidiDeviceID& deviceID)
         m_deviceChanged.notify();
     };
 
-    Ret ret = make_ok();
+    Ret ret = muse::make_ok();
 
     if (!deviceID.empty() && deviceID != NONE_DEVICE_ID) {
         std::vector<int> deviceParams = splitDeviceId(deviceID);
@@ -220,17 +221,17 @@ MidiDeviceID AlsaMidiInPort::deviceID() const
     return m_deviceID;
 }
 
-mu::async::Notification AlsaMidiInPort::deviceChanged() const
+async::Notification AlsaMidiInPort::deviceChanged() const
 {
     return m_deviceChanged;
 }
 
-mu::async::Channel<tick_t, Event> AlsaMidiInPort::eventReceived() const
+async::Channel<tick_t, Event> AlsaMidiInPort::eventReceived() const
 {
     return m_eventReceived;
 }
 
-mu::Ret AlsaMidiInPort::run()
+Ret AlsaMidiInPort::run()
 {
     if (!isConnected()) {
         return make_ret(Err::MidiNotConnected);
@@ -334,7 +335,7 @@ void AlsaMidiInPort::doProcess()
             continue;
         }
 
-        e = Event::fromMIDI10Package(data);
+        e = Event::fromMidi10Package(data);
 
         e = e.toMIDI20();
         if (e) {

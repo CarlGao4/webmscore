@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -51,16 +51,14 @@ struct ElementKey
     {
         return !(*this == key);
     }
+
+    bool operator<(const ElementKey& other) const
+    {
+        return std::tie(type, subtype) < std::tie(other.type, other.subtype);
+    }
 };
 
-using ElementKeyList = QList<ElementKey>;
-using ElementKeySet = QSet<ElementKey>;
-
-inline uint qHash(const ElementKey& key)
-{
-    QString subtypePart = key.subtype >= 0 ? QString::number(key.subtype) : "";
-    return qHash(QString::number(static_cast<int>(key.type)) + subtypePart);
-}
+using ElementKeySet = std::set<ElementKey>;
 
 class CommonTypes
 {
@@ -72,16 +70,30 @@ public:
         PLACEMENT_TYPE_BELOW
     };
 
+    enum class AlignmentH {
+        LEFT,
+        RIGHT,
+        HCENTER
+    };
+
+    enum class AutoOnOff {
+        AUTO_ON_OFF_AUTO,
+        AUTO_ON_OFF_ON,
+        AUTO_ON_OFF_OFF,
+    };
+
+    Q_ENUM(AutoOnOff);
     Q_ENUM(Placement)
+    Q_ENUM(AlignmentH)
 };
 
 inline double formatDoubleFunc(const QVariant& elementPropertyValue)
 {
-    return DataFormatter::roundDouble(elementPropertyValue.toDouble());
+    return muse::DataFormatter::roundDouble(elementPropertyValue.toDouble());
 }
 
 template<typename T>
-inline QVariant object(T type, QString title, ui::IconCode::Code iconCode = ui::IconCode::Code::NONE)
+inline QVariant object(T type, QString title, muse::ui::IconCode::Code iconCode = muse::ui::IconCode::Code::NONE)
 {
     QVariantMap obj;
     obj["value"] = static_cast<int>(type);

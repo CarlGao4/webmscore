@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -43,11 +43,11 @@ class PaletteProvider;
 //   PaletteElementEditor
 // ========================================================
 
-class PaletteElementEditor : public QObject, public async::Asyncable
+class PaletteElementEditor : public QObject, public muse::async::Asyncable
 {
     Q_OBJECT
 
-    INJECT(framework::IInteractive, interactive)
+    INJECT(muse::IInteractive, interactive)
     INJECT(IPaletteProvider, paletteProvider)
 
     Q_PROPERTY(bool valid READ valid CONSTANT)
@@ -62,6 +62,8 @@ public:
 
     bool valid() const;
     QString actionName() const;
+
+    void setPaletteIndex(QPersistentModelIndex paletteIndex);
 
     Q_INVOKABLE void open();
 
@@ -127,18 +129,21 @@ public:
     }
 
     Q_INVOKABLE mu::palette::PaletteElementEditor* elementEditor(const QModelIndex& index);
+
+private:
+    QMap<Palette::Type, PaletteElementEditor*> m_paletteElementEditorMap;
 };
 
 // ========================================================
 //   UserPaletteController
 // ========================================================
 
-class UserPaletteController : public AbstractPaletteController, public async::Asyncable
+class UserPaletteController : public AbstractPaletteController, public muse::async::Asyncable
 {
     Q_OBJECT
 
     INJECT(context::IGlobalContext, globalContext)
-    INJECT(framework::IInteractive, interactive)
+    INJECT(muse::IInteractive, interactive)
     INJECT(IPaletteConfiguration, configuration)
 
     QAbstractItemModel* _model;
@@ -200,12 +205,12 @@ public:
 //   PaletteProvider
 // ========================================================
 
-class PaletteProvider : public QObject, public IPaletteProvider, public async::Asyncable
+class PaletteProvider : public QObject, public IPaletteProvider, public muse::async::Asyncable
 {
     Q_OBJECT
 
     INJECT(IPaletteConfiguration, configuration)
-    INJECT(framework::IInteractive, interactive)
+    INJECT(muse::IInteractive, interactive)
 
     Q_PROPERTY(QAbstractItemModel * mainPaletteModel READ mainPaletteModel NOTIFY mainPaletteChanged)
     Q_PROPERTY(mu::palette::AbstractPaletteController * mainPaletteController READ mainPaletteController NOTIFY mainPaletteChanged)
@@ -215,18 +220,19 @@ class PaletteProvider : public QObject, public IPaletteProvider, public async::A
 
     Q_PROPERTY(bool isSinglePalette READ isSinglePalette NOTIFY isSinglePaletteChanged)
     Q_PROPERTY(bool isSingleClickToOpenPalette READ isSingleClickToOpenPalette NOTIFY isSingleClickToOpenPaletteChanged)
+    Q_PROPERTY(bool isPaletteDragEnabled READ isPaletteDragEnabled NOTIFY isPaletteDragEnabledChanged)
 
 public:
     void init() override;
 
     PaletteTreeModel* userPaletteModel() const { return m_userPaletteModel; }
     PaletteTreePtr userPaletteTree() const override { return m_userPaletteModel->paletteTreePtr(); }
-    async::Notification userPaletteTreeChanged() const override { return m_userPaletteChanged; }
+    muse::async::Notification userPaletteTreeChanged() const override { return m_userPaletteChanged; }
     void setUserPaletteTree(PaletteTreePtr tree) override;
 
     void setDefaultPaletteTree(PaletteTreePtr tree) override;
 
-    async::Channel<engraving::ElementPtr> addCustomItemRequested() const override;
+    muse::async::Channel<engraving::ElementPtr> addCustomItemRequested() const override;
 
     Q_INVOKABLE QModelIndex poolPaletteIndex(const QModelIndex& index, mu::palette::FilterPaletteTreeModel* poolPalette) const;
     Q_INVOKABLE QModelIndex customElementsPaletteIndex(const QModelIndex& index);
@@ -237,14 +243,14 @@ public:
 
     Q_INVOKABLE QAbstractItemModel* availableExtraPalettesModel() const;
     Q_INVOKABLE bool addPalette(const QPersistentModelIndex&);
-    Q_INVOKABLE bool removeCustomPalette(const QPersistentModelIndex&);
 
-    Q_INVOKABLE bool resetPalette(const QModelIndex&);
+    Q_INVOKABLE void resetPalette(const QModelIndex&);
 
     Q_INVOKABLE bool savePalette(const QModelIndex&);
     Q_INVOKABLE bool loadPalette(const QModelIndex&);
 
     Q_INVOKABLE void setSearching(bool searching);
+    Q_INVOKABLE void setFilter(const QString&);
 
     bool paletteChanged() const { return m_userPaletteModel->paletteTreeChanged(); }
 
@@ -261,6 +267,7 @@ public:
 
     bool isSinglePalette() const;
     bool isSingleClickToOpenPalette() const;
+    bool isPaletteDragEnabled() const;
 
 signals:
     void userPaletteChanged();
@@ -268,6 +275,7 @@ signals:
 
     void isSinglePaletteChanged();
     void isSingleClickToOpenPaletteChanged();
+    void isPaletteDragEnabledChanged();
 
 private slots:
     void notifyAboutUserPaletteChanged()
@@ -290,11 +298,13 @@ private:
 
     QString getPaletteFilename(bool open, const QString& name = "") const;
 
+    void doResetPalette(const QModelIndex& index);
+
     PaletteTreeModel* m_userPaletteModel;
     PaletteTreeModel* m_masterPaletteModel;
     PaletteTreeModel* m_defaultPaletteModel; // palette used by "Reset palette" action
 
-    async::Notification m_userPaletteChanged;
+    muse::async::Notification m_userPaletteChanged;
 
     bool m_isSearching = false;
 
@@ -309,7 +319,7 @@ private:
     // PaletteController* m_masterPaletteController = nullptr;
     UserPaletteController* m_customElementsPaletteController = nullptr;
 
-    async::Channel<engraving::ElementPtr> m_addCustomItemRequested;
+    muse::async::Channel<engraving::ElementPtr> m_addCustomItemRequested;
 };
 }
 

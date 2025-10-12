@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -38,7 +38,7 @@ int PitchList::pitchOffset(int tick) const
         return 0;
     }
 
-    std::vector<int> ticks = mu::keys(*this);
+    std::vector<int> ticks = muse::keys(*this);
     auto it = std::upper_bound(ticks.cbegin(), ticks.cend(), tick);
     if (it == ticks.cbegin()) {
         return 0;

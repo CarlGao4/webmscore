@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -46,8 +46,8 @@ DurationElement::DurationElement(const ElementType& type, EngravingItem* parent,
 //   DurationElement
 //---------------------------------------------------------
 
-DurationElement::DurationElement(const DurationElement& e)
-    : EngravingItem(e)
+DurationElement::DurationElement(const DurationElement& e, bool link)
+    : EngravingItem(e, link)
 {
     m_tuplet   = 0;      // e._tuplet;
     m_duration = e.m_duration;
@@ -122,7 +122,7 @@ Fraction DurationElement::actualTicks() const
 void DurationElement::readAddTuplet(Tuplet* t)
 {
     setTuplet(t);
-    if (!score()->undoStack()->active()) {     // HACK, also added in Undo::AddElement()
+    if (!score()->undoStack()->hasActiveCommand()) { // HACK, also added in Undo::AddElement()
         t->add(this);
     }
 }

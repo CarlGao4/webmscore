@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -23,6 +23,7 @@
 
 #include "general/generalsettingsmodel.h"
 #include "measures/measuressettingsmodel.h"
+#include "emptystaves/emptystavesvisiblitysettingsmodel.h"
 #include "notation/notationsettingsproxymodel.h"
 #include "parts/partssettingsmodel.h"
 #include "text/textsettingsmodel.h"
@@ -43,8 +44,11 @@ InspectorListModel::InspectorListModel(QObject* parent)
     m_repository = new ElementRepositoryService(this);
 
     listenSelectionChanged();
+    listenScoreChanges();
+
     context()->currentNotationChanged().onNotify(this, [this]() {
         listenSelectionChanged();
+        listenScoreChanges();
 
         notifyModelsAboutNotationChanged();
     });
@@ -59,7 +63,7 @@ void InspectorListModel::buildModelsForSelectedElements(const ElementKeySet& sel
                                                                                                        isRangeSelection,
                                                                                                        selectedElementList);
 
-    createModelsBySectionType(buildingSectionTypeSet.values(), selectedElementKeySet);
+    createModelsBySectionType(buildingSectionTypeSet, selectedElementKeySet);
 
     sortModels();
 }
@@ -71,26 +75,42 @@ void InspectorListModel::buildModelsForEmptySelection()
         return;
     }
 
-    static const QList<InspectorSectionType> persistentSectionList {
+    static const InspectorSectionTypeSet persistentSections {
         InspectorSectionType::SECTION_SCORE_DISPLAY,
         InspectorSectionType::SECTION_SCORE_APPEARANCE
     };
 
-    removeUnusedModels({}, false /*isRangeSelection*/, {}, persistentSectionList);
+    removeUnusedModels({}, false /*isRangeSelection*/, {}, persistentSections);
 
-    createModelsBySectionType(persistentSectionList);
+    createModelsBySectionType(persistentSections);
+}
+
+bool InspectorListModel::alwaysUpdateModelList(const QList<engraving::EngravingItem*>& selectedElementList)
+{
+    // Force update of the list model where sections are only relevant to the child of the selected element
+    // eg. We need to update the text section of PlayCountText when a BarLine is selected
+    for (EngravingItem* el : selectedElementList) {
+        if (el->isBarLine()) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 void InspectorListModel::setElementList(const QList<mu::engraving::EngravingItem*>& selectedElementList, SelectionState selectionState)
 {
     TRACEFUNC;
 
+    bool forceUpdate = false;
+
     if (!m_modelList.isEmpty()) {
         if (context()->currentNotation() == nullptr) {
             buildModelsForEmptySelection();
         }
 
-        if (!m_repository->needUpdateElementList(selectedElementList, selectionState)) {
+        forceUpdate = alwaysUpdateModelList(selectedElementList);
+        if (!m_repository->needUpdateElementList(selectedElementList, selectionState) && !forceUpdate) {
             return;
         }
     }
@@ -108,6 +128,10 @@ void InspectorListModel::setElementList(const QList<mu::engraving::EngravingItem
     }
 
     m_repository->updateElementList(selectedElementList, selectionState);
+
+    if (forceUpdate) {
+        m_repository->elementsUpdated(selectedElementList);
+    }
 }
 
 int InspectorListModel::rowCount(const QModelIndex&) const
@@ -150,13 +174,20 @@ void InspectorListModel::setInspectorVisible(bool visible)
 
     if (visible) {
         updateElementList();
+
+        if (!m_changedPropertyIdSet.empty() || !m_changedStyleIdSet.empty()) {
+            onScoreChanged(m_changedPropertyIdSet, m_changedStyleIdSet);
+
+            m_changedPropertyIdSet.clear();
+            m_changedStyleIdSet.clear();
+        }
     }
 }
 
-void InspectorListModel::createModelsBySectionType(const QList<InspectorSectionType>& sectionTypeList,
+void InspectorListModel::createModelsBySectionType(const InspectorSectionTypeSet& sectionTypes,
                                                    const ElementKeySet& selectedElementKeySet)
 {
-    for (InspectorSectionType sectionType : sectionTypeList) {
+    for (InspectorSectionType sectionType : sectionTypes) {
         if (sectionType == InspectorSectionType::SECTION_UNDEFINED) {
             continue;
         }
@@ -183,6 +214,9 @@ void InspectorListModel::createModelsBySectionType(const QList<InspectorSectionT
         case InspectorSectionType::SECTION_MEASURES:
             newModel = new MeasuresSettingsModel(this, m_repository);
             break;
+        case InspectorSectionType::SECTION_EMPTY_STAVES:
+            newModel = new EmptyStavesVisibilitySettingsModel(this, m_repository);
+            break;
         case InspectorSectionType::SECTION_NOTATION:
             newModel = new NotationSettingsProxyModel(this, m_repository, selectedElementKeySet);
             break;
@@ -203,6 +237,8 @@ void InspectorListModel::createModelsBySectionType(const QList<InspectorSectionT
         }
 
         if (newModel) {
+            connect(newModel, &AbstractInspectorModel::requestReloadInspectorListModel, this,
+                    &InspectorListModel::updateElementList);
             newModel->init();
             m_modelList << newModel;
         }
@@ -213,7 +249,7 @@ void InspectorListModel::createModelsBySectionType(const QList<InspectorSectionT
 
 void InspectorListModel::removeUnusedModels(const ElementKeySet& newElementKeySet,
                                             bool isRangeSelection, const QList<engraving::EngravingItem*>& selectedElementList,
-                                            const QList<InspectorSectionType>& exclusions)
+                                            const InspectorSectionTypeSet& exclusions)
 {
     QList<AbstractInspectorModel*> modelsToRemove;
 
@@ -222,7 +258,7 @@ void InspectorListModel::removeUnusedModels(const ElementKeySet& newElementKeySe
                                                                                                     selectedElementList);
 
     for (AbstractInspectorModel* model : m_modelList) {
-        if (exclusions.contains(model->sectionType())) {
+        if (muse::contains(exclusions, model->sectionType())) {
             continue;
         }
 
@@ -250,13 +286,13 @@ bool InspectorListModel::isModelAllowed(const AbstractInspectorModel* model, con
 {
     InspectorModelType modelType = model->modelType();
 
-    if (modelType != InspectorModelType::TYPE_UNDEFINED && allowedModelTypes.contains(modelType)) {
+    if (modelType != InspectorModelType::TYPE_UNDEFINED && muse::contains(allowedModelTypes, modelType)) {
         return true;
     }
 
     auto proxyModel = dynamic_cast<const AbstractInspectorProxyModel*>(model);
     if (!proxyModel) {
-        return allowedSectionTypes.contains(model->sectionType());
+        return muse::contains(allowedSectionTypes, model->sectionType());
     }
 
     for (auto subModel : proxyModel->modelList()) {
@@ -321,6 +357,59 @@ void InspectorListModel::listenSelectionChanged()
     notation->interaction()->selectionChanged().onNotify(this, [this]() {
         updateElementList();
     });
+}
+
+void InspectorListModel::listenScoreChanges()
+{
+    INotationPtr notation = context()->currentNotation();
+    if (!notation) {
+        return;
+    }
+
+    notation->viewModeChanged().onNotify(this, [this]() {
+        for (AbstractInspectorModel* model : m_modelList) {
+            model->onNotationChanged({}, {});
+        }
+    });
+
+    notation->undoStack()->changesChannel().onReceive(this, [this](const ScoreChanges& changes) {
+        if (changes.isTextEditing) {
+            return;
+        }
+
+        if (!m_inspectorVisible) {
+            m_changedPropertyIdSet.insert(changes.changedPropertyIdSet.cbegin(), changes.changedPropertyIdSet.cend());
+            m_changedStyleIdSet.insert(changes.changedStyleIdSet.cbegin(), changes.changedStyleIdSet.cend());
+            return;
+        }
+
+        const INotationPtr notation = context()->currentNotation();
+        if (notation && notation->elements()->msScore()->selectionChanged()) {
+            updateElementList();
+        }
+
+        onScoreChanged(changes.changedPropertyIdSet, changes.changedStyleIdSet);
+    });
+}
+
+void InspectorListModel::onScoreChanged(const mu::engraving::PropertyIdSet& changedPropertyIdSet,
+                                        const mu::engraving::StyleIdSet& changedStyleIdSet)
+{
+    for (AbstractInspectorModel* model : m_modelList) {
+        if (!model->shouldUpdateOnScoreChange() || model->isEmpty()) {
+            continue;
+        }
+
+        if (!model->shouldUpdateOnEmptyPropertyAndStyleIdSets()) {
+            if (changedPropertyIdSet.empty() && changedStyleIdSet.empty()) {
+                continue;
+            }
+        }
+
+        mu::engraving::PropertyIdSet expandedPropertyIdSet = model->propertyIdSetFromStyleIdSet(changedStyleIdSet);
+        expandedPropertyIdSet.insert(changedPropertyIdSet.cbegin(), changedPropertyIdSet.cend());
+        model->onNotationChanged(expandedPropertyIdSet, changedStyleIdSet);
+    }
 }
 
 void InspectorListModel::updateElementList()

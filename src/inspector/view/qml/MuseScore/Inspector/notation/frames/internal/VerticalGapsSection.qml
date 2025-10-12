@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -21,8 +21,8 @@
  */
 import QtQuick 2.15
 
-import MuseScore.UiComponents 1.0
-import MuseScore.Ui 1.0
+import Muse.UiComponents 1.0
+import Muse.Ui 1.0
 import MuseScore.Inspector 1.0
 
 import "../../../common"
@@ -32,10 +32,12 @@ Item {
 
     property PropertyItem gapAbove: null
     property PropertyItem gapBelow: null
+    property PropertyItem notationGapAbove: null
+    property PropertyItem notationGapBelow: null
 
     property NavigationPanel navigationPanel: null
     property int navigationRowStart: 1
-    property int navigationRowEnd: gapBelow.navigationRowEnd
+    property int navigationRowEnd: gapNotationBelow.navigationRowEnd
 
     height: childrenRect.height
     width: parent.width
@@ -44,33 +46,93 @@ Item {
         gapAbove.focusOnFirst()
     }
 
+    StyledTextLabel {
+        id: gapToStaff
+        horizontalAlignment: Text.AlignLeft
+        text: qsTrc("inspector", "Gap to staff/frames")
+        font: ui.theme.bodyBoldFont
+    }
+
     SpinBoxPropertyView {
         id: gapAbove
+        anchors.top: gapToStaff.bottom
+        anchors.topMargin: 4
         anchors.left: parent.left
         anchors.right: parent.horizontalCenter
         anchors.rightMargin: 4
 
-        titleText: qsTrc("inspector", "Gap above")
+        titleText: qsTrc("inspector", "Above")
         propertyItem: root.gapAbove
 
         icon: IconCode.GAP_ABOVE
+        measureUnitsSymbol: qsTrc("global", "sp")
 
         navigationPanel: root.navigationPanel
         navigationRowStart: root.navigationRowStart + 1
+        accessibleName: qsTrc("inspector", "Gap to staff/frames above")
     }
 
     SpinBoxPropertyView {
         id: gapBelow
+        anchors.top: gapAbove.top
         anchors.left: parent.horizontalCenter
         anchors.leftMargin: 4
         anchors.right: parent.right
 
-        titleText: qsTrc("inspector", "Gap below")
+        titleText: qsTrc("inspector", "Below")
         propertyItem: root.gapBelow
 
         icon: IconCode.GAP_BELOW
+        measureUnitsSymbol: qsTrc("global", "sp")
 
         navigationPanel: root.navigationPanel
         navigationRowStart: gapAbove.navigationRowEnd + 1
+        accessibleName: qsTrc("inspector", "Gap to staff/frames below")
+    }
+
+    StyledTextLabel {
+        id: notationPadding
+        anchors.top: gapAbove.bottom
+        anchors.topMargin: 12
+        horizontalAlignment: Text.AlignLeft
+        text: qsTrc("inspector", "Clearance for notation")
+        font: ui.theme.bodyBoldFont
+    }
+
+    SpinBoxPropertyView {
+        id: gapNotationAbove
+        anchors.top: notationPadding.bottom
+        anchors.topMargin: 4
+        anchors.left: parent.left
+        anchors.right: parent.horizontalCenter
+        anchors.rightMargin: 4
+
+        titleText: qsTrc("inspector", "Above")
+        propertyItem: root.notationGapAbove
+
+        icon: IconCode.GAP_ABOVE
+        measureUnitsSymbol: qsTrc("global", "sp")
+
+        navigationPanel: root.navigationPanel
+        navigationRowStart: gapBelow.navigationRowEnd + 1
+        accessibleName: qsTrc("inspector", "Clearance for notation above")
+    }
+
+    SpinBoxPropertyView {
+        id: gapNotationBelow
+        anchors.top: gapNotationAbove.top
+        anchors.left: parent.horizontalCenter
+        anchors.leftMargin: 4
+        anchors.right: parent.right
+
+        titleText: qsTrc("inspector", "Below")
+        propertyItem: root.notationGapBelow
+
+        icon: IconCode.GAP_BELOW
+        measureUnitsSymbol: qsTrc("global", "sp")
+
+        navigationPanel: root.navigationPanel
+        navigationRowStart: gapNotationAbove.navigationRowEnd + 1
+        accessibleName: qsTrc("inspector", "Clearance for notation below")
     }
 }

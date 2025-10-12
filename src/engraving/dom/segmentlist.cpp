@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -46,6 +46,26 @@ SegmentList SegmentList::clone() const
     return dl;
 }
 
+Segment* SegmentList::at(int index) const
+{
+    Segment* s = m_first;
+    for (int i = 0; i < m_size; ++i) {
+        if (i == index) {
+            return s;
+        }
+        s = s->next();
+    }
+    return nullptr;
+}
+
+Segment* SegmentList::firstActive() const
+{
+    if (Segment* segment = m_first) {
+        return segment->isActive() ? segment : segment->nextActive();
+    }
+    return nullptr;
+}
+
 //---------------------------------------------------------
 //   check
 //---------------------------------------------------------
@@ -76,9 +96,16 @@ void SegmentList::check()
         case SegmentType::BarLine:
         case SegmentType::ChordRest:
         case SegmentType::Breath:
+        case SegmentType::ClefRepeatAnnounce:
+        case SegmentType::TimeSigRepeatAnnounce:
+        case SegmentType::KeySigRepeatAnnounce:
+        case SegmentType::ClefStartRepeatAnnounce:
+        case SegmentType::TimeSigStartRepeatAnnounce:
+        case SegmentType::KeySigStartRepeatAnnounce:
         case SegmentType::EndBarLine:
         case SegmentType::TimeSigAnnounce:
         case SegmentType::KeySigAnnounce:
+        case SegmentType::TimeTick:
             break;
         default:
             ASSERT_X(String(u"SegmentList::check: invalid segment type: %1").arg(int(s->segmentType())));
@@ -253,6 +280,16 @@ Segment* SegmentList::last(ElementFlag flags) const
 {
     for (Segment* s = m_last; s; s = s->prev()) {
         if (s->flag(flags)) {
+            return s;
+        }
+    }
+    return nullptr;
+}
+
+Segment* SegmentList::last(SegmentType types) const
+{
+    for (Segment* s = m_last; s; s = s->prev()) {
+        if (s->segmentType() & types) {
             return s;
         }
     }

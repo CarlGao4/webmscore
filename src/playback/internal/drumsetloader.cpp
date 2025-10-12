@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2024 MuseScore BVBA and others
+ * Copyright (C) 2024 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -23,32 +23,14 @@
 #include "drumsetloader.h"
 
 #include "notation/notationtypes.h"
-
-#include "engraving/rw/xmlreader.h"
+#include "notation/utilities/percussionutilities.h"
 
 #include "global/types/bytearray.h"
 
 using namespace mu::playback;
-using namespace mu::audio;
+using namespace muse::audio;
 using namespace mu::notation;
 using namespace mu::engraving;
-
-static void readDrumset(const mu::ByteArray& drumMapping, Drumset& drumset)
-{
-    XmlReader reader(drumMapping);
-
-    while (reader.readNextStartElement()) {
-        if (reader.name() == "museScore") {
-            while (reader.readNextStartElement()) {
-                if (reader.name() == "Drum") {
-                    drumset.load(reader);
-                } else {
-                    reader.unknown();
-                }
-            }
-        }
-    }
-}
 
 void DrumsetLoader::loadDrumset(INotationPtr notation, const InstrumentTrackId& trackId, const AudioResourceMeta& resourceMeta)
 {
@@ -86,14 +68,14 @@ void DrumsetLoader::loadDrumset(INotationPtr notation, const InstrumentTrackId& 
         return;
     }
 
-    ByteArray drumMapping = museSampler()->drumMapping(instrumentId);
+    muse::ByteArray drumMapping = museSampler()->drumMapping(instrumentId);
     if (drumMapping.empty()) {
         m_drumsetCache.emplace(instrumentId, std::nullopt);
         return;
     }
 
     Drumset drumset;
-    readDrumset(drumMapping, drumset);
+    PercussionUtilities::readDrumset(drumMapping, drumset);
     replaceDrumset(notation, trackId, drumset);
 
     m_drumsetCache.emplace(instrumentId, std::move(drumset));

@@ -26,7 +26,7 @@
 
 #include "internal/articulationstringutils.h"
 
-using namespace mu::mpe;
+using namespace muse::mpe;
 
 static const QString SINGLE_NOTE_MENU_ID = "0";
 static const QString MULTI_NOTE_MENU_ID = "1";
@@ -190,7 +190,7 @@ QVariant ArticulationPatternItem::data(const QModelIndex& index, int /*role*/) c
 
 QHash<int, QByteArray> ArticulationPatternItem::roleNames() const
 {
-    static QHash<int, QByteArray> roles = {
+    static const QHash<int, QByteArray> roles = {
         { PatternSegmentItem, "patternSegmentItem" }
     };
 

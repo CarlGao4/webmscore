@@ -1,4 +1,4 @@
-set(MODULE liblouis)
+declare_thirdparty_module(liblouis)
 
 add_subdirectory(tables)
 
@@ -36,10 +36,10 @@ set(MODULE_SRC
     ${CMAKE_CURRENT_LIST_DIR}/liblouis/utils.c
 )
 
-set(MODULE_USE_PCH_NONE ON)
-set(MODULE_USE_UNITY_NONE ON)
+set(MODULE_USE_UNITY OFF)
+set(MODULE_USE_COVERAGE OFF)
 
-include(${PROJECT_SOURCE_DIR}/build/module.cmake)
+setup_module()
 
 target_no_warning(${MODULE} -Wno-conversion)
 target_no_warning(${MODULE} -w)

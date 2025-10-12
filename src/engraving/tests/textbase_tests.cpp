@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -71,7 +71,9 @@ TEST_F(Engraving_TextBaseTests, dynamicAddTextBefore)
     Dynamic* dynamic = addDynamic(score);
     EditData ed;
     dynamic->startEdit(ed);
+    score->startCmd(TranslatableString::untranslatable("Edit dynamic text (test)"));
     score->undo(new InsertText(dynamic->cursor(), String(u"poco ")), &ed);
+    score->endCmd();
     dynamic->endEdit(ed);
     EXPECT_TRUE(ScoreComp::saveCompareScore(score, u"dynamicAddTextBefore.mscx", TEXTBASE_DATA_DIR + u"dynamicAddTextBefore-ref.mscx"));
 }
@@ -83,8 +85,10 @@ TEST_F(Engraving_TextBaseTests, dynamicAddTextAfter)
     EditData ed;
     ed.s = String(u" ma non troppo");
     dynamic->startEdit(ed);
+    score->startCmd(TranslatableString::untranslatable("Edit dynamic text (test)"));
     dynamic->cursor()->moveCursorToEnd();
     dynamic->edit(ed);
+    score->endCmd();
     dynamic->endEdit(ed);
     EXPECT_TRUE(ScoreComp::saveCompareScore(score, u"dynamicAddTextAfter.mscx", TEXTBASE_DATA_DIR + u"dynamicAddTextAfter-ref.mscx"));
 }
@@ -95,8 +99,10 @@ TEST_F(Engraving_TextBaseTests, dynamicAddTextNoItalic)
     Dynamic* dynamic = addDynamic(score);
     EditData ed;
     dynamic->startEdit(ed);
+    score->startCmd(TranslatableString::untranslatable("Edit dynamic text (test)"));
     dynamic->setProperty(Pid::FONT_STYLE, PropertyValue::fromValue(0));
     score->undo(new InsertText(dynamic->cursor(), String(u"moderately ")), &ed);
+    score->endCmd();
     dynamic->endEdit(ed);
     EXPECT_TRUE(ScoreComp::saveCompareScore(score, u"dynamicAddTextNoItalic.mscx", TEXTBASE_DATA_DIR + u"dynamicAddTextNoItalic-ref.mscx"));
 }
@@ -139,12 +145,12 @@ TEST_F(Engraving_TextBaseTests, undoChangeFontStyleProperty)
     MasterScore* score = ScoreRW::readScore(u"test.mscx");
     StaffText* staffText = addStaffText(score);
     staffText->setXmlText(u"normal <b>bold</b> <u>underline</u> <i>italic</i>");
-    EngravingItem::renderer()->layoutItem(staffText);
-    score->startCmd();
+    score->renderer()->layoutItem(staffText);
+    score->startCmd(TranslatableString::untranslatable("Engraving text base tests"));
     staffText->undoChangeProperty(Pid::FONT_STYLE, PropertyValue::fromValue(0), PropertyFlags::UNSTYLED);
     score->endCmd();
     EXPECT_EQ(staffText->xmlText(), u"normal <b>bold</b> <u>underline</u> <i>italic</i>");
-    score->startCmd();
+    score->startCmd(TranslatableString::untranslatable("Engraving text base tests"));
     staffText->undoChangeProperty(Pid::FONT_STYLE, PropertyValue::fromValue(static_cast<int>(FontStyle::Bold)),
                                   PropertyFlags::UNSTYLED);
     score->endCmd();
@@ -154,22 +160,51 @@ TEST_F(Engraving_TextBaseTests, undoChangeFontStyleProperty)
     EXPECT_EQ(staffText->xmlText(), u"normal <b>bold</b> <u>underline</u> <i>italic</i>");
     score->undoStack()->redo(&ed);
     EXPECT_EQ(staffText->xmlText(), u"<b>normal bold <u>underline</u> <i>italic</i></b>");
-    score->startCmd();
+    score->startCmd(TranslatableString::untranslatable("Engraving text base tests"));
     staffText->undoChangeProperty(Pid::FONT_STYLE, PropertyValue::fromValue(
                                       static_cast<int>(FontStyle::Italic + FontStyle::Bold)), PropertyFlags::UNSTYLED);
     score->endCmd();
     EXPECT_EQ(staffText->xmlText(), u"<b><i>normal bold <u>underline</u> italic</i></b>");
-    score->startCmd();
+    score->startCmd(TranslatableString::untranslatable("Engraving text base tests"));
     staffText->undoChangeProperty(Pid::FONT_STYLE,
                                   PropertyValue::fromValue(
                                       static_cast<int>(FontStyle::Italic + FontStyle::Bold + FontStyle::Underline)),
                                   PropertyFlags::UNSTYLED);
     score->endCmd();
     EXPECT_EQ(staffText->xmlText(), u"<b><i><u>normal bold underline italic</u></i></b>");
-    score->startCmd();
+    score->startCmd(TranslatableString::untranslatable("Engraving text base tests"));
     staffText->undoChangeProperty(Pid::FONT_STYLE, PropertyValue::fromValue(0), PropertyFlags::UNSTYLED);
     score->endCmd();
     EXPECT_EQ(staffText->xmlText(), u"normal bold underline italic");
+}
+
+TEST_F(Engraving_TextBaseTests, undoChangeFontSizeEmptyLines)   // Testcase for Issue #19571
+{
+    MasterScore* score = ScoreRW::readScore(u"test.mscx");
+    StaffText* staffText = addStaffText(score);
+
+    String originalText = u"<font size=\"25\"/>Line 1\nLine 2\n\n\nLine 5"; // Two lines of text, two empty lines, one line of text.
+    String expectedText = u"<font size=\"30\"/>Line 1\nLine 2\n\n\nLine 5"; // The font size should change for all lines, including the empty ones.
+
+    staffText->setXmlText(originalText);
+    LOGD("Text is initially: %s", muPrintable(staffText->xmlText().replace(u"\n", u"\\n")));
+    score->renderer()->layoutItem(staffText);
+
+    score->startCmd(TranslatableString::untranslatable("Engraving text base tests"));
+    staffText->undoChangeProperty(Pid::FONT_SIZE, PropertyValue::fromValue(30.0), PropertyFlags::UNSTYLED); // Change font size from 25 to 30
+    score->endCmd();
+
+    LOGD(" 1.: Text is now : %s", muPrintable(staffText->xmlText().replace(u"\n", u"\\n")));
+    EXPECT_EQ(staffText->xmlText(), expectedText); // The font size should change for all lines, including the empty ones.
+
+    EditData ed;
+    score->undoStack()->undo(&ed);
+    LOGD(" 2.: Text is now : %s", muPrintable(staffText->xmlText().replace(u"\n", u"\\n")));
+    EXPECT_EQ(staffText->xmlText(), originalText);
+
+    score->undoStack()->redo(&ed);
+    LOGD(" 3.: Text is now : %s", muPrintable(staffText->xmlText().replace(u"\n", u"\\n")));
+    EXPECT_EQ(staffText->xmlText(), expectedText);
 }
 
 TEST_F(Engraving_TextBaseTests, musicalSymbolsNotBold)
@@ -177,7 +212,7 @@ TEST_F(Engraving_TextBaseTests, musicalSymbolsNotBold)
     MasterScore* score = ScoreRW::readScore(u"test.mscx");
     StaffText* staffText = addStaffText(score);
     staffText->setXmlText(u"<b>Allegro <sym>metNoteQuarterUp</sym> = 120</b>");
-    EngravingItem::renderer()->layoutItem(staffText);
+    score->renderer()->layoutItem(staffText);
     auto fragmentList = staffText->fragmentList();
     EXPECT_TRUE(fragmentList.front().font(staffText).bold());
     EXPECT_TRUE(!std::next(fragmentList.begin())->font(staffText).bold());
@@ -188,7 +223,7 @@ TEST_F(Engraving_TextBaseTests, musicalSymbolsNotItalic)
     MasterScore* score = ScoreRW::readScore(u"test.mscx");
     Dynamic* dynamic = addDynamic(score);
     dynamic->setXmlText(u"molto <sym>dynamicForte</sym>");
-    EngravingItem::renderer()->layoutItem(dynamic);
+    score->renderer()->layoutItem(dynamic);
     auto fragmentList = dynamic->fragmentList();
     EXPECT_TRUE(fragmentList.front().font(dynamic).italic());
     EXPECT_TRUE(!std::next(fragmentList.begin())->font(dynamic).italic());

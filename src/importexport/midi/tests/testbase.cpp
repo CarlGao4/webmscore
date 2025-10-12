@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -38,19 +38,19 @@
 #include "log.h"
 
 using namespace mu;
-using namespace mu::io;
+using namespace muse::io;
 using namespace mu::engraving;
 
 namespace mu::engraving {
 MasterScore* MTest::readScore(const QString& name)
 {
-    QString path = root + "/" + name;
-    MasterScore* score = compat::ScoreAccess::createMasterScoreWithBaseStyle();
+    muse::io::path_t path = root + "/" + name;
+    MasterScore* score = compat::ScoreAccess::createMasterScoreWithBaseStyle(nullptr);
     score->setFileInfoProvider(std::make_shared<LocalFileInfoProvider>(path));
-    std::string suffix = io::suffix(path);
+    std::string suffix = muse::io::suffix(path);
 
     ScoreLoad sl;
-    Ret ret;
+    muse::Ret ret;
     if (suffix == "mscz" || suffix == "mscx") {
         ret = compat::loadMsczOrMscx(score, path, false);
     } else {
@@ -81,7 +81,7 @@ bool MTest::saveScore(Score* score, const QString& name) const
         return false;
     }
 
-    return rw::RWRegister::writer()->writeScore(score, &file, false);
+    return rw::RWRegister::writer(score->iocContext())->writeScore(score, &file, false);
 }
 
 bool MTest::compareFilesFromPaths(const QString& f1, const QString& f2)

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -33,11 +33,11 @@
 #include "ui/view/widgetstatestore.h"
 
 using namespace mu::notation;
-using namespace mu::ui;
+using namespace muse::ui;
 using namespace mu::engraving;
 
 PageSettings::PageSettings(QWidget* parent)
-    : QDialog(parent)
+    : QDialog(parent), muse::Injectable(muse::iocCtxForQWidget(this))
 {
     setObjectName("PageSettings");
     setupUi(this);
@@ -53,8 +53,6 @@ PageSettings::PageSettings(QWidget* parent)
         inchButton->setChecked(true);
     }
 
-    WidgetStateStore::restoreGeometry(this);
-
     for (int i = 0; i < QPageSize::LastPageSize; ++i) {
         pageGroup->addItem(QPageSize::name(QPageSize::PageSizeId(i)), i);
     }
@@ -67,44 +65,41 @@ PageSettings::PageSettings(QWidget* parent)
     connect(landscapeButton, &QRadioButton::clicked, this, &PageSettings::orientationClicked);
     connect(twosided,        &QCheckBox::toggled,    this, &PageSettings::twosidedToggled);
 
-    connect(pageHeight,           QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+    connect(pageHeight,           &QDoubleSpinBox::valueChanged,
             this,                 &PageSettings::pageHeightChanged);
-    connect(pageWidth,            QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+    connect(pageWidth,            &QDoubleSpinBox::valueChanged,
             this,                 &PageSettings::pageWidthChanged);
-    connect(oddPageTopMargin,     QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+    connect(oddPageTopMargin,     &QDoubleSpinBox::valueChanged,
             this,                 &PageSettings::otmChanged);
-    connect(oddPageBottomMargin,  QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+    connect(oddPageBottomMargin,  &QDoubleSpinBox::valueChanged,
             this,                 &PageSettings::obmChanged);
-    connect(oddPageLeftMargin,    QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+    connect(oddPageLeftMargin,    &QDoubleSpinBox::valueChanged,
             this,                 &PageSettings::olmChanged);
-    connect(oddPageRightMargin,   QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+    connect(oddPageRightMargin,   &QDoubleSpinBox::valueChanged,
             this,                 &PageSettings::ormChanged);
-    connect(evenPageTopMargin,    QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+    connect(evenPageTopMargin,    &QDoubleSpinBox::valueChanged,
             this,                 &PageSettings::etmChanged);
-    connect(evenPageBottomMargin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+    connect(evenPageBottomMargin, &QDoubleSpinBox::valueChanged,
             this,                 &PageSettings::ebmChanged);
-    connect(evenPageRightMargin,  QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+    connect(evenPageRightMargin,  &QDoubleSpinBox::valueChanged,
             this,                 &PageSettings::ermChanged);
-    connect(evenPageLeftMargin,   QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+    connect(evenPageLeftMargin,   &QDoubleSpinBox::valueChanged,
             this,                 &PageSettings::elmChanged);
-    connect(spatiumEntry,         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+    connect(spatiumEntry,         &QDoubleSpinBox::valueChanged,
             this,                 &PageSettings::spatiumChanged);
 
-    connect(pageGroup,            QOverload<int>::of(&QComboBox::activated),
+    connect(pageGroup,            &QComboBox::activated,
             this, &PageSettings::pageFormatSelected);
-    connect(pageOffsetEntry,      QOverload<int>::of(&QSpinBox::valueChanged),
+    connect(pageOffsetEntry,      &QSpinBox::valueChanged,
             this, &PageSettings::pageOffsetChanged);
-}
-
-PageSettings::PageSettings(const PageSettings& other)
-    : QDialog(other.parentWidget())
-{
 }
 
 void PageSettings::showEvent(QShowEvent* event)
 {
-    globalContext()->currentNotation()->undoStack()->prepareChanges();
+    globalContext()->currentNotation()->undoStack()->prepareChanges(muse::TranslatableString("undoableAction", "Edit page settings"));
     updateValues();
+
+    WidgetStateStore::restoreGeometry(this);
     QWidget::showEvent(event);
 }
 
@@ -164,17 +159,17 @@ void PageSettings::updateValues()
 
     blockSignals(true);
 
-    const char* suffix;
+    QString suffix;
     double singleStepSize;
     double singleStepScale;
     if (mm) {
-        suffix = "mm";
+        suffix = muse::qtrc("global", "mm");
         singleStepSize = 1.0;
-        singleStepScale = 0.2;
+        singleStepScale = 0.05;
     } else {
-        suffix = "in";
+        suffix = muse::qtrc("global", "in", /*disambiguation*/ "abbreviation of inch");
         singleStepSize = 0.05;
-        singleStepScale = 0.005;
+        singleStepScale = 0.002;
     }
     for (auto w : { oddPageTopMargin, oddPageBottomMargin, oddPageLeftMargin, oddPageRightMargin, evenPageTopMargin,
                     evenPageBottomMargin, evenPageLeftMargin, evenPageRightMargin, spatiumEntry, pageWidth, pageHeight }) {
@@ -266,10 +261,8 @@ void PageSettings::orientationClicked()
 
 void PageSettings::on_resetPageStyleButton_clicked()
 {
-    for (auto styleId : pageStyles()) {
-        globalContext()->currentNotation()->style()->resetStyleValue(styleId);
-    }
-
+    score()->undoChangePageNumberOffset(0);
+    globalContext()->currentNotation()->style()->resetStyleValues(pageStyles());
     updateValues();
 }
 
@@ -478,8 +471,8 @@ void PageSettings::spatiumChanged(double val)
 
 void PageSettings::pageOffsetChanged(int val)
 {
-    // TODO: Cancel does not work when page offset is changed?
-    score()->setPageNumberOffset(val - 1);
+    score()->undoChangePageNumberOffset(val - 1);
+    globalContext()->currentNotation()->notationChanged().notify();
 }
 
 void PageSettings::pageHeightChanged(double val)

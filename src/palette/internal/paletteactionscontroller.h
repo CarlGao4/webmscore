@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -32,25 +32,25 @@
 #include "context/iglobalcontext.h"
 
 namespace mu::palette {
-class PaletteActionsController : public actions::Actionable, public async::Asyncable
+class PaletteActionsController : public muse::actions::Actionable, public muse::async::Asyncable
 {
-    INJECT(actions::IActionsDispatcher, dispatcher)
-    INJECT(framework::IInteractive, interactive)
+    INJECT(muse::actions::IActionsDispatcher, dispatcher)
+    INJECT(muse::IInteractive, interactive)
     INJECT(context::IGlobalContext, globalContext)
 
 public:
     void init();
 
-    ValCh<bool> isMasterPaletteOpened() const;
+    muse::ValCh<bool> isMasterPaletteOpened() const;
 
 private:
-    void toggleMasterPalette(const actions::ActionData& args);
+    void toggleMasterPalette(const muse::actions::ActionData& args);
     void toggleSpecialCharactersDialog();
     void openTimeSignaturePropertiesDialog();
-    void openEditDrumsetDialog();
+    void openCustomizeKitDialog();
 
-    ValCh<bool> m_masterPaletteOpened;
-    async::Channel<actions::ActionCodeList> m_actionsReceiveAvailableChanged;
+    muse::ValCh<bool> m_masterPaletteOpened;
+    muse::async::Channel<muse::actions::ActionCodeList> m_actionsReceiveAvailableChanged;
 };
 }
 

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -29,7 +29,7 @@
 #include "notation/notationtypes.h"
 
 namespace mu::notation {
-class NotationContextMenuModel : public uicomponents::AbstractMenuModel
+class NotationContextMenuModel : public muse::uicomponents::AbstractMenuModel
 {
     Q_OBJECT
 
@@ -39,22 +39,30 @@ public:
     Q_INVOKABLE void loadItems(int elementType);
 
 private:
-    uicomponents::MenuItemList makeItemsByElementType(ElementType type);
+    muse::uicomponents::MenuItemList makeItemsByElementType(ElementType type);
 
-    uicomponents::MenuItemList makePageItems();
-    uicomponents::MenuItemList makeDefaultCopyPasteItems();
-    uicomponents::MenuItemList makeMeasureItems();
-    uicomponents::MenuItemList makeStaffTextItems();
-    uicomponents::MenuItemList makeSystemTextItems();
-    uicomponents::MenuItemList makeTimeSignatureItems();
-    uicomponents::MenuItemList makeInstrumentNameItems();
-    uicomponents::MenuItemList makeHarmonyItems();
-    uicomponents::MenuItemList makeSelectItems();
-    uicomponents::MenuItemList makeElementItems();
-    uicomponents::MenuItemList makeInsertMeasuresItems();
-    uicomponents::MenuItemList makeChangeInstrumentItems();
-    uicomponents::MenuItemList makeVerticalBoxItems();
-    uicomponents::MenuItemList makeHorizontalBoxItems();
+    muse::uicomponents::MenuItemList makePageItems();
+    muse::uicomponents::MenuItemList makeDefaultCopyPasteItems();
+    muse::uicomponents::MenuItemList makeMeasureItems();
+    muse::uicomponents::MenuItemList makeStaffTextItems();
+    muse::uicomponents::MenuItemList makeSystemTextItems();
+    muse::uicomponents::MenuItemList makeTimeSignatureItems();
+    muse::uicomponents::MenuItemList makeInstrumentNameItems();
+    muse::uicomponents::MenuItemList makeHarmonyItems();
+    muse::uicomponents::MenuItemList makeFretboardDiagramItems();
+    muse::uicomponents::MenuItemList makeElementInFretBoxItems();
+    muse::uicomponents::MenuItemList makeSelectItems();
+    muse::uicomponents::MenuItemList makeElementItems();
+    muse::uicomponents::MenuItemList makeInsertMeasuresItems();
+    muse::uicomponents::MenuItemList makeMoveMeasureItems();
+    muse::uicomponents::MenuItemList makeChangeInstrumentItems();
+    muse::uicomponents::MenuItemList makeVerticalBoxItems();
+    muse::uicomponents::MenuItemList makeHorizontalBoxItems();
+    muse::uicomponents::MenuItemList makeHairpinItems();
+    muse::uicomponents::MenuItemList makeGradualTempoChangeItems();
+    muse::uicomponents::MenuItemList makeTextItems();
+
+    muse::uicomponents::MenuItem* makeEditStyle(const EngravingItem* element);
 
     bool isSingleSelection() const;
     bool canSelectSimilarInRange() const;
@@ -63,6 +71,8 @@ private:
 
     INotationInteractionPtr interaction() const;
     INotationSelectionPtr selection() const;
+
+    const EngravingItem* currentElement() const;
 
     const INotationInteraction::HitElementContext& hitElementContext() const;
 };

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -30,12 +30,9 @@ VoicingSelect::VoicingSelect(QWidget* parent)
     setupUi(this);
 
     //setup changed signals
-    connect(interpretBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &VoicingSelect::_voicingChanged);
-    connect(voicingBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &VoicingSelect::_voicingChanged);
-    connect(durationBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &VoicingSelect::_voicingChanged);
+    connect(interpretBox, &QComboBox::currentIndexChanged, this, &VoicingSelect::_voicingChanged);
+    connect(voicingBox, &QComboBox::currentIndexChanged, this, &VoicingSelect::_voicingChanged);
+    connect(durationBox, &QComboBox::currentIndexChanged, this, &VoicingSelect::_voicingChanged);
 }
 
 void VoicingSelect::_voicingChanged()

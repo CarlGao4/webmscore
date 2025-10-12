@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -26,20 +26,19 @@
 #include "translation.h"
 
 #include "internal/notationuiactions.h"
-#include "workspace/workspacetypes.h"
 
 #include "log.h"
 
 using namespace mu::notation;
-using namespace mu::workspace;
-using namespace mu::ui;
-using namespace mu::uicomponents;
-using namespace mu::actions;
+using namespace muse::workspace;
+using namespace muse::ui;
+using namespace muse::uicomponents;
+using namespace muse::actions;
 
 static const QString NOTE_INPUT_TOOLBAR_NAME("noteInput");
 
 NoteInputBarCustomiseModel::NoteInputBarCustomiseModel(QObject* parent)
-    : SelectableItemListModel(parent)
+    : SelectableItemListModel(parent), muse::Injectable(muse::iocCtxForQmlObject(this))
 {
 }
 
@@ -52,7 +51,7 @@ void NoteInputBarCustomiseModel::load()
     ToolConfig toolConfig = uiConfiguration()->toolConfig(NOTE_INPUT_TOOLBAR_NAME, NotationUiActions::defaultNoteInputBarConfig());
 
     for (const ToolConfig::Item& item : toolConfig.items) {
-        UiAction action = actionsRegister()->action(item.action);
+        const UiAction& action = actionsRegister()->action(item.action);
         items << makeItem(action, item.show);
     }
 
@@ -232,7 +231,7 @@ NoteInputBarCustomiseItem* NoteInputBarCustomiseModel::makeItem(const UiAction& 
 NoteInputBarCustomiseItem* NoteInputBarCustomiseModel::makeSeparatorItem()
 {
     NoteInputBarCustomiseItem* item = new NoteInputBarCustomiseItem(NoteInputBarCustomiseItem::ItemType::SEPARATOR, this);
-    item->setTitle(QString("-------  %1  -------").arg(qtrc("notation", "Separator line")));
+    item->setTitle(QString("-------  %1  -------").arg(muse::qtrc("notation", "Separator line")));
     item->setChecked(true); //! NOTE Can't be unchecked
     return item;
 }

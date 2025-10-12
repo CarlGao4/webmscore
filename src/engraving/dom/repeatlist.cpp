@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -90,6 +90,24 @@ bool RepeatSegment::containsMeasure(Measure const* const m) const
     return false;
 }
 
+bool RepeatSegment::endsWithMeasure(Measure const* const m) const
+{
+    if (m_measureList.empty()) {
+        return false;
+    }
+
+    return m_measureList.back() == m;
+}
+
+bool RepeatSegment::startsWithMeasure(const Measure* const m) const
+{
+    if (m_measureList.empty()) {
+        return false;
+    }
+
+    return m_measureList.front() == m;
+}
+
 bool RepeatSegment::isEmpty() const
 {
     return m_measureList.empty();
@@ -98,6 +116,11 @@ bool RepeatSegment::isEmpty() const
 int RepeatSegment::len() const
 {
     return (m_measureList.empty()) ? 0 : (m_measureList.back()->endTick().ticks() - tick);
+}
+
+int RepeatSegment::endTick() const
+{
+    return tick + len();
 }
 
 void RepeatSegment::popMeasure()
@@ -129,7 +152,7 @@ RepeatList::RepeatList(Score* s)
 
 RepeatList::~RepeatList()
 {
-    DeleteAll(*this);
+    muse::DeleteAll(*this);
 }
 
 //---------------------------------------------------------
@@ -149,7 +172,7 @@ int RepeatList::ticks() const
 //   update
 //---------------------------------------------------------
 
-void RepeatList::update(bool expand)
+void RepeatList::update(bool expand, bool updateTies)
 {
     if (!m_scoreChanged && expand == m_expanded) {
         return;
@@ -162,6 +185,10 @@ void RepeatList::update(bool expand)
     }
 
     m_scoreChanged = false;
+
+    if (updateTies) {
+        m_score->undoRemoveStaleTieJumpPoints();
+    }
 }
 
 //---------------------------------------------------------
@@ -183,8 +210,9 @@ void RepeatList::updateTempo()
         s->utime      = t;
         double ct      = tl->tick2time(s->tick);
         s->timeOffset = t - ct;
-        utick        += s->len();
-        t            += tl->tick2time(s->tick + s->len()) - ct;
+        int len       = s->len();
+        utick        += len;
+        t            += tl->tick2time(s->tick + len) - ct;
     }
 }
 
@@ -223,7 +251,7 @@ int RepeatList::tick2utick(int tick) const
         return 0;
     }
     for (const RepeatSegment* s : *this) {
-        if (tick >= s->tick && tick < (s->tick + s->len())) {
+        if (tick >= s->tick && tick < s->endTick()) {
             return s->utick + (tick - s->tick);
         }
     }
@@ -276,10 +304,14 @@ int RepeatList::utime2utick(double secs) const
 ///
 std::vector<RepeatSegment*>::const_iterator RepeatList::findRepeatSegmentFromUTick(int utick) const
 {
-    return std::lower_bound(this->cbegin(), this->cend(), utick, [](RepeatSegment const* rs, int utick) {
-        // Skip RS where endtick is less than us
-        return utick > (rs->utick + rs->len());
-    });
+    for (auto it = cbegin(); it != cend(); ++it) {
+        const RepeatSegment* seg = *it;
+        if (utick >= seg->utick && utick < seg->utick + seg->len()) {
+            return it;
+        }
+    }
+
+    return cend();
 }
 
 //---------------------------------------------------------
@@ -289,7 +321,7 @@ std::vector<RepeatSegment*>::const_iterator RepeatList::findRepeatSegmentFromUTi
 
 void RepeatList::flatten()
 {
-    DeleteAll(*this);
+    muse::DeleteAll(*this);
     clear();
 
     Measure* m = m_score->firstMeasure();
@@ -316,7 +348,7 @@ void RepeatList::flatten()
 //          - d.s. al fine
 //          - d.s. al coda
 //---------------------------------------------------------
-enum class RepeatListElementType {
+enum class RepeatListElementType : unsigned char {
     SECTION_BREAK,
     VOLTA_START,
     VOLTA_END,
@@ -364,7 +396,7 @@ void RepeatList::collectRepeatListElements()
 
     // Clear out previous listing
     for (const RepeatListElementList& srle : m_rlElements) {
-        DeleteAll(srle);
+        muse::DeleteAll(srle);
     }
     m_rlElements.clear();
 
@@ -387,7 +419,7 @@ void RepeatList::collectRepeatListElements()
     // so we will pre-process them into cloned versions that handle those overlaps.
     // This assumes that spanners are ordered from first to last tick-wise
     for (const auto& spannerEntry : m_score->spanner()) {
-        if (!spannerEntry.second->isVolta()) {
+        if (!spannerEntry.second->isVolta() || !spannerEntry.second->playSpanner()) {
             continue;
         }
 
@@ -433,7 +465,7 @@ void RepeatList::collectRepeatListElements()
                 }
                 // Cross-section of the repeatList
                 std::vector<int> endings = remainder->endings();
-                mu::remove_if(endings, [&volta](const int& ending) {
+                muse::remove_if(endings, [&volta](const int& ending) {
                     return !(volta->hasEnding(ending));
                 });
 
@@ -497,6 +529,10 @@ void RepeatList::collectRepeatListElements()
             }
             // Jumps and Markers
             for (EngravingItem* e : mb->el()) {
+                if (e->systemFlag() && !e->isTopSystemObject()) {
+                    continue;
+                }
+
                 if (e->isJump()) {
                     sectionRLElements.push_back(new RepeatListElement(RepeatListElementType::JUMP, e, toMeasure(mb)));
                     if (volta != nullptr) {
@@ -521,23 +557,17 @@ void RepeatList::collectRepeatListElements()
                     }
                 } else if (e->isMarker()) {
                     RepeatListElement* markerRLE = new RepeatListElement(RepeatListElementType::MARKER, e, toMeasure(mb));
-                    // There may be multiple markers in the same measure and there is no guarantee we're reading
-                    // them from left to right. The only way available to guess their order is to look at their
-                    // text alignment and order them left to right
+                    // There may be multiple markers in the same measure. Make sure we place right markers before left
                     // At the same time, we should ensure Markers are evaluated before Jumps
-                    Align markerRLEalignmentH = toMarker(e)->align();
+                    bool markerRLEisRight = toMarker(e)->isRightMarker();
                     auto insertionIt = sectionRLElements.end() - 1;
                     while ((*insertionIt)->measure == markerRLE->measure) {
                         bool markerShouldGoBefore = false;
                         if (((*insertionIt)->repeatListElementType == RepeatListElementType::MARKER)
-                            && (markerRLEalignmentH != AlignH::RIGHT) // We can be the end when right aligned
+                            && (!markerRLEisRight) // We can be the end when right aligned
                             ) {
-                            Align storedMarkerAlignmentH = toMarker((*insertionIt)->element)->align();
-                            if (markerRLEalignmentH == AlignH::HCENTER) {
-                                markerShouldGoBefore = (storedMarkerAlignmentH == AlignH::RIGHT);
-                            } else { //(markerRLEalignmentH == Align::LEFT)
-                                markerShouldGoBefore = (storedMarkerAlignmentH != AlignH::LEFT);
-                            }
+                            bool storedMarkerIsRight = toMarker((*insertionIt)->element)->isRightMarker();
+                            markerShouldGoBefore = storedMarkerIsRight;
                         }
                         if (markerShouldGoBefore
                             || ((*insertionIt)->repeatListElementType == RepeatListElementType::JUMP)
@@ -627,7 +657,7 @@ void RepeatList::collectRepeatListElements()
 ///         "end" will result in end of current section
 ///
 std::pair<std::vector<RepeatListElementList>::const_iterator, RepeatListElementList::const_iterator> RepeatList::findMarker(
-    String label, std::vector<RepeatListElementList>::const_iterator referenceSectionIt,
+    muse::String label, std::vector<RepeatListElementList>::const_iterator referenceSectionIt,
     RepeatListElementList::const_iterator referenceRepeatListElementIt) const
 {
     bool found = false;
@@ -774,7 +804,7 @@ void RepeatList::unwind()
 {
     TRACEFUNC;
 
-    DeleteAll(*this);
+    muse::DeleteAll(*this);
     clear();
     m_jumpsTaken.clear();
 
@@ -838,10 +868,10 @@ void RepeatList::unwind()
                     activeVolta = nullptr;
                     // Start next rs on the following measure
                     Measure const* const possibleNextMeasure = (*repeatListElementIt)->measure->nextMeasure();
-                    rs = new RepeatSegment(playbackCount);
                     if (possibleNextMeasure == nullptr) {
-                        // end of score, but will still encounter section break, notify it
+                        rs = nullptr;                   // end of score, but will still encounter section break, notify it
                     } else {
+                        rs = new RepeatSegment(playbackCount);
                         rs->addMeasure(possibleNextMeasure);
                     }
                 }

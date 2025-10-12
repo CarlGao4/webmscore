@@ -30,8 +30,8 @@
 
 #include "log.h"
 
-using namespace mu;
-using namespace mu::draw;
+using namespace muse;
+using namespace muse::draw;
 
 IPaintProviderPtr Painter::extended;
 bool PainterItemMarker::enabled = true;
@@ -456,7 +456,7 @@ void Painter::fillRect(const RectF& rect, const Brush& brush)
 {
     Pen oldPen = this->pen();
     Brush oldBrush = this->brush();
-    setPen(Pen(mu::draw::PenStyle::NoPen));
+    setPen(Pen(PenStyle::NoPen));
     setBrush(brush);
 
     drawRect(rect);
@@ -541,6 +541,11 @@ bool Painter::hasClipping() const
 void Painter::setClipRect(const RectF& rect)
 {
     m_provider->setClipRect(rect);
+}
+
+void Painter::setMask(const RectF& background, const std::vector<RectF>& maskRects)
+{
+    m_provider->setMask(background, maskRects);
 }
 
 void Painter::setClipping(bool enable)

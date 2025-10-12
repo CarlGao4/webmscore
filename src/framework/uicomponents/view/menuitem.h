@@ -19,21 +19,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_UICOMPONENTS_MENUITEM_H
-#define MU_UICOMPONENTS_MENUITEM_H
+#ifndef MUSE_UICOMPONENTS_MENUITEM_H
+#define MUSE_UICOMPONENTS_MENUITEM_H
 
 #include <QObject>
 #include <QString>
 
-#include "async/asyncable.h"
+#include "global/async/asyncable.h"
 
-#include "ui/uitypes.h"
+#include "ui/uiaction.h"
 
-namespace mu {
-class TranslatableString;
-}
-
-namespace mu::uicomponents {
+namespace muse::uicomponents {
 // This must be in sync with QAction::MenuRole
 enum class MenuItemRole {
     NoRole = 0,
@@ -44,6 +40,8 @@ enum class MenuItemRole {
     PreferencesRole,
     QuitRole
 };
+class MenuItem;
+using MenuItemList = QList<MenuItem*>;
 
 class MenuItem : public QObject, public async::Asyncable
 {
@@ -61,6 +59,7 @@ class MenuItem : public QObject, public async::Asyncable
     Q_PROPERTY(QString section READ section NOTIFY sectionChanged)
 
     Q_PROPERTY(int icon READ icon_property NOTIFY actionChanged)
+    Q_PROPERTY(QString iconColor READ iconColor_property NOTIFY actionChanged)
 
     Q_PROPERTY(bool enabled READ enabled_property NOTIFY stateChanged)
 
@@ -72,7 +71,7 @@ class MenuItem : public QObject, public async::Asyncable
 
     Q_PROPERTY(int role READ role_property NOTIFY roleChanged)
 
-    Q_PROPERTY(QList<MenuItem*> subitems READ subitems NOTIFY subitemsChanged)
+    Q_PROPERTY(MenuItemList subitems READ subitems NOTIFY subitemsChanged)
 
 public:
     MenuItem(QObject* parent = nullptr);
@@ -88,11 +87,12 @@ public:
 
     MenuItemRole role() const;
 
-    QList<MenuItem*> subitems() const;
+    MenuItemList subitems() const;
 
     ui::UiAction action() const;
     ui::UiActionState state() const;
-    actions::ActionData args() const;
+    muse::actions::ActionData args() const;
+    const muse::actions::ActionQuery& query() const;
 
     bool isValid() const;
 
@@ -101,15 +101,18 @@ public:
 
 public slots:
     void setId(const QString& id);
-    void setTitle(const TranslatableString& title);
+    void setTitle(const muse::TranslatableString& title);
     void setSection(const QString& section);
-    void setState(const mu::ui::UiActionState& state);
+    void setState(const muse::ui::UiActionState& state);
     void setSelectable(bool selectable);
     void setSelected(bool selected);
-    void setRole(mu::uicomponents::MenuItemRole role);
-    void setSubitems(const QList<mu::uicomponents::MenuItem*>& subitems);
-    void setAction(const mu::ui::UiAction& action);
-    void setArgs(const actions::ActionData& args);
+    void setCheckable(bool checkable);
+    void setChecked(bool checked);
+    void setRole(muse::uicomponents::MenuItemRole role);
+    void setSubitems(const uicomponents::MenuItemList& subitems);
+    void setAction(const muse::ui::UiAction& action);
+    void setArgs(const muse::actions::ActionData& args);
+    void setQuery(const muse::actions::ActionQuery& query);
 
 signals:
     void idChanged(QString id);
@@ -119,7 +122,7 @@ signals:
     void selectableChanged(bool selectable);
     void selectedChanged(bool selected);
     void roleChanged(int role);
-    void subitemsChanged(QList<mu::uicomponents::MenuItem*> subitems, const QString& menuId);
+    void subitemsChanged(uicomponents::MenuItemList subitems, const QString& menuId);
     void actionChanged();
 
 private:
@@ -128,6 +131,7 @@ private:
     QString description_property() const;
 
     int icon_property() const;
+    QString iconColor_property() const;
 
     bool enabled_property() const;
 
@@ -145,12 +149,12 @@ private:
     bool m_selectable = false;
     bool m_selected = false;
     MenuItemRole m_role = MenuItemRole::NoRole;
-    actions::ActionData m_args;
-    QList<MenuItem*> m_subitems;
+    muse::actions::ActionData m_args;
+    muse::actions::ActionQuery m_query;
+    MenuItemList m_subitems;
 
     ui::UiAction m_action;
 };
-using MenuItemList = QList<MenuItem*>;
 
 inline QVariantList menuItemListToVariantList(const uicomponents::MenuItemList& list)
 {
@@ -163,4 +167,4 @@ inline QVariantList menuItemListToVariantList(const uicomponents::MenuItemList& 
 }
 }
 
-#endif // MU_UICOMPONENTS_MENUITEM_H
+#endif // MUSE_UICOMPONENTS_MENUITEM_H

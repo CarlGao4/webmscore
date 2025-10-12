@@ -25,10 +25,10 @@ SOFTWARE.
 #ifndef KORS_LOG_BASE_H
 #define KORS_LOG_BASE_H
 
-#include <cassert>
+#include <cassert> // IWYU pragma: export
 
-#include "funcinfo.h"
-#include "logger.h"
+#include "funcinfo.h" // IWYU pragma: export
+#include "logger.h" // IWYU pragma: export
 
 //! Log
 
@@ -51,59 +51,50 @@ SOFTWARE.
 #define LOGI LOGI_T(LOG_TAG)
 #define LOGD LOGD_T(LOG_TAG)
 #define LOGDA LOGDA_T(LOG_TAG)      // active debug
-#define LOGN if (0) LOGD_T(LOG_TAG) // compiling, but no output
-
-#ifdef __EMSCRIPTEN__
-#include <emscripten.h>
-#define PrintStackTrace \
-    EM_ASM({ console.error("Call stack:\n", new Error().stack); });
-#elif defined(__unix__)
-#include <execinfo.h>
-#define PrintStackTrace \
-    do { \
-        const int maxStackFrames = 128; \
-        void* stackFrames[maxStackFrames]; \
-        int numFrames = backtrace(stackFrames, maxStackFrames); \
-        char** symbols = backtrace_symbols(stackFrames, numFrames); \
-        if (symbols) { \
-            LOGE() << "Call stack:" << std::endl; \
-            for (int i = 0; i < numFrames; ++i) { \
-                LOGE() << symbols[i] << std::endl; \
-            } \
-            free(symbols); \
-        } \
-    } while (0)
-#else
-#define PrintStackTrace (void)0
-#endif
+#define LOGN if constexpr (0)LOGD_T(LOG_TAG)  // compiling, but no output
 
 //! Useful macros
-#define DO_ASSERT_X(cond, msg) \
-    if (!(cond)) { \
-        LOGE() << "\"ASSERT FAILED!\": " << msg << ", file: " << __FILE__ << ", line: " << __LINE__; \
-        PrintStackTrace; \
-        assert(cond); \
-    } \
+#define DO_ASSERT_X_IMPL(cond, msg, var_name) \
+    { \
+        const bool var_name = static_cast<bool>(cond); \
+        if (!(var_name)) { \
+            LOGE() << "ASSERT FAILED:    " << msg << "    " << __FILE__ << ":" << __LINE__; \
+            assert(var_name && #cond); \
+        } \
+    }
+#define DO_ASSERT_X(cond, msg) DO_ASSERT_X_IMPL(cond, msg, UNIQUE_VAR_NAME(__do_assert_))
 
 #define DO_ASSERT(cond) DO_ASSERT_X(cond, #cond)
 #define ASSERT_X(msg) DO_ASSERT_X(false, msg)
 
-#define IF_ASSERT_FAILED_X(cond, msg) \
-    DO_ASSERT_X(cond, msg) \
-    if (!(cond)) \
+#define CONCAT_IMPL(x, y) x##y
+#define CONCAT(x, y) CONCAT_IMPL(x, y)
+#define UNIQUE_VAR_NAME(prefix) CONCAT(prefix, __LINE__)
 
+#define IF_ASSERT_FAILED_X_IMPL(cond, msg, var_name) \
+    const bool var_name = static_cast<bool>(cond); \
+    if (!(var_name)) { \
+        LOGE() << "ASSERT FAILED:    " << msg << "    " << __FILE__ << ":" << __LINE__; \
+        assert(var_name && #cond); \
+    } \
+    if (!(var_name))
+
+#define IF_ASSERT_FAILED_X(cond, msg) IF_ASSERT_FAILED_X_IMPL(cond, msg, UNIQUE_VAR_NAME(__if_assert_failed_))
 #define IF_ASSERT_FAILED(cond) IF_ASSERT_FAILED_X(cond, #cond)
 
-#define IF_FAILED(cond) \
-    if (!(cond)) { \
-        LOGE() << "\"FAILED!\": " << #cond << ", file: " << __FILE__ << ", line: " << __LINE__; \
+#define IF_FAILED_IMPL(cond, var_name) \
+    const bool var_name = static_cast<bool>(cond); \
+    if (!(var_name)) { \
+        LOGE() << "FAILED: " << #cond << " at " << __FILE__ << ":" << __LINE__; \
     } \
-    if (!(cond)) \
+    if (!(var_name))
+
+#define IF_FAILED(cond) IF_FAILED_IMPL(cond, UNIQUE_VAR_NAME(__if_failed_))
 
 #define UNUSED(x) (void)x;
 
 #define UNREACHABLE \
-    LOGE() << "\"UNREACHABLE!\": " << ", file: " << __FILE__ << ", line: " << __LINE__; \
+    LOGE() << "\"UNREACHABLE    " << __FILE__ << ":" << __LINE__; \
     ASSERT_X("UNREACHABLE was reached"); \
 
 #define DEPRECATED LOGD() << "This function deprecated!!"

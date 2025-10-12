@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -20,8 +20,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_ENGRAVING_STAFF_H
-#define MU_ENGRAVING_STAFF_H
+#pragma once
 
 #include <map>
 #include <vector>
@@ -30,12 +29,13 @@
 
 #include "draw/types/color.h"
 
-#include "changeMap.h"
 #include "cleflist.h"
 #include "groups.h"
 #include "keylist.h"
 #include "pitch.h"
 #include "stafftypelist.h"
+
+#include "../types/types.h"
 
 namespace mu::engraving {
 class BracketItem;
@@ -49,7 +49,7 @@ class Score;
 class StaffType;
 class TimeSig;
 
-enum class Key;
+enum class Key : signed char;
 
 //---------------------------------------------------------
 //    Staff
@@ -61,10 +61,6 @@ class Staff final : public EngravingItem
     OBJECT_ALLOCATOR(engraving, Staff)
 
 public:
-    enum class HideMode {
-        AUTO, ALWAYS, NEVER, INSTRUMENT
-    };
-
     Staff* clone() const override;
 
     void init(const InstrumentTemplate*, const StaffType* staffType, int);
@@ -138,15 +134,16 @@ public:
     bool stemless(const Fraction&) const;
     bool cutaway() const { return m_cutaway; }
     void setCutaway(bool val) { m_cutaway = val; }
-    bool showIfEmpty() const { return m_showIfEmpty; }
-    void setShowIfEmpty(bool val) { m_showIfEmpty = val; }
+    bool showIfEntireSystemEmpty() const { return m_showIfEntireSystemEmpty; }
+    void setShowIfEntireSystemEmpty(bool val) { m_showIfEntireSystemEmpty = val; }
 
     bool hideSystemBarLine() const { return m_hideSystemBarLine; }
     void setHideSystemBarLine(bool val) { m_hideSystemBarLine = val; }
-    HideMode hideWhenEmpty() const { return m_hideWhenEmpty; }
-    void setHideWhenEmpty(HideMode v) { m_hideWhenEmpty = v; }
-    bool mergeMatchingRests() const { return m_mergeMatchingRests; }
-    void setMergeMatchingRests(bool val) { m_mergeMatchingRests = val; }
+    AutoOnOff hideWhenEmpty() const { return m_hideWhenEmpty; }
+    void setHideWhenEmpty(AutoOnOff v) { m_hideWhenEmpty = v; }
+    AutoOnOff mergeMatchingRests() const { return m_mergeMatchingRests; }
+    void setMergeMatchingRests(AutoOnOff val) { m_mergeMatchingRests = val; }
+    bool shouldMergeMatchingRests() const;
 
     int barLineSpan() const { return m_barLineSpan; }
     int barLineFrom() const { return m_barLineFrom; }
@@ -155,6 +152,7 @@ public:
     void setBarLineFrom(int val) { m_barLineFrom = val; }
     void setBarLineTo(int val) { m_barLineTo = val; }
     double staffHeight() const;
+    double staffHeight(const Fraction& tick) const;
 
     int channel(const Fraction&, voice_idx_t voice) const;
 
@@ -183,6 +181,8 @@ public:
     void removeStaffType(const Fraction&);
     void staffTypeListChanged(const Fraction&);
 
+    std::pair<int, int> staffTypeRange(const Fraction&) const;
+
     bool isPitchedStaff(const Fraction&) const;
     bool isTabStaff(const Fraction&) const;
     bool isDrumStaff(const Fraction&) const;
@@ -204,8 +204,6 @@ public:
     double spatium(const EngravingItem*) const;
     //===========
 
-    ChangeMap& velocities() { return m_velocities; }
-    ChangeMap& velocityMultiplications() { return m_velocityMultiplications; }
     PitchList& pitchOffsets() { return m_pitchOffsets; }
 
     int pitchOffset(const Fraction& tick) const { return m_pitchOffsets.pitchOffset(tick.ticks()); }
@@ -215,19 +213,18 @@ public:
     Staff* primaryStaff() const;
     bool isPrimaryStaff() const;
 
-    Millimetre userDist() const { return m_userDist; }
-    void setUserDist(Millimetre val) { m_userDist = val; }
+    Spatium userDist() const { return m_userDist; }
+    void setUserDist(Spatium val) { m_userDist = val; }
 
-    void spatiumChanged(double /*oldValue*/, double /*newValue*/) override;
     void setLocalSpatium(double oldVal, double newVal, Fraction tick);
     bool genKeySig();
     bool showLedgerLines(const Fraction&) const;
 
     using EngravingItem::color;
     using EngravingItem::setColor;
-    mu::draw::Color color(const Fraction&) const;
-    void setColor(const Fraction&, const mu::draw::Color& val);
-    void undoSetColor(const mu::draw::Color& val);
+    Color color(const Fraction&) const;
+    void setColor(const Fraction&, const Color& val);
+    void undoSetColor(const Color& val);
     void insertTime(const Fraction&, const Fraction& len);
 
     PropertyValue getProperty(Pid) const override;
@@ -261,6 +258,16 @@ public:
 
     Staff* findLinkedInScore(const Score* score) const override;
 
+    track_idx_t getLinkedTrackInStaff(const Staff* linkedStaff, const track_idx_t strack) const;
+    bool trackHasLinksInVoiceZero(track_idx_t track);
+
+    void undoSetShowMeasureNumbers(bool show);
+    bool shouldShowMeasureNumbers() const;
+
+    bool isLastOfScore() const;
+    bool isSystemObjectStaff() const;
+    bool hasSystemObjectsBelowBottomStaff() const;
+
 private:
 
     friend class Factory;
@@ -291,13 +298,13 @@ private:
     int m_barLineTo = 0;                // line of end staff to draw the bar line to (0= staff bottom line, ...)
 
     bool m_cutaway = false;
-    bool m_showIfEmpty = false;             // show this staff if system is empty and hideEmptyStaves is true
+    bool m_showIfEntireSystemEmpty = false;             // show this staff if system is empty and hideEmptyStaves is true
     bool m_hideSystemBarLine = false;       // no system barline if not preceded by staff with barline
-    bool m_mergeMatchingRests = false;      // merge matching rests in multiple voices
-    HideMode m_hideWhenEmpty = HideMode::AUTO;      // hide empty staves
+    AutoOnOff m_mergeMatchingRests = AutoOnOff::AUTO;      // merge matching rests in multiple voices
+    AutoOnOff m_hideWhenEmpty = AutoOnOff::AUTO;      // hide empty staves
 
-    mu::draw::Color m_color   { engravingConfiguration()->defaultColor() };
-    Millimetre m_userDist     { Millimetre(0.0) };           ///< user edited extra distance
+    Color m_color;
+    Spatium m_userDist     { Spatium(0.0) };           ///< user edited extra distance
 
     StaffTypeList m_staffTypeList;
 
@@ -307,11 +314,10 @@ private:
     bool m_playbackVoice[VOICES] { true, true, true, true };
     std::array<bool, VOICES> m_visibilityVoices { true, true, true, true };
 
-    ChangeMap m_velocities;                 // cached value
-    ChangeMap m_velocityMultiplications;    // cached value
     PitchList m_pitchOffsets;               // cached value
 
     bool m_reflectTranspositionInLinkedTab = true;
+
+    AutoOnOff m_showMeasureNumbers = AutoOnOff::AUTO;
 };
-} // namespace mu::engraving
-#endif
+}

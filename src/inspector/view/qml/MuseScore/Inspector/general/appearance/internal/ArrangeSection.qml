@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,8 +22,8 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 
-import MuseScore.Ui 1.0
-import MuseScore.UiComponents 1.0
+import Muse.Ui 1.0
+import Muse.UiComponents 1.0
 import MuseScore.Inspector 1.0
 import "../../../common"
 
@@ -71,7 +71,7 @@ Column {
                 navigation.row: root.resetButtonNavigationRow
                 navigation.accessible.name: qsTrc("inspector", "Reset stacking order to default")
 
-                enabled: root.arrangeOrderProperty.isModified
+                enabled: root.arrangeOrderProperty.isEnabled && root.arrangeOrderProperty.isModified
 
                 onClicked: {
                     root.arrangeOrderProperty.resetToDefault()
@@ -93,6 +93,8 @@ Column {
                 navigation.panel: root.navigationPanel
                 navigation.row: root.navigationRowStart + 1
 
+                enabled: root.arrangeOrderProperty.isEnabled
+
                 text: qsTrc("inspector", "Forwards")
 
                 onClicked: {
@@ -109,6 +111,8 @@ Column {
                 navigation.name: "To front"
                 navigation.panel: root.navigationPanel
                 navigation.row: forwardsButton.navigation.row + 1
+
+                enabled: root.arrangeOrderProperty.isEnabled
 
                 text: qsTrc("inspector", "To front")
 
@@ -132,6 +136,8 @@ Column {
                 navigation.panel: root.navigationPanel
                 navigation.row: toFrontButton.navigation.row + 1
 
+                enabled: root.arrangeOrderProperty.isEnabled
+
                 text: qsTrc("inspector", "Backwards")
 
                 onClicked: {
@@ -148,6 +154,8 @@ Column {
                 navigation.name: "To back"
                 navigation.panel: root.navigationPanel
                 navigation.row: backwardsButton.navigation.row + 1
+
+                enabled: root.arrangeOrderProperty.isEnabled
 
                 text: qsTrc("inspector", "To back")
 

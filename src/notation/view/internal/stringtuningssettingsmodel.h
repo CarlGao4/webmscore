@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2023 MuseScore BVBA and others
+ * Copyright (C) 2023 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -40,8 +40,6 @@ class StringTuningsSettingsModel : public AbstractElementPopupModel
 {
     Q_OBJECT
 
-    INJECT(IInstrumentsRepository, instrumentsRepository)
-
     Q_PROPERTY(QVariantList presets READ presets NOTIFY presetsChanged)
     Q_PROPERTY(QString currentPreset READ currentPreset WRITE setCurrentPreset NOTIFY currentPresetChanged)
 
@@ -49,6 +47,8 @@ class StringTuningsSettingsModel : public AbstractElementPopupModel
     Q_PROPERTY(int currentNumberOfStrings READ currentNumberOfStrings WRITE setCurrentNumberOfStrings NOTIFY currentNumberOfStringsChanged)
 
     Q_PROPERTY(QList<StringTuningsItem*> strings READ strings NOTIFY stringsChanged)
+
+    muse::Inject<IInstrumentsRepository> instrumentsRepository = { this };
 
 public:
     explicit StringTuningsSettingsModel(QObject* parent = nullptr);
@@ -59,8 +59,8 @@ public:
     Q_INVOKABLE void toggleString(int stringIndex);
     Q_INVOKABLE bool setStringValue(int stringIndex, const QString& stringValue);
 
-    Q_INVOKABLE QString increaseStringValue(const QString& stringValue);
-    Q_INVOKABLE QString decreaseStringValue(const QString& stringValue);
+    Q_INVOKABLE QString increaseStringValue(int currentPitch);
+    Q_INVOKABLE QString decreaseStringValue(int currentPitch);
 
     QVariantList presets(bool withCustom = true) const;
 

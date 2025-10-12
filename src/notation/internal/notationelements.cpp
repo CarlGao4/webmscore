@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -30,6 +30,7 @@
 #include "log.h"
 #include "searchcommandsparser.h"
 
+using namespace muse;
 using namespace mu::notation;
 
 NotationElements::NotationElements(IGetScore* getScore)
@@ -122,14 +123,9 @@ mu::engraving::Measure* NotationElements::measure(const int measureIndex) const
     return score()->crMeasure(measureIndex);
 }
 
-PageList NotationElements::pages() const
+const PageList& NotationElements::pages() const
 {
-    PageList result;
-    for (const Page* page : score()->pages()) {
-        result.push_back(page);
-    }
-
-    return result;
+    return score()->pages();
 }
 
 const Page* NotationElements::pageByPoint(const PointF& point) const

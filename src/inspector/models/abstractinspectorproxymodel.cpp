@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -41,16 +41,16 @@ QVariantList AbstractInspectorProxyModel::models() const
 
 QObject* AbstractInspectorProxyModel::modelByType(InspectorModelType type) const
 {
-    return m_modelsHash.value(type);
+    return m_models.value(type);
 }
 
 QObject* AbstractInspectorProxyModel::firstModel() const
 {
-    if (m_modelsHash.empty()) {
+    if (m_models.empty()) {
         return nullptr;
     }
 
-    return m_modelsHash.values().first();
+    return m_models.values().first();
 }
 
 InspectorModelType AbstractInspectorProxyModel::defaultSubModelType() const
@@ -70,7 +70,7 @@ void AbstractInspectorProxyModel::setDefaultSubModelType(InspectorModelType mode
 
 bool AbstractInspectorProxyModel::isMultiModel() const
 {
-    return m_modelsHash.count() > 1;
+    return m_models.count() > 1;
 }
 
 void AbstractInspectorProxyModel::requestElements()
@@ -107,7 +107,7 @@ void AbstractInspectorProxyModel::setModels(const QList<AbstractInspectorModel*>
             continue;
         }
 
-        auto oldModel = m_modelsHash.take(model->modelType());
+        auto oldModel = m_models.take(model->modelType());
 
         delete oldModel;
         oldModel = nullptr;
@@ -120,7 +120,7 @@ void AbstractInspectorProxyModel::setModels(const QList<AbstractInspectorModel*>
 
         InspectorModelType modelType = model->modelType();
 
-        if (m_modelsHash.contains(modelType)) {
+        if (m_models.contains(modelType)) {
             continue;
         }
 
@@ -128,7 +128,10 @@ void AbstractInspectorProxyModel::setModels(const QList<AbstractInspectorModel*>
             emit isEmptyChanged();
         });
 
-        m_modelsHash[modelType] = model;
+        connect(model, &AbstractInspectorModel::requestReloadInspectorListModel, this,
+                &AbstractInspectorModel::requestReloadInspectorListModel);
+
+        m_models[modelType] = model;
     }
 
     emit modelsChanged();
@@ -141,6 +144,28 @@ void AbstractInspectorProxyModel::onCurrentNotationChanged()
     }
 
     AbstractInspectorModel::onCurrentNotationChanged();
+}
+
+void AbstractInspectorProxyModel::onNotationChanged(const engraving::PropertyIdSet& changedPropertyIdSet,
+                                                    const engraving::StyleIdSet& changedStyleIdSet)
+{
+    for (AbstractInspectorModel* model : modelList()) {
+        if (!model->shouldUpdateOnScoreChange() || model->isEmpty()) {
+            continue;
+        }
+
+        if (!model->shouldUpdateOnEmptyPropertyAndStyleIdSets()) {
+            if (changedPropertyIdSet.empty() && changedStyleIdSet.empty()) {
+                continue;
+            }
+        }
+
+        mu::engraving::PropertyIdSet expandedPropertyIdSet = model->propertyIdSetFromStyleIdSet(changedStyleIdSet);
+        expandedPropertyIdSet.insert(changedPropertyIdSet.cbegin(), changedPropertyIdSet.cend());
+        model->onNotationChanged(expandedPropertyIdSet, changedStyleIdSet);
+    }
+
+    AbstractInspectorModel::onNotationChanged(changedPropertyIdSet, changedStyleIdSet);
 }
 
 void AbstractInspectorProxyModel::updateModels(const ElementKeySet& newElementKeySet)
@@ -168,7 +193,17 @@ void AbstractInspectorProxyModel::updateModels(const ElementKeySet& newElementKe
     setModels(models);
 }
 
+bool AbstractInspectorProxyModel::shouldUpdateOnEmptyPropertyAndStyleIdSets() const
+{
+    for (const AbstractInspectorModel* model : modelList()) {
+        if (model->shouldUpdateOnEmptyPropertyAndStyleIdSets()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 QList<AbstractInspectorModel*> AbstractInspectorProxyModel::modelList() const
 {
-    return m_modelsHash.values();
+    return m_models.values();
 }

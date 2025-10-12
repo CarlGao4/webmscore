@@ -19,8 +19,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_SHORTCUTS_SHORTCUTSREGISTER_H
-#define MU_SHORTCUTS_SHORTCUTSREGISTER_H
+#ifndef MUSE_SHORTCUTS_SHORTCUTSREGISTER_H
+#define MUSE_SHORTCUTS_SHORTCUTSREGISTER_H
+
+#include <unordered_map>
 
 #include "../ishortcutsregister.h"
 #include "modularity/ioc.h"
@@ -30,21 +32,22 @@
 #include "io/ifilesystem.h"
 #include "multiinstances/imultiinstancesprovider.h"
 
-namespace mu::framework {
+namespace muse::deprecated {
 class XmlReader;
 class XmlWriter;
 }
 
-namespace mu::shortcuts {
-class ShortcutsRegister : public IShortcutsRegister, public async::Asyncable
+namespace muse::shortcuts {
+class ShortcutsRegister : public IShortcutsRegister, public Injectable, public async::Asyncable
 {
-    INJECT(IShortcutsConfiguration, configuration)
-    INJECT(io::IFileSystem, fileSystem)
-    INJECT(mi::IMultiInstancesProvider, multiInstancesProvider)
-    INJECT(ui::IUiActionsRegister, uiactionsRegister)
+    Inject<IShortcutsConfiguration> configuration = { this };
+    Inject<io::IFileSystem> fileSystem = { this };
+    Inject<mi::IMultiInstancesProvider> multiInstancesProvider = { this };
+    Inject<muse::ui::IUiActionsRegister> uiactionsRegister = { this };
 
 public:
-    ShortcutsRegister() = default;
+    ShortcutsRegister(const modularity::ContextPtr& iocCtx)
+        : Injectable(iocCtx) {}
 
     void init();
 
@@ -73,10 +76,10 @@ public:
 private:
 
     bool readFromFile(ShortcutList& shortcuts, const io::path_t& path) const;
-    Shortcut readShortcut(framework::XmlReader& reader) const;
+    Shortcut readShortcut(deprecated::XmlReader& reader) const;
 
     bool writeToFile(const ShortcutList& shortcuts, const io::path_t& path) const;
-    void writeShortcut(framework::XmlWriter& writer, const Shortcut& shortcut) const;
+    void writeShortcut(deprecated::XmlWriter& writer, const Shortcut& shortcut) const;
 
     void mergeShortcuts(ShortcutList& shortcuts, const ShortcutList& defaultShortcuts) const;
     void mergeAdditionalShortcuts(ShortcutList& shortcuts);
@@ -88,7 +91,7 @@ private:
 
     ShortcutList m_shortcuts;
     ShortcutList m_defaultShortcuts;
-    QHash<std::string, ShortcutList> m_additionalShortcutsHash;
+    std::unordered_map<std::string, ShortcutList> m_additionalShortcutsMap;
     async::Notification m_shortcutsChanged;
 
     bool m_isActive = true;
@@ -96,11 +99,4 @@ private:
 };
 }
 
-namespace std {
-inline uint qHash(const std::string& key, uint seed = 0)
-{
-    return ::qHash(QByteArray::fromRawData(key.data(), static_cast<int>(key.length())), seed);
-}
-}
-
-#endif // MU_SHORTCUTS_SHORTCUTSREGISTER_H
+#endif // MUSE_SHORTCUTS_SHORTCUTSREGISTER_H

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -41,7 +41,7 @@ static const QString SPECIAL_CHARACTERS_DIALOG_NAME("SpecialCharactersDialog");
 using namespace mu::engraving;
 using namespace mu::notation;
 using namespace mu::palette;
-using namespace mu::ui;
+using namespace muse::ui;
 
 static constexpr SymId commonScoreSymbols[] = {
     SymId::accidentalFlat,
@@ -58,6 +58,7 @@ static constexpr SymId commonScoreSymbols[] = {
     SymId::metNote64thUp,
     SymId::metNote128thUp,
     SymId::metAugmentationDot,
+    SymId::tuplet3,
     SymId::restWholeLegerLine,
     SymId::restHalfLegerLine,
     SymId::restQuarter,
@@ -433,7 +434,7 @@ SpecialCharactersDialog::SpecialCharactersDialog(QWidget* parent)
     psa->setRestrictHeight(false);
 
     tabWidget->clear();
-    tabWidget->addTab(psa, mu::qtrc("palette", "Common symbols"));
+    tabWidget->addTab(psa, muse::qtrc("palette", "Common symbols"));
 
     psa = new PaletteScrollArea(m_pSmufl);
     psa->setRestrictHeight(false);
@@ -441,19 +442,18 @@ SpecialCharactersDialog::SpecialCharactersDialog(QWidget* parent)
     QSplitter* ws = new QSplitter;
     m_lws = new QListWidget;
 
-    QStringList keys;
-    std::vector<String> symbols = mu::keys(Smufl::smuflRanges());
-    for (const String& s : symbols) {
-        keys << s.toQString();
+    QStringList smuflRangeNames;
+    for (const auto& pair: Smufl::smuflRanges()) {
+        smuflRangeNames << pair.first.toQString();
     }
 
-    m_lws->addItems(keys);
+    m_lws->addItems(smuflRangeNames);
     m_lws->setCurrentRow(0);
 
     ws->addWidget(m_lws);
     ws->addWidget(psa);
 
-    tabWidget->addTab(ws, mu::qtrc("palette", "Musical symbols"));
+    tabWidget->addTab(ws, muse::qtrc("palette", "Musical symbols"));
 
     psa = new PaletteScrollArea(m_pUnicode);
     psa->setRestrictHeight(false);
@@ -464,7 +464,7 @@ SpecialCharactersDialog::SpecialCharactersDialog(QWidget* parent)
 
     int index = 0;
     for (const UnicodeRange& range : unicodeRanges) {
-        QListWidgetItem* newItem = new QListWidgetItem(mu::qtrc("palette/unicodeRanges", range.name));
+        QListWidgetItem* newItem = new QListWidgetItem(muse::qtrc("palette/unicodeRanges", range.name));
         newItem->setData(Qt::UserRole, index);
         m_lwu->addItem(newItem);
         if (index == 0) {
@@ -476,7 +476,7 @@ SpecialCharactersDialog::SpecialCharactersDialog(QWidget* parent)
     wu->addWidget(m_lwu);
     wu->addWidget(psa);
 
-    tabWidget->addTab(wu, mu::qtrc("palette", "Unicode symbols"));
+    tabWidget->addTab(wu, muse::qtrc("palette", "Unicode symbols"));
 
     connect(m_lws, &QListWidget::currentRowChanged, this, &SpecialCharactersDialog::populateSmufl);
     connect(m_lwu, &QListWidget::currentRowChanged, this, &SpecialCharactersDialog::populateUnicode);
@@ -493,24 +493,18 @@ SpecialCharactersDialog::SpecialCharactersDialog(QWidget* parent)
         const TextBase* editedText = interaction->editedText();
         setFont(editedText->font());
     }
-
-    WidgetStateStore::restoreGeometry(this);
 }
 
-SpecialCharactersDialog::SpecialCharactersDialog(const SpecialCharactersDialog& other)
-    : TopLevelDialog(other.parentWidget())
+void SpecialCharactersDialog::showEvent(QShowEvent* event)
 {
+    WidgetStateStore::restoreGeometry(this);
+    TopLevelDialog::showEvent(event);
 }
 
 void SpecialCharactersDialog::hideEvent(QHideEvent* event)
 {
     WidgetStateStore::saveGeometry(this);
     QDialog::hideEvent(event);
-}
-
-int SpecialCharactersDialog::static_metaTypeId()
-{
-    return QMetaType::type(SPECIAL_CHARACTERS_DIALOG_NAME.toStdString().c_str());
 }
 
 //---------------------------------------------------------
@@ -672,7 +666,7 @@ void SpecialCharactersDialog::populateCommon()
         std::shared_ptr<FSymbol> fs = std::make_shared<FSymbol>(gpaletteScore->dummy());
         fs->setCode(id);
         fs->setFont(m_font);
-        m_pCommon->appendElement(fs, QString(id));
+        m_pCommon->appendElement(fs, QString::fromUcs4(&id, 1));
     }
 
     for (SymId id : commonScoreSymbols) {
@@ -685,7 +679,7 @@ void SpecialCharactersDialog::populateCommon()
         std::shared_ptr<FSymbol> fs = std::make_shared<FSymbol>(gpaletteScore->dummy());
         fs->setCode(id);
         fs->setFont(m_font);
-        m_pCommon->appendElement(fs, QString(id));
+        m_pCommon->appendElement(fs, QString::fromUcs4(&id, 1));
     }
 }
 
@@ -695,14 +689,12 @@ void SpecialCharactersDialog::populateCommon()
 
 void SpecialCharactersDialog::populateSmufl()
 {
-    int row = m_lws->currentRow();
-
-    QString key = mu::keys(Smufl::smuflRanges()).at(row).toQString();
-    QStringList smuflNames = Smufl::smuflRanges().at(key).toQStringList();
-
     m_pSmufl->clear();
-    for (const QString& name : smuflNames) {
-        auto symId = SymNames::symIdByName(name);
+
+    int row = m_lws->currentRow();
+    std::vector<SymId> symIds = std::next(Smufl::smuflRanges().begin(), row)->second;
+
+    for (SymId symId : symIds) {
         std::shared_ptr<Symbol> s = std::make_shared<Symbol>(gpaletteScore->dummy());
         s->setSym(symId, gpaletteScore->engravingFont());
         m_pSmufl->appendElement(s, SymNames::translatedUserNameForSymId(symId));
@@ -722,11 +714,11 @@ void SpecialCharactersDialog::populateUnicode()
         std::shared_ptr<FSymbol> fs = std::make_shared<FSymbol>(gpaletteScore->dummy());
         fs->setCode(code);
         fs->setFont(m_font);
-        m_pUnicode->appendElement(fs, QString("0x%1").arg(code, 5, 16, QLatin1Char('0')));
+        m_pUnicode->appendElement(fs, QString("0x%1").arg(static_cast<int>(code), 5, 16, QLatin1Char('0')));
     }
 }
 
-void SpecialCharactersDialog::setFont(const mu::draw::Font& font)
+void SpecialCharactersDialog::setFont(const muse::draw::Font& font)
 {
     m_font = font;
     m_font.setPointSizeF(20);

@@ -1,11 +1,11 @@
 #!/bin/bash
 # SPDX-License-Identifier: GPL-3.0-only
-# MuseScore-CLA-applies
+# MuseScore-Studio-CLA-applies
 #
-# MuseScore
+# MuseScore Studio
 # Music Composition & Notation
 #
-# Copyright (C) 2021 MuseScore BVBA and others
+# Copyright (C) 2021 MuseScore Limited
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 3 as
@@ -18,6 +18,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+trap 'code=$?; echo "Error: command \`$BASH_COMMAND\` exited with code $code." >&2; exit 1' ERR
 
 S3_KEY=""
 S3_SECRET=""
@@ -34,11 +36,10 @@ done
 if [ -z "$S3_KEY" ]; then echo "error: not set S3_KEY"; exit 1; fi
 if [ -z "$S3_SECRET" ]; then echo "error: not set S3_SECRET"; exit 1; fi
 
-command -v s3cmd >/dev/null 2>&1
-if [[ $? -ne 0 ]]; then
+if ! command -v s3cmd >/dev/null 2>&1; then
     echo "=== Install tools ==="
 
-    apt install python3-setuptools
+    sudo apt-get install python3-setuptools
 
     echo "Install s3cmd"
     pip3 install s3cmd

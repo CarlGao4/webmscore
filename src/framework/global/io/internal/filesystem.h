@@ -19,12 +19,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_SYSTEM_FILESYSTEM_H
-#define MU_SYSTEM_FILESYSTEM_H
+#ifndef MUSE_IO_FILESYSTEM_H
+#define MUSE_IO_FILESYSTEM_H
 
 #include "../ifilesystem.h"
 
-namespace mu::io {
+namespace muse::io {
 class FileSystem : public IFileSystem
 {
 public:
@@ -36,6 +36,7 @@ public:
     Ret move(const io::path_t& src, const io::path_t& dst, bool replace = false) override;
 
     Ret makePath(const io::path_t& path) const override;
+    Ret makeLink(const io::path_t& targetPath, const io::path_t& linkPath) const override;
 
     EntryType entryType(const io::path_t& path) const override;
 
@@ -46,7 +47,7 @@ public:
 
     RetVal<ByteArray> readFile(const io::path_t& filePath) const override;
     Ret readFile(const io::path_t& filePath, ByteArray& data) const override;
-    Ret writeFile(const io::path_t& filePath, const ByteArray& data) const override;
+    Ret writeFile(const io::path_t& filePath, const ByteArray& data) override;
 
     void setAttribute(const io::path_t& path, Attribute attribute) const override;
     bool setPermissionsAllowedForAll(const io::path_t& path) const override;
@@ -59,10 +60,10 @@ public:
     Ret isWritable(const path_t& filePath) const override;
 
 private:
-    Ret removeFile(const io::path_t& path) const;
-    Ret removeDir(const io::path_t& path, bool onlyIfEmpty = false) const;
+    Ret removeFile(const io::path_t& path);
+    Ret removeDir(const io::path_t& path, bool onlyIfEmpty = false);
     Ret copyRecursively(const io::path_t& src, const io::path_t& dst) const;
 };
 }
 
-#endif // MU_SYSTEM_FILESYSTEM_H
+#endif // MUSE_IO_FILESYSTEM_H

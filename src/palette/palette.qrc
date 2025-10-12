@@ -6,8 +6,8 @@
         <file>qml/MuseScore/Palette/internal/AddPalettesPopup.qml</file>
         <file>qml/MuseScore/Palette/internal/CreateCustomPalettePopup.qml</file>
         <file>qml/MuseScore/Palette/internal/MoreElementsPopup.qml</file>
-        <file>qml/MuseScore/Palette/internal/Palette.qml</file>
-        <file>qml/MuseScore/Palette/internal/PaletteGrid.qml</file>
+        <file>qml/MuseScore/Palette/internal/PaletteGridView.qml</file>
+        <file>qml/MuseScore/Palette/internal/PaletteGridLinesCanvas.qml</file>
         <file>qml/MuseScore/Palette/internal/PaletteTree.qml</file>
         <file>qml/MuseScore/Palette/internal/PlaceholderManager.qml</file>
         <file>qml/MuseScore/Palette/internal/TreePaletteHeader.qml</file>
@@ -15,5 +15,6 @@
         <file>qml/MuseScore/Palette/PaletteCellPropertiesDialog.qml</file>
         <file>qml/MuseScore/Palette/PalettePropertiesDialog.qml</file>
         <file>qml/MuseScore/Palette/DrumsetPanel.qml</file>
+        <file>qml/MuseScore/Palette/internal/PalettePropertyItem.qml</file>
     </qresource>
 </RCC>

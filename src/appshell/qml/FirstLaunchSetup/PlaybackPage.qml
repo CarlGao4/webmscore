@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -21,22 +21,22 @@
  */
 import QtQuick 2.15
 import QtQuick.Window 2.15
-import QtGraphicalEffects 1.15
 
-import MuseScore.Ui 1.0
-import MuseScore.UiComponents 1.0
+import Muse.Ui 1.0
+import Muse.UiComponents 1.0
+import Muse.GraphicalEffects 1.0
 import MuseScore.AppShell 1.0
 
 Page {
     title: qsTrc("appshell/gettingstarted", "Playback")
-    explanation: qsTrc("appshell/gettingstarted", "Enjoy realistic playback for free by downloading our new Muse Sounds library")
+    explanation: qsTrc("appshell/gettingstarted", "Discover new sound libraries in MuseHub and enjoy realistic score playback")
 
     titleContentSpacing: 12
 
     extraButtonTitle: qsTrc("appshell/gettingstarted", "Watch video")
 
     onExtraButtonClicked: {
-        Qt.openUrlExternally("https://youtu.be/n7UgN69e2Y8")
+        Qt.openUrlExternally("https://youtu.be/L8OdWHOjL8c")
     }
 
     Image {
@@ -46,13 +46,9 @@ Page {
         source: "resources/MuseSounds.png"
         sourceSize: Qt.size(width * Screen.devicePixelRatio, height * Screen.devicePixelRatio)
 
-        layer.enabled: true
-        layer.effect: OpacityMask {
-            maskSource: Rectangle {
-                width: image.width
-                height: image.height
-                radius: 3
-            }
+        layer.enabled: ui.isEffectsAllowed
+        layer.effect: RoundedCornersEffect {
+            radius: 3
         }
     }
 }

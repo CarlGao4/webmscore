@@ -29,8 +29,8 @@
 
 #include "log.h"
 
-using namespace mu;
-using namespace mu::io;
+using namespace muse;
+using namespace muse::io;
 
 bool IODevice::open(IODevice::OpenMode mode)
 {
@@ -228,6 +228,20 @@ size_t IODevice::write(const QByteArray& ba)
 }
 
 #endif
+
+std::string IODevice::meta(const std::string& key) const
+{
+    auto it = m_meta.find(key);
+    if (it != m_meta.end()) {
+        return it->second;
+    }
+    return std::string();
+}
+
+void IODevice::setMeta(const std::string& key, const std::string& val)
+{
+    m_meta[key] = val;
+}
 
 bool IODevice::hasError() const
 {

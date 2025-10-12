@@ -19,8 +19,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_UI_QMLTOOLTIP_H
-#define MU_UI_QMLTOOLTIP_H
+#ifndef MUSE_UI_QMLTOOLTIP_H
+#define MUSE_UI_QMLTOOLTIP_H
 
 #include <QObject>
 #include <QQuickItem>
@@ -30,16 +30,18 @@
 
 #include "modularity/ioc.h"
 #include "ui/iinteractiveprovider.h"
+#include "ui/iuiconfiguration.h"
 
-namespace mu::ui {
-class QmlToolTip : public QObject, public async::Asyncable
+namespace muse::ui {
+class QmlToolTip : public QObject, public Injectable, public async::Asyncable
 {
     Q_OBJECT
 
-    INJECT(IInteractiveProvider, interactiveProvider)
+    Inject<IInteractiveProvider> interactiveProvider = { this };
+    Inject<IUiConfiguration> uiConfiguration = { this };
 
 public:
-    explicit QmlToolTip(QObject* parent = nullptr);
+    explicit QmlToolTip(QObject* parent, const modularity::ContextPtr& iocCtx);
 
     Q_INVOKABLE void show(QQuickItem* item, const QString& title, const QString& description = "", const QString& shortcut = "");
     Q_INVOKABLE void hide(QQuickItem* item, bool force = false);
@@ -73,4 +75,4 @@ private:
 };
 }
 
-#endif // MU_UI_QMLTOOLTIP_H
+#endif // MUSE_UI_QMLTOOLTIP_H

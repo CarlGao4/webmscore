@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -31,6 +31,7 @@ class MMRestSettingsModel : public AbstractInspectorModel
 
     Q_PROPERTY(PropertyItem * isNumberVisible READ isNumberVisible CONSTANT)
     Q_PROPERTY(PropertyItem * numberPosition READ numberPosition CONSTANT)
+    Q_PROPERTY(bool areNumberOptionsEnabled READ areNumberOptionsEnabled NOTIFY isNumberVisibleEnabledChanged)
 
 public:
     explicit MMRestSettingsModel(QObject* parent, IElementRepositoryService* repository);
@@ -42,10 +43,18 @@ public:
 
     PropertyItem* isNumberVisible() const;
     PropertyItem* numberPosition() const;
+    bool areNumberOptionsEnabled() const;
+
+signals:
+    void isNumberVisibleEnabledChanged(bool enabled);
+
+private:
+    void updateNumberOptionsEnabled();
 
 private:
     PropertyItem* m_isNumberVisible = nullptr;
     PropertyItem* m_numberPosition = nullptr;
+    bool m_isNumberVisibleEnabled = true;
 };
 }
 

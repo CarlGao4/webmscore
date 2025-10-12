@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -31,29 +31,30 @@
 class QColor;
 
 namespace mu::notation {
-class PlaybackCursor
+class PlaybackCursor : public muse::Injectable
 {
-    INJECT(INotationConfiguration, configuration)
+    muse::Inject<INotationConfiguration> configuration = { this };
 
 public:
-    PlaybackCursor() = default;
+    PlaybackCursor(const muse::modularity::ContextPtr& iocCtx)
+        : muse::Injectable(iocCtx) {}
 
-    void paint(draw::Painter* painter);
+    void paint(muse::draw::Painter* painter);
 
     void setNotation(INotationPtr notation);
-    void move(midi::tick_t tick);
+    void move(muse::midi::tick_t tick);
 
     bool visible() const;
     void setVisible(bool arg);
 
-    const RectF& rect() const;
+    const muse::RectF& rect() const;
 
 private:
     QColor color() const;
-    RectF resolveCursorRectByTick(midi::tick_t tick) const;
+    muse::RectF resolveCursorRectByTick(muse::midi::tick_t tick) const;
 
     bool m_visible = false;
-    RectF m_rect;
+    muse::RectF m_rect;
 
     INotationPtr m_notation;
 };

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2022 MuseScore BVBA and others
+ * Copyright (C) 2022 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -28,7 +28,6 @@
 #include "context/iglobalcontext.h"
 
 #include "engraving/dom/harppedaldiagram.h"
-#include "engraving/dom/undo.h"
 
 #include "view/abstractelementpopupmodel.h"
 
@@ -37,12 +36,12 @@ class HarpPedalPopupModel : public AbstractElementPopupModel
 {
     Q_OBJECT
 
-    INJECT(context::IGlobalContext, globalContext)
-
     Q_PROPERTY(bool isDiagram READ isDiagram WRITE setIsDiagram NOTIFY isDiagramChanged)
     Q_PROPERTY(
         QVector<mu::notation::HarpPedalPopupModel::Position> pedalState READ pedalState WRITE setDiagramPedalState NOTIFY pedalStateChanged)
     Q_PROPERTY(QRectF staffPos READ staffPos CONSTANT)
+
+    muse::Inject<context::IGlobalContext> globalContext = { this };
 
 public:
     enum class Position {

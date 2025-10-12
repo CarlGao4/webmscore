@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -19,8 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_NOTATION_CONTROLLEDVIEWMOCK_H
-#define MU_NOTATION_CONTROLLEDVIEWMOCK_H
+#pragma once
 
 #include <gmock/gmock.h>
 
@@ -34,30 +33,33 @@ public:
     MOCK_METHOD(qreal, width, (), (const, override));
     MOCK_METHOD(qreal, height, (), (const, override));
 
-    MOCK_METHOD(PointF, viewportTopLeft, (), (const, override));
+    MOCK_METHOD(muse::PointF, viewportTopLeft, (), (const, override));
 
     MOCK_METHOD(bool, moveCanvas, (qreal, qreal), (override));
     MOCK_METHOD(void, moveCanvasHorizontal, (qreal), (override));
     MOCK_METHOD(void, moveCanvasVertical, (qreal), (override));
 
-    MOCK_METHOD(RectF, notationContentRect, (), (const, override));
+    MOCK_METHOD(muse::RectF, notationContentRect, (), (const, override));
     MOCK_METHOD(qreal, currentScaling, (), (const, override));
-    MOCK_METHOD(void, setScaling, (qreal, const PointF&, bool), (override));
+    MOCK_METHOD(void, setScaling, (qreal, const muse::PointF&, bool), (override));
 
-    MOCK_METHOD(PointF, toLogical, (const PointF&), (const, override));
-    MOCK_METHOD(PointF, toLogical, (const QPointF&), (const, override));
-    MOCK_METHOD(PointF, fromLogical, (const PointF&), (const, override));
-    MOCK_METHOD(RectF, fromLogical, (const RectF&), (const, override));
+    MOCK_METHOD(muse::PointF, toLogical, (const muse::PointF&), (const, override));
+    MOCK_METHOD(muse::PointF, toLogical, (const QPointF&), (const, override));
+    MOCK_METHOD(muse::PointF, fromLogical, (const muse::PointF&), (const, override));
+    MOCK_METHOD(muse::RectF, fromLogical, (const muse::RectF&), (const, override));
 
     MOCK_METHOD(bool, isNoteEnterMode, (), (const, override));
-    MOCK_METHOD(void, showShadowNote, (const PointF&), (override));
+    MOCK_METHOD(void, showShadowNote, (const muse::PointF&), (override));
 
     MOCK_METHOD(void, showContextMenu, (const ElementType&, const QPointF&), (override));
     MOCK_METHOD(void, hideContextMenu, (), (override));
 
-    MOCK_METHOD(void, showElementPopup, (const ElementType&, const RectF&), (override));
-    MOCK_METHOD(void, hideElementPopup, (), (override));
-    MOCK_METHOD(void, toggleElementPopup, (const ElementType&, const RectF&), (override));
+    MOCK_METHOD(void, showElementPopup, (const ElementType&), (override));
+    MOCK_METHOD(void, hideElementPopup, (const ElementType&), (override));
+    MOCK_METHOD(void, hideElementPopup, (PopupModelType), (override));
+    MOCK_METHOD(void, toggleElementPopup, (const ElementType&), (override));
+
+    MOCK_METHOD(bool, elementPopupIsOpen, (const ElementType&), (const, override));
 
     MOCK_METHOD(INotationInteractionPtr, notationInteraction, (), (const, override));
     MOCK_METHOD(INotationPlaybackPtr, notationPlayback, (), (const, override));
@@ -65,5 +67,3 @@ public:
     MOCK_METHOD(QQuickItem*, asItem, (), (override));
 };
 }
-
-#endif // MU_NOTATION_CONTROLLEDVIEWMOCK_H

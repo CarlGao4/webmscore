@@ -19,12 +19,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_DRAW_QIMAGEPROVIDER_H
-#define MU_DRAW_QIMAGEPROVIDER_H
+#pragma once
 
-#include "iimageprovider.h"
+#include "../iimageprovider.h"
 
-namespace mu::draw {
+namespace muse::draw {
 class QImageProvider : public IImageProvider
 {
 public:
@@ -37,5 +36,3 @@ public:
     void saveAsPng(std::shared_ptr<Pixmap> px, io::IODevice* device) override;
 };
 }
-
-#endif // MU_DRAW_QIMAGEPROVIDER_H

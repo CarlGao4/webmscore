@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -482,7 +482,7 @@ SymId KeySigEvent::symInKey(SymId sym, int degree) const
     int accIndex = std::distance(std::begin(accTable), std::find(std::begin(accTable), std::end(accTable), sym));
 
     // non transposed key
-    if (keyval == 0 || abs(keyval) > 7) {
+    if (keyval == 0 || std::abs(keyval) > 7) {
         return sym;
     }
 
@@ -491,7 +491,7 @@ SymId KeySigEvent::symInKey(SymId sym, int degree) const
         return SymId::noSym;
     }
 
-    for (int i = 1; i <= abs(keyval); ++i) {
+    for (int i = 1; i <= std::abs(keyval); ++i) {
         if ((degree * 2 + 2) % 7 == (keyval < 0 ? 8 - i : i) % 7) {
             accIndex += keyval < 0 ? -1 : 1;
         }

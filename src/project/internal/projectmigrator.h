@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -32,17 +32,17 @@ namespace mu::project {
 class ProjectMigrator : public IProjectMigrator
 {
     INJECT(IProjectConfiguration, configuration)
-    INJECT(framework::IInteractive, interactive)
+    INJECT(muse::IInteractive, interactive)
 public:
     ProjectMigrator() = default;
 
-    Ret migrateEngravingProjectIfNeed(engraving::EngravingProjectPtr project) override;
+    muse::Ret migrateEngravingProjectIfNeed(engraving::EngravingProjectPtr project) override;
 
 private:
 
-    Ret askAboutMigration(MigrationOptions& out, const QString& appVersion, MigrationType migrationType);
+    muse::Ret askAboutMigration(MigrationOptions& out, const QString& appVersion, MigrationType migrationType);
 
-    Ret migrateProject(engraving::EngravingProjectPtr project, const MigrationOptions& opt);
+    muse::Ret migrateProject(engraving::EngravingProjectPtr project, const MigrationOptions& opt);
 
     bool applyLelandStyle(mu::engraving::MasterScore* score);
     bool applyEdwinStyle(mu::engraving::MasterScore* score);

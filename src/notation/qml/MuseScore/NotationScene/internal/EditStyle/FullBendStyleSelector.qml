@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -23,8 +23,8 @@
 import QtQuick 2.15
 
 import MuseScore.NotationScene 1.0
-import MuseScore.UiComponents 1.0
-import MuseScore.Ui 1.0
+import Muse.UiComponents 1.0
+import Muse.Ui 1.0
 
 Rectangle {
     anchors.fill: parent
@@ -44,14 +44,10 @@ Rectangle {
             width: 106
             height: 60
 
-            checked: modelData.value === bendStyleSelector.useFull.value
+            iconCode: modelData.iconCode
+            iconFontSize: 28
 
-            StyledIconLabel {
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.verticalCenter: parent.verticalCenter
-                iconCode: modelData.iconCode
-                font.pixelSize: 28
-            }
+            checked: modelData.value === bendStyleSelector.useFull.value
 
             onToggled: {
                 bendStyleSelector.useFull.value = modelData.value

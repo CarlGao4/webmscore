@@ -19,14 +19,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_UI_IINTERACTIVEURIREGISTER_H
-#define MU_UI_IINTERACTIVEURIREGISTER_H
+#ifndef MUSE_UI_IINTERACTIVEURIREGISTER_H
+#define MUSE_UI_IINTERACTIVEURIREGISTER_H
+
+#include <type_traits>
 
 #include "modularity/imoduleinterface.h"
 #include "types/uri.h"
 #include "uitypes.h"
 
-namespace mu::ui {
+namespace muse::ui {
 class IInteractiveUriRegister : MODULE_EXPORT_INTERFACE
 {
     INTERFACE_ID(IInteractiveUriRegister)
@@ -35,6 +37,7 @@ public:
     virtual ~IInteractiveUriRegister() = default;
 
     virtual void registerUri(const Uri& uri, const ContainerMeta& meta) = 0;
+    virtual void unregisterUri(const Uri& uri) = 0;
     virtual ContainerMeta meta(const Uri& uri) const = 0;
 
     // useful
@@ -43,11 +46,13 @@ public:
         registerUri(uri, ContainerMeta(ContainerType::Type::QmlDialog, qmlPath));
     }
 
-    void registerWidgetUri(const Uri& uri, int widgetMetaTypeId)
+    template<typename T>
+    void registerWidgetUri(const Uri& uri)
     {
-        registerUri(uri, ContainerMeta(ContainerType::Type::QWidgetDialog, widgetMetaTypeId));
+        static_assert(std::is_base_of<QWidget, T>::value, "T must derive from QWidget");
+        registerUri(uri, ContainerMeta(ContainerType::Type::QWidgetDialog, qRegisterMetaType<T>()));
     }
 };
 }
 
-#endif // MU_UI_IINTERACTIVEURIREGISTER_H
+#endif // MUSE_UI_IINTERACTIVEURIREGISTER_H

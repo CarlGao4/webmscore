@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -20,15 +20,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_ENGRAVING_READ206_H
-#define MU_ENGRAVING_READ206_H
+#pragma once
 
 #include "../ireader.h"
 
-#include "modularity/ioc.h"
-#include "iengravingfontsprovider.h"
-
-#include "engravingerrors.h"
 #include "style/styledef.h"
 #include "dom/score.h"
 
@@ -59,18 +54,19 @@ class ReadContext;
 namespace mu::engraving::read206 {
 class Read206 : public rw::IReader
 {
-    INJECT_STATIC(IEngravingFontsProvider, engravingFonts)
 public:
 
     //---------------------------------------------------------
     //   read206
     //    import old version > 1.3  and < 3.x files
     //---------------------------------------------------------
-    Err readScore(Score* score, XmlReader& e, rw::ReadInOutData* out) override;
+    muse::Ret readScore(Score* score, XmlReader& e, rw::ReadInOutData* out) override;
 
     bool pasteStaff(XmlReader& e, Segment* dst, staff_idx_t dstStaff, Fraction scale) override;
     void pasteSymbols(XmlReader& e, ChordRest* dst) override;
+    void readTremoloCompat(compat::TremoloCompat* item, XmlReader& xml) override;
 
+    static VoiceAssignment readDynamicRange(int);
     static EngravingItem* readArticulation(EngravingItem*, XmlReader&, read400::ReadContext& ctx);
     static void readAccidental206(Accidental*, XmlReader&, read400::ReadContext& ctx);
     static void readTextStyle206(MStyle* style, XmlReader& e, read400::ReadContext& ctx, std::map<String, std::map<Sid,
@@ -98,5 +94,3 @@ private:
     static void readPart206(Part* part, XmlReader& e, read400::ReadContext& ctx);
 };
 }
-
-#endif // MU_ENGRAVING_READ206_H

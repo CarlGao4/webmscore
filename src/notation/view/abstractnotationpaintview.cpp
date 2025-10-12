@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,15 +22,18 @@
 #include "abstractnotationpaintview.h"
 
 #include <QPainter>
+#include <QMimeData>
 
 #include "actions/actiontypes.h"
-
+#include "engraving/dom/shadownote.h"
 #include "log.h"
 
 using namespace mu;
-using namespace mu::ui;
-using namespace mu::draw;
 using namespace mu::notation;
+using namespace muse;
+using namespace muse::ui;
+using namespace muse::draw;
+using namespace muse::actions;
 
 static constexpr qreal SCROLL_LIMIT_OFF_OVERSCROLL_FACTOR = 0.75;
 
@@ -40,11 +43,10 @@ static void compensateFloatPart(RectF& rect)
 }
 
 AbstractNotationPaintView::AbstractNotationPaintView(QQuickItem* parent)
-    : uicomponents::QuickPaintedView(parent)
+    : muse::uicomponents::QuickPaintedView(parent), muse::Injectable(muse::iocCtxForQmlObject(this))
 {
     setFlag(ItemHasContents, true);
     setFlag(ItemAcceptsDrops, true);
-    setFlag(ItemAcceptsInputMethod, true);
     setAcceptedMouseButtons(Qt::AllButtons);
 
     connect(this, &QQuickPaintedItem::widthChanged, this, &AbstractNotationPaintView::onViewSizeChanged);
@@ -56,21 +58,6 @@ AbstractNotationPaintView::AbstractNotationPaintView(QQuickItem* parent)
 
     connect(this, &AbstractNotationPaintView::verticalScrollChanged, [this]() {
         m_previousVerticalScrollPosition = startVerticalScrollPosition();
-    });
-
-    m_inputController = std::make_unique<NotationViewInputController>(this);
-    m_playbackCursor = std::make_unique<PlaybackCursor>();
-    m_playbackCursor->setVisible(false);
-    m_noteInputCursor = std::make_unique<NoteInputCursor>();
-
-    m_loopInMarker = std::make_unique<LoopMarker>(LoopBoundaryType::LoopIn);
-    m_loopOutMarker = std::make_unique<LoopMarker>(LoopBoundaryType::LoopOut);
-
-    m_continuousPanel = std::make_unique<ContinuousPanel>();
-
-    //! NOTE For diagnostic tools
-    dispatcher()->reg(this, "diagnostic-notationview-redraw", [this]() {
-        scheduleRedraw();
     });
 
     m_enableAutoScrollTimer.setSingleShot(true);
@@ -93,6 +80,26 @@ void AbstractNotationPaintView::load()
 {
     TRACEFUNC;
 
+    m_loadCalled = true;
+    m_inputController = std::make_unique<NotationViewInputController>(this, iocContext());
+    m_playbackCursor = std::make_unique<PlaybackCursor>(iocContext());
+    m_playbackCursor->setVisible(false);
+    m_noteInputCursor = std::make_unique<NoteInputCursor>(configuration()->thinNoteInputCursor());
+    m_ruler = std::make_unique<NotationRuler>(iocContext());
+
+    m_loopInMarker = std::make_unique<LoopMarker>(LoopBoundaryType::LoopIn, iocContext());
+    m_loopOutMarker = std::make_unique<LoopMarker>(LoopBoundaryType::LoopOut, iocContext());
+
+    m_continuousPanel = std::make_unique<ContinuousPanel>(iocContext());
+
+    //! NOTE For diagnostic tools
+    if (!dispatcher()->isReg(this)) {
+        dispatcher()->reg(this, "diagnostic-notationview-redraw", [this]() {
+            scheduleRedraw();
+        });
+    }
+
+    m_inputController->setReadonly(m_readonly);
     m_inputController->init();
 
     onNotationSetup();
@@ -123,7 +130,7 @@ void AbstractNotationPaintView::initBackground()
 
 void AbstractNotationPaintView::initNavigatorOrientation()
 {
-    configuration()->canvasOrientation().ch.onReceive(this, [this](framework::Orientation) {
+    configuration()->canvasOrientation().ch.onReceive(this, [this](muse::Orientation) {
         moveCanvasToPosition(PointF(0, 0));
     });
 }
@@ -196,7 +203,7 @@ void AbstractNotationPaintView::selectOnNavigationActive()
     interaction->selectFirstElement(false);
 }
 
-bool AbstractNotationPaintView::canReceiveAction(const actions::ActionCode& actionCode) const
+bool AbstractNotationPaintView::canReceiveAction(const ActionCode& actionCode) const
 {
     if (actionCode == "diagnostic-notationview-redraw") {
         return true;
@@ -225,7 +232,7 @@ void AbstractNotationPaintView::onCurrentNotationChanged()
 void AbstractNotationPaintView::onLoadNotation(INotationPtr)
 {
     if (viewport().isValid() && !m_notation->viewState()->isMatrixInited()) {
-        m_inputController->initZoom();
+        initZoomAndPosition();
     }
 
     if (publishMode()) {
@@ -234,17 +241,26 @@ void AbstractNotationPaintView::onLoadNotation(INotationPtr)
         m_notation->painting()->setViewMode(m_notation->viewState()->viewMode());
     }
 
-    INotationInteractionPtr interaction = notationInteraction();
-
-    m_notation->notationChanged().onNotify(this, [this, interaction]() {
-        interaction->hideShadowNote();
-        m_shadowNoteRect = RectF();
+    m_notation->notationChanged().onNotify(this, [this]() {
+        updateShadowNoteVisibility();
         scheduleRedraw();
     });
 
     onNoteInputStateChanged();
+    if (isNoteEnterMode()) {
+        emit activeFocusRequested();
+    }
+
+    INotationInteractionPtr interaction = notationInteraction();
+
     interaction->noteInput()->stateChanged().onNotify(this, [this]() {
         onNoteInputStateChanged();
+    });
+
+    interaction->noteInput()->noteInputStarted().onReceive(this, [this](bool focusNotation) {
+        if (focusNotation) {
+            emit activeFocusRequested();
+        }
     });
 
     interaction->selectionChanged().onNotify(this, [this]() {
@@ -256,9 +272,15 @@ void AbstractNotationPaintView::onLoadNotation(INotationPtr)
     });
 
     interaction->textEditingStarted().onNotify(this, [this]() {
-        if (!hasActiveFocus()) {
-            forceFocusIn();
-        }
+        setFlag(ItemAcceptsInputMethod, true);
+        setFocus(false); // Remove focus once so that the IME reloads the state
+        forceFocusIn();
+    });
+
+    interaction->textEditingEnded().onReceive(this, [this](const engraving::TextBase*) {
+        setFlag(ItemAcceptsInputMethod, false);
+        setFocus(false); // Remove focus once so that the IME reloads the state
+        forceFocusIn();
     });
 
     interaction->dropChanged().onNotify(this, [this]() {
@@ -270,6 +292,11 @@ void AbstractNotationPaintView::onLoadNotation(INotationPtr)
     updateLoopMarkers();
     notationPlayback()->loopBoundariesChanged().onNotify(this, [this]() {
         updateLoopMarkers();
+    });
+
+    m_notation->viewModeChanged().onNotify(this, [this]() {
+        updateLoopMarkers();
+        ensureViewportInsideScrollableArea();
     });
 
     if (isMainView()) {
@@ -316,6 +343,10 @@ void AbstractNotationPaintView::onUnloadNotation(INotationPtr)
     }
 }
 
+void AbstractNotationPaintView::initZoomAndPosition()
+{
+}
+
 void AbstractNotationPaintView::setMatrix(const Transform& matrix)
 {
     if (m_matrix == matrix) {
@@ -349,7 +380,10 @@ void AbstractNotationPaintView::onMatrixChanged(const Transform& oldMatrix, cons
 
     emit horizontalScrollChanged();
     emit verticalScrollChanged();
+    emit matrixChanged();
     emit viewportChanged();
+
+    onPlaybackCursorRectChanged();
 }
 
 void AbstractNotationPaintView::onViewSizeChanged()
@@ -362,7 +396,7 @@ void AbstractNotationPaintView::onViewSizeChanged()
 
     if (viewport().isValid()) {
         if (!notation()->viewState()->isMatrixInited()) {
-            m_inputController->initZoom();
+            initZoomAndPosition();
         } else {
             m_inputController->updateZoomAfterSizeChange();
         }
@@ -375,6 +409,8 @@ void AbstractNotationPaintView::onViewSizeChanged()
     emit horizontalScrollChanged();
     emit verticalScrollChanged();
     emit viewportChanged();
+
+    onPlaybackCursorRectChanged();
 }
 
 void AbstractNotationPaintView::updateLoopMarkers()
@@ -386,10 +422,36 @@ void AbstractNotationPaintView::updateLoopMarkers()
     m_loopInMarker->move(loop.loopInTick);
     m_loopOutMarker->move(loop.loopOutTick);
 
-    m_loopInMarker->setVisible(loop.visible);
-    m_loopOutMarker->setVisible(loop.visible);
+    m_loopInMarker->setVisible(loop.enabled);
+    m_loopOutMarker->setVisible(loop.enabled);
 
     scheduleRedraw();
+}
+
+void AbstractNotationPaintView::updateShadowNoteVisibility()
+{
+    INotationInteractionPtr interaction = notationInteraction();
+    const engraving::ShadowNote* shadowNote = interaction ? interaction->shadowNote() : nullptr;
+    if (!shadowNote || !shadowNote->visible()) {
+        m_shadowNoteRect = RectF();
+        return;
+    }
+
+    if (isNoteEnterMode()) {
+        //! NOTE: The following may actually hide the shadow note
+        //! if cursorPos is no longer valid...
+        const QPointF cursorPos = mapFromGlobal(QCursor::pos());
+        showShadowNote(toLogical(cursorPos));
+    } else {
+        interaction->hideShadowNote();
+        m_shadowNoteRect = RectF();
+        return;
+    }
+}
+
+NotationViewInputController* AbstractNotationPaintView::inputController() const
+{
+    return m_inputController.get();
 }
 
 INotationPtr AbstractNotationPaintView::notation() const
@@ -436,18 +498,9 @@ void AbstractNotationPaintView::onNoteInputStateChanged()
 {
     TRACEFUNC;
 
-    bool noteEnterMode = isNoteEnterMode();
-    setAcceptHoverEvents(noteEnterMode);
-
-    if (noteEnterMode) {
-        emit activeFocusRequested();
-    }
-
-    if (INotationInteractionPtr interaction = notationInteraction()) {
-        interaction->hideShadowNote();
-        m_shadowNoteRect = RectF();
-        scheduleRedraw();
-    }
+    setAcceptHoverEvents(isNoteEnterMode());
+    updateShadowNoteVisibility();
+    scheduleRedraw();
 }
 
 void AbstractNotationPaintView::onShowItemRequested(const INotationInteraction::ShowItemRequest& request)
@@ -483,7 +536,12 @@ void AbstractNotationPaintView::showShadowNote(const PointF& pos)
 {
     TRACEFUNC;
 
-    bool visible = notationInteraction()->showShadowNote(pos);
+    INotationInteractionPtr interaction = notationInteraction();
+    if (!interaction) {
+        return;
+    }
+
+    const bool visible = interaction->showShadowNote(pos);
 
     if (m_shadowNoteRect.isValid()) {
         scheduleRedraw(m_shadowNoteRect);
@@ -494,7 +552,7 @@ void AbstractNotationPaintView::showShadowNote(const PointF& pos)
         }
     }
 
-    RectF shadowNoteRect = fromLogical(notationInteraction()->shadowNoteRect());
+    RectF shadowNoteRect = fromLogical(interaction->shadowNoteRect());
 
     if (shadowNoteRect.isValid()) {
         compensateFloatPart(shadowNoteRect);
@@ -513,7 +571,7 @@ void AbstractNotationPaintView::showContextMenu(const ElementType& elementType, 
         _pos = QPointF(width() / 2, height() / 2);
     }
 
-    emit showContextMenuRequested(static_cast<int>(elementType), pos);
+    emit showContextMenuRequested(static_cast<int>(elementType), _pos);
 }
 
 void AbstractNotationPaintView::hideContextMenu()
@@ -525,32 +583,57 @@ void AbstractNotationPaintView::hideContextMenu()
     }
 }
 
-void AbstractNotationPaintView::showElementPopup(const ElementType& elementType, const RectF& elementRect)
+void AbstractNotationPaintView::showElementPopup(const ElementType& elementType)
 {
     TRACEFUNC;
 
-    PopupModelType modelType = AbstractElementPopupModel::modelTypeFromElement(elementType);
+    const PopupModelType modelType = AbstractElementPopupModel::modelTypeFromElement(elementType);
+    if (m_currentElementPopupType == modelType) {
+        // Don't do anything if a popup of this type is already open...
+        return;
+    }
 
-    emit showElementPopupRequested(modelType, fromLogical(elementRect).toQRectF());
+    m_currentElementPopupType = modelType;
+    emit showElementPopupRequested(modelType);
 }
 
-void AbstractNotationPaintView::hideElementPopup()
+void AbstractNotationPaintView::hideElementPopup(const ElementType& elementType)
 {
     TRACEFUNC;
 
-    if (m_isPopupOpen) {
+    hideElementPopup(AbstractElementPopupModel::modelTypeFromElement(elementType));
+}
+
+void AbstractNotationPaintView::hideElementPopup(PopupModelType modelType)
+{
+    TRACEFUNC;
+
+    if (m_currentElementPopupType == PopupModelType::TYPE_UNDEFINED) {
+        // Popup is already hidden...
+        return;
+    }
+
+    // Hide the popup if the model type matches the currently open model type, or if no element type was specified
+    if (modelType == m_currentElementPopupType || modelType == PopupModelType::TYPE_UNDEFINED) {
+        m_currentElementPopupType = PopupModelType::TYPE_UNDEFINED;
         emit hideElementPopupRequested();
     }
 }
 
-void AbstractNotationPaintView::toggleElementPopup(const ElementType& elementType, const RectF& elementRect)
+void AbstractNotationPaintView::toggleElementPopup(const ElementType& elementType)
 {
-    if (m_isPopupOpen) {
-        hideElementPopup();
+    if (m_currentElementPopupType != PopupModelType::TYPE_UNDEFINED) {
+        hideElementPopup(elementType);
         return;
     }
 
-    showElementPopup(elementType, elementRect);
+    showElementPopup(elementType);
+}
+
+bool AbstractNotationPaintView::elementPopupIsOpen(const ElementType& elementType) const
+{
+    const PopupModelType modelType = AbstractElementPopupModel::modelTypeFromElement(elementType);
+    return m_currentElementPopupType == modelType;
 }
 
 void AbstractNotationPaintView::paint(QPainter* qp)
@@ -560,8 +643,8 @@ void AbstractNotationPaintView::paint(QPainter* qp)
     RectF rect = RectF::fromQRectF(qp->clipBoundingRect());
     rect = correctDrawRect(rect);
 
-    mu::draw::Painter mup(qp, objectName().toStdString());
-    mu::draw::Painter* painter = &mup;
+    muse::draw::Painter mup(qp, objectName().toStdString());
+    muse::draw::Painter* painter = &mup;
 
     paintBackground(rect, painter);
 
@@ -578,18 +661,29 @@ void AbstractNotationPaintView::paint(QPainter* qp)
     bool isPrinting = publishMode() || m_inputController->readonly();
     notation()->painting()->paintView(painter, toLogical(rect), isPrinting);
 
-    m_playbackCursor->paint(painter);
-    m_noteInputCursor->paint(painter);
+    const ui::UiContext uiCtx = uiContextResolver()->currentUiContext();
+    const bool isOnNotationPage = uiCtx == ui::UiCtxProjectOpened || uiCtx == ui::UiCtxProjectFocused;
+
+    const INotationNoteInputPtr noteInput = notationNoteInput();
+    if (noteInput->isNoteInputMode() && isOnNotationPage) {
+        if (noteInput->usingNoteInputMethod(NoteInputMethod::BY_DURATION)
+            && !configuration()->useNoteInputCursorInInputByDuration()) {
+            m_ruler->paint(painter, noteInput->state());
+        } else {
+            m_noteInputCursor->paint(painter);
+        }
+    }
+
     m_loopInMarker->paint(painter);
     m_loopOutMarker->paint(painter);
 
     if (notation()->viewMode() == engraving::LayoutMode::LINE) {
-        ContinuousPanel::NotationViewContext ctx;
-        ctx.xOffset = m_matrix.dx();
-        ctx.yOffset = m_matrix.dy();
-        ctx.scaling = currentScaling();
-        ctx.fromLogical = [this](const PointF& pos) -> PointF { return fromLogical(pos); };
-        m_continuousPanel->paint(*painter, ctx);
+        ContinuousPanel::NotationViewContext nvCtx;
+        nvCtx.xOffset = m_matrix.dx();
+        nvCtx.yOffset = m_matrix.dy();
+        nvCtx.scaling = currentScaling();
+        nvCtx.fromLogical = [this](const PointF& pos) -> PointF { return fromLogical(pos); };
+        m_continuousPanel->paint(*painter, nvCtx);
     }
 }
 
@@ -607,7 +701,7 @@ void AbstractNotationPaintView::onNotationSetup()
         onPlayingChanged();
     });
 
-    playbackController()->midiTickPlayed().onReceive(this, [this](uint32_t tick) {
+    playbackController()->currentPlaybackPositionChanged().onReceive(this, [this](audio::secs_t, midi::tick_t tick) {
         movePlaybackCursor(tick);
     });
 
@@ -624,7 +718,7 @@ void AbstractNotationPaintView::onNotationSetup()
     });
 }
 
-void AbstractNotationPaintView::paintBackground(const RectF& rect, draw::Painter* painter)
+void AbstractNotationPaintView::paintBackground(const RectF& rect, muse::draw::Painter* painter)
 {
     TRACEFUNC;
 
@@ -680,6 +774,11 @@ std::pair<qreal, qreal> AbstractNotationPaintView::constraintCanvas(qreal dx, qr
     }
 
     return { dx, dy };
+}
+
+QVariant AbstractNotationPaintView::matrix() const
+{
+    return Transform::toQTransform(m_matrix);
 }
 
 PointF AbstractNotationPaintView::viewportTopLeft() const
@@ -968,7 +1067,7 @@ bool AbstractNotationPaintView::doMoveCanvas(qreal dx, qreal dy)
     return true;
 }
 
-void AbstractNotationPaintView::scheduleRedraw(const mu::RectF& rect)
+void AbstractNotationPaintView::scheduleRedraw(const muse::RectF& rect)
 {
     QRect qrect = correctDrawRect(rect).toQRect();
     update(qrect);
@@ -1081,9 +1180,9 @@ void AbstractNotationPaintView::onContextMenuIsOpenChanged(bool open)
     m_isContextMenuOpen = open;
 }
 
-void AbstractNotationPaintView::onElementPopupIsOpenChanged(bool open)
+void AbstractNotationPaintView::onElementPopupIsOpenChanged(const PopupModelType& popupType)
 {
-    m_isPopupOpen = open;
+    m_currentElementPopupType = popupType;
 }
 
 void AbstractNotationPaintView::mousePressEvent(QMouseEvent* event)
@@ -1151,8 +1250,19 @@ void AbstractNotationPaintView::keyPressEvent(QKeyEvent* event)
     return;
 }
 
+void AbstractNotationPaintView::keyReleaseEvent(QKeyEvent* event)
+{
+    if (isInited()) {
+        m_inputController->keyReleaseEvent(event);
+    }
+}
+
 bool AbstractNotationPaintView::event(QEvent* event)
 {
+    if (!isInited()) {
+        return QQuickPaintedItem::event(event);
+    }
+
     QEvent::Type eventType = event->type();
     auto keyEvent = dynamic_cast<QKeyEvent*>(event);
 
@@ -1160,8 +1270,16 @@ bool AbstractNotationPaintView::event(QEvent* event)
                                || eventType == QEvent::Type::ContextMenu) && hasFocus();
 
     if (isContextMenuEvent) {
-        showContextMenu(m_inputController->selectionType(),
-                        fromLogical(m_inputController->selectionElementPos()).toQPointF());
+        QContextMenuEvent* contextMenuEvent = dynamic_cast<QContextMenuEvent*>(event);
+        if (contextMenuEvent && contextMenuEvent->reason() == QContextMenuEvent::Mouse
+            && m_inputController->ignoreNextMouseContextMenuEvent()) {
+            return true;
+        }
+        QPointF pos = contextMenuEvent && !contextMenuEvent->pos().isNull()
+                      ? mapFromGlobal(contextMenuEvent->globalPos())
+                      : fromLogical(m_inputController->selectionElementPos()).toQPointF();
+        showContextMenu(m_inputController->selectionType(), pos);
+        return true;
     } else if (eventType == QEvent::Type::ShortcutOverride) {
         bool shouldOverrideShortcut = shortcutOverride(keyEvent);
 
@@ -1222,15 +1340,21 @@ void AbstractNotationPaintView::dropEvent(QDropEvent* event)
 void AbstractNotationPaintView::setNotation(INotationPtr notation)
 {
     m_notation = notation;
-    m_continuousPanel->setNotation(m_notation);
-    m_playbackCursor->setNotation(m_notation);
-    m_loopInMarker->setNotation(m_notation);
-    m_loopOutMarker->setNotation(m_notation);
+
+    if (m_loadCalled) {
+        m_continuousPanel->setNotation(m_notation);
+        m_playbackCursor->setNotation(m_notation);
+        m_loopInMarker->setNotation(m_notation);
+        m_loopOutMarker->setNotation(m_notation);
+    }
 }
 
 void AbstractNotationPaintView::setReadonly(bool readonly)
 {
-    m_inputController->setReadonly(readonly);
+    m_readonly = readonly;
+    if (m_inputController) {
+        m_inputController->setReadonly(m_readonly);
+    }
 }
 
 void AbstractNotationPaintView::clear()
@@ -1298,19 +1422,23 @@ void AbstractNotationPaintView::onPlayingChanged()
     bool isPlaying = playbackController()->isPlaying();
     m_playbackCursor->setVisible(isPlaying);
 
+    if (m_playbackCursorItem) {
+        m_playbackCursorItem->setVisible(isPlaying);
+    }
+
     m_autoScrollEnabled = true;
     m_enableAutoScrollTimer.stop();
 
     if (isPlaying) {
-        float playPosSec = playbackController()->playbackPositionInSeconds();
-        midi::tick_t tick = notationPlayback()->secToTick(playPosSec);
+        audio::secs_t pos = globalContext()->playbackState()->playbackPosition();
+        muse::midi::tick_t tick = notationPlayback()->secToTick(pos);
         movePlaybackCursor(tick);
     } else {
         scheduleRedraw();
     }
 }
 
-void AbstractNotationPaintView::movePlaybackCursor(midi::tick_t tick)
+void AbstractNotationPaintView::movePlaybackCursor(muse::midi::tick_t tick)
 {
     TRACEFUNC;
 
@@ -1321,6 +1449,10 @@ void AbstractNotationPaintView::movePlaybackCursor(midi::tick_t tick)
     RectF oldCursorRect = m_playbackCursor->rect();
     m_playbackCursor->move(tick);
     const RectF& newCursorRect = m_playbackCursor->rect();
+
+    if (newCursorRect != oldCursorRect) {
+        onPlaybackCursorRectChanged();
+    }
 
     if (!m_playbackCursor->visible() || newCursorRect.isNull()) {
         return;
@@ -1338,21 +1470,6 @@ void AbstractNotationPaintView::movePlaybackCursor(midi::tick_t tick)
                 return;
             }
         }
-    }
-
-    //! NOTE: redraw in a slightly larger area than the cursor rect to avoid graphical artifacts
-    RectF dirtyRect1 = fromLogical(oldCursorRect).adjusted(-1, -1, 2, 1);
-    RectF dirtyRect2 = fromLogical(newCursorRect).adjusted(-1, -1, 2, 1);
-
-    double dx = std::abs(dirtyRect2.x() - dirtyRect1.x());
-    double dy = std::abs(dirtyRect2.y() - dirtyRect1.y());
-
-    //! NOTE: the difference between the old cursor rect and the new one is not big, so we redraw their united rect
-    if (dx < 1.0 && dy < 1.0) {
-        scheduleRedraw(dirtyRect1.united(dirtyRect2));
-    } else {
-        scheduleRedraw(dirtyRect1);
-        scheduleRedraw(dirtyRect2);
     }
 }
 
@@ -1376,6 +1493,23 @@ bool AbstractNotationPaintView::needAdjustCanvasVerticallyWhilePlayback(const Re
     }
 
     return nonEmptySystemCount > 1;
+}
+
+void AbstractNotationPaintView::onPlaybackCursorRectChanged()
+{
+    if (!m_playbackCursor || !m_playbackCursorItem) {
+        return;
+    }
+
+    QRectF cursorRect = fromLogical(m_playbackCursor->rect()).toQRectF();
+    cursorRect.setWidth(std::max(std::round(cursorRect.width()), 1.0)); // makes it move more smoothly
+
+    QRectF viewRect(0.0, 0.0, width(), height());
+    QRectF newRect = cursorRect.intersected(viewRect);
+
+    m_playbackCursorItem->setX(newRect.x());
+    m_playbackCursorItem->setY(newRect.y());
+    m_playbackCursorItem->setSize(newRect.size());
 }
 
 const Page* AbstractNotationPaintView::pageByPoint(const PointF& point) const
@@ -1438,4 +1572,23 @@ void AbstractNotationPaintView::setIsMainView(bool isMainView)
 
     m_isMainView = isMainView;
     emit isMainViewChanged(m_isMainView);
+}
+
+void AbstractNotationPaintView::setPlaybackCursorItem(QQuickItem* cursor)
+{
+    if (m_playbackCursorItem == cursor) {
+        return;
+    }
+
+    m_playbackCursorItem = cursor;
+
+    if (m_playbackCursorItem) {
+        m_playbackCursorItem->setVisible(playbackController()->isPlaying());
+        m_playbackCursorItem->setEnabled(false); // ignore mouse & keyboard events
+        m_playbackCursorItem->setProperty("color", configuration()->playbackCursorColor());
+
+        connect(m_playbackCursorItem, &QObject::destroyed, this, [this]() {
+            m_playbackCursorItem = nullptr;
+        });
+    }
 }

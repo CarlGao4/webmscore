@@ -19,9 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
-#ifndef MU_UICOMPONENTS_POPUPVIEWCLOSECONTROLLER_H
-#define MU_UICOMPONENTS_POPUPVIEWCLOSECONTROLLER_H
+#pragma once
 
 #include <QObject>
 #include <QQuickItem>
@@ -33,16 +31,16 @@
 #include "ui/imainwindow.h"
 #include "ui/iinteractiveprovider.h"
 
-namespace mu::uicomponents {
-class PopupViewCloseController : public QObject, public async::Asyncable
+namespace muse::uicomponents {
+class PopupViewCloseController : public QObject, public muse::Injectable, public async::Asyncable
 {
     Q_OBJECT
 
-    INJECT(ui::IMainWindow, mainWindow)
-    INJECT(ui::IInteractiveProvider, interactiveProvider)
+    muse::Inject<ui::IMainWindow> mainWindow = { this };
+    muse::Inject<ui::IInteractiveProvider> interactiveProvider = { this };
 
 public:
-    explicit PopupViewCloseController(QObject* parent = nullptr);
+    explicit PopupViewCloseController(const muse::modularity::ContextPtr& iocCtx, QObject* parent = nullptr);
     ~PopupViewCloseController() override = default;
 
     void init();
@@ -56,10 +54,8 @@ public:
     QWindow* popupWindow() const;
     void setWindow(QWindow* window);
 
-    bool popupHasFocus() const;
-    void setPopupHasFocus(bool hasFocus);
-
-    void setIsCloseOnPressOutsideParent(bool close);
+    void setIsCloseOnPressOutsideParent(bool arg);
+    void setCanClosed(bool arg);
 
     async::Notification closeNotification() const;
 
@@ -69,24 +65,24 @@ private slots:
 protected:
     bool eventFilter(QObject* watched, QEvent* event) override;
 
-    void doFocusOut();
+    void doFocusOut(const QPointF& mousePos);
     virtual void doUpdateEventFilters();
 
-    bool isMouseWithinBoundaries(const QPoint& mousePos) const;
+    bool isMouseWithinBoundaries(const QPointF& mousePos) const;
+
+    void notifyAboutClose();
 
 private:
-    void notifyAboutClose();
+    QWindow* parentWindow() const;
 
     bool m_active = false;
 
     QQuickItem* m_parentItem = nullptr;
     QWindow* m_popupWindow = nullptr;
 
-    bool m_popupHasFocus = true;
     bool m_isCloseOnPressOutsideParent = false;
+    bool m_canClosed = true;
 
     async::Notification m_closeNotification;
 };
 }
-
-#endif // MU_UICOMPONENTS_POPUPVIEWCLOSECONTROLLER_H

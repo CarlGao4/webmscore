@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -19,29 +19,26 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_ENGRAVING_PROPERTYVALUE_H
-#define MU_ENGRAVING_PROPERTYVALUE_H
+#pragma once
 
-#include <any>
-#include <string>
 #include <memory>
 #include <cassert>
-
-#include "types/string.h"
-#include "types/types.h"
-#include "types/symid.h"
-
-#include "global/logstream.h"
 
 #ifndef NO_QT_SUPPORT
 #include <QVariant>
 #endif
 
+#include "global/types/string.h"
+#include "global/logstream.h"
+
+#include "../types/types.h"
+#include "../types/symid.h"
+
 namespace mu::engraving {
 class Groups;
 class TDuration;
 
-enum class P_TYPE {
+enum class P_TYPE : unsigned char {
     UNDEFINED = 0,
     // Base
     BOOL,
@@ -67,9 +64,11 @@ enum class P_TYPE {
     ORNAMENT_INTERVAL,
     ORNAMENT_SHOW_ACCIDENTAL,
     GLISS_STYLE,
+    GLISS_TYPE,
 
     // Layout
     ALIGN,
+    ALIGN_H,
     PLACEMENT_V,
     PLACEMENT_H,
     TEXT_PLACE,
@@ -79,6 +78,15 @@ enum class P_TYPE {
     BEAM_MODE,
     ACCIDENTAL_ROLE,
     TIE_PLACEMENT,
+    TIE_DOTS_PLACEMENT,
+
+    TIMESIG_PLACEMENT,
+    TIMESIG_STYLE,
+    TIMESIG_MARGIN,
+    NOTE_SPELLING_TYPE,
+    CHORD_PRESET_TYPE,
+    PARENTHESES_MODE,
+    PLAY_COUNT_PRESET,
 
     // Sound
     FRACTION,
@@ -97,7 +105,6 @@ enum class P_TYPE {
     CLEF_TYPE,
     CLEF_TO_BARLINE_POS,
     DYNAMIC_TYPE,
-    DYNAMIC_RANGE,
     DYNAMIC_SPEED,
     LINE_TYPE,
     HOOK_TYPE,
@@ -106,6 +113,20 @@ enum class P_TYPE {
     PLAYTECH_TYPE,
     TEMPOCHANGE_TYPE,
     SLUR_STYLE_TYPE,
+    NOTELINE_PLACEMENT_TYPE,
+    LYRICS_DASH_SYSTEM_START_TYPE,
+    PARTIAL_SPANNER_DIRECTION,
+    MARKER_TYPE,
+
+    LH_TAPPING_SYMBOL,
+    RH_TAPPING_SYMBOL,
+
+    VOICE_ASSIGNMENT,
+    AUTO_ON_OFF,
+
+    AUTO_CUSTOM_HIDE,
+
+    MEASURE_NUMBER_PLACEMENT,
 
     // Other
     GROUPS,
@@ -178,9 +199,14 @@ public:
     PropertyValue(GlissandoStyle v)
         : m_type(P_TYPE::GLISS_STYLE), m_data(make_data<GlissandoStyle>(v)) {}
 
+    PropertyValue(GlissandoType v)
+        : m_type(P_TYPE::GLISS_TYPE), m_data(make_data<GlissandoType>(v)) {}
+
     // Layout
     PropertyValue(Align v)
         : m_type(P_TYPE::ALIGN), m_data(make_data<Align>(v)) {}
+    PropertyValue(AlignH v)
+        : m_type(P_TYPE::ALIGN_H), m_data(make_data<AlignH>(v)) {}
 
     PropertyValue(PlacementV v)
         : m_type(P_TYPE::PLACEMENT_V), m_data(make_data<PlacementV>(v)) {}
@@ -206,6 +232,30 @@ public:
 
     PropertyValue(TiePlacement v)
         : m_type(P_TYPE::TIE_PLACEMENT), m_data(make_data<TiePlacement>(v)) {}
+
+    PropertyValue(TieDotsPlacement v)
+        : m_type(P_TYPE::TIE_DOTS_PLACEMENT), m_data(make_data<TieDotsPlacement>(v)) {}
+
+    PropertyValue(TimeSigPlacement v)
+        : m_type(P_TYPE::TIMESIG_PLACEMENT), m_data(make_data<TimeSigPlacement>(v)) {}
+
+    PropertyValue(TimeSigStyle v)
+        : m_type(P_TYPE::TIMESIG_STYLE), m_data(make_data<TimeSigStyle>(v)) {}
+
+    PropertyValue(TimeSigVSMargin v)
+        : m_type(P_TYPE::TIMESIG_MARGIN), m_data(make_data<TimeSigVSMargin>(v)) {}
+
+    PropertyValue(NoteSpellingType v)
+        : m_type(P_TYPE::NOTE_SPELLING_TYPE), m_data(make_data<NoteSpellingType>(v)) {}
+
+    PropertyValue(const ChordStylePreset& v)
+        : m_type(P_TYPE::CHORD_PRESET_TYPE), m_data(make_data<ChordStylePreset>(v)) {}
+
+    PropertyValue(const ParenthesesMode& v)
+        : m_type(P_TYPE::PARENTHESES_MODE), m_data(make_data<ParenthesesMode>(v)) {}
+
+    PropertyValue(const RepeatPlayCountPreset& v)
+        : m_type(P_TYPE::PLAY_COUNT_PRESET), m_data(make_data<RepeatPlayCountPreset>(v)) {}
 
     // Sound
     PropertyValue(const Fraction& v)
@@ -244,8 +294,6 @@ public:
 
     PropertyValue(DynamicType v)
         : m_type(P_TYPE::DYNAMIC_TYPE), m_data(make_data<DynamicType>(v)) {}
-    PropertyValue(DynamicRange v)
-        : m_type(P_TYPE::DYNAMIC_RANGE), m_data(make_data<DynamicRange>(v)) {}
     PropertyValue(DynamicSpeed v)
         : m_type(P_TYPE::DYNAMIC_SPEED), m_data(make_data<DynamicSpeed>(v)) {}
 
@@ -269,6 +317,9 @@ public:
     PropertyValue(SlurStyleType v)
         : m_type(P_TYPE::SLUR_STYLE_TYPE), m_data(make_data<SlurStyleType>(v)) {}
 
+    PropertyValue(const NoteLineEndPlacement& v)
+        : m_type(P_TYPE::NOTELINE_PLACEMENT_TYPE), m_data(make_data<NoteLineEndPlacement>(v)) {}
+
     // Other
     PropertyValue(const GroupNodes& v)
         : m_type(P_TYPE::GROUPS), m_data(make_data<GroupNodes>(v)) {}
@@ -278,6 +329,33 @@ public:
 
     PropertyValue(const OrnamentShowAccidental& v)
         : m_type(P_TYPE::ORNAMENT_SHOW_ACCIDENTAL), m_data(make_data<OrnamentShowAccidental>(v)) {}
+
+    PropertyValue(const LyricsDashSystemStart& v)
+        : m_type(P_TYPE::LYRICS_DASH_SYSTEM_START_TYPE), m_data(make_data<LyricsDashSystemStart>(v)) {}
+
+    PropertyValue(const PartialSpannerDirection& v)
+        : m_type(P_TYPE::PARTIAL_SPANNER_DIRECTION), m_data(make_data<PartialSpannerDirection>(v)) {}
+
+    PropertyValue(const LHTappingSymbol& v)
+        : m_type(P_TYPE::LH_TAPPING_SYMBOL), m_data(make_data<LHTappingSymbol>(v)) {}
+
+    PropertyValue(const RHTappingSymbol& v)
+        : m_type(P_TYPE::RH_TAPPING_SYMBOL), m_data(make_data<RHTappingSymbol>(v)) {}
+
+    PropertyValue(const VoiceAssignment& v)
+        : m_type(P_TYPE::VOICE_ASSIGNMENT), m_data(make_data<VoiceAssignment>(v)) {}
+
+    PropertyValue(const AutoOnOff& v)
+        : m_type(P_TYPE::AUTO_ON_OFF), m_data(make_data<AutoOnOff>(v)) {}
+
+    PropertyValue(const AutoCustomHide& v)
+        : m_type(P_TYPE::AUTO_CUSTOM_HIDE), m_data(make_data<AutoCustomHide>(v)) {}
+
+    PropertyValue(const MarkerType& v)
+        : m_type(P_TYPE::MARKER_TYPE), m_data(make_data<MarkerType>(v)) {}
+
+    PropertyValue(const MeasureNumberPlacement& v)
+        : m_type(P_TYPE::MEASURE_NUMBER_PLACEMENT), m_data(make_data<MeasureNumberPlacement>(v)) {}
 
     bool isValid() const;
 
@@ -466,10 +544,8 @@ private:
 };
 }
 
-inline mu::logger::Stream& operator<<(mu::logger::Stream& s, const mu::engraving::PropertyValue&)
+inline muse::logger::Stream& operator<<(muse::logger::Stream& s, const mu::engraving::PropertyValue&)
 {
     s << "property(not implemented log output)";
     return s;
 }
-
-#endif // MU_ENGRAVING_PROPERTYVALUE_H

@@ -26,8 +26,8 @@
 #include "types/translatablestring.h"
 #include "shortcuts/shortcutstypes.h"
 
-using namespace mu::uicomponents;
-using namespace mu::ui;
+using namespace muse::uicomponents;
+using namespace muse::ui;
 
 MenuItem::MenuItem(QObject* parent)
     : QObject(parent)
@@ -81,7 +81,7 @@ MenuItemRole MenuItem::role() const
     return m_role;
 }
 
-QList<MenuItem*> MenuItem::subitems() const
+MenuItemList MenuItem::subitems() const
 {
     return m_subitems;
 }
@@ -91,9 +91,19 @@ UiAction MenuItem::action() const
     return m_action;
 }
 
-mu::actions::ActionData MenuItem::args() const
+muse::actions::ActionData MenuItem::args() const
 {
     return m_args;
+}
+
+const muse::actions::ActionQuery& MenuItem::query() const
+{
+    return m_query;
+}
+
+void MenuItem::setQuery(const muse::actions::ActionQuery& query)
+{
+    m_query = query;
 }
 
 bool MenuItem::isValid() const
@@ -103,12 +113,12 @@ bool MenuItem::isValid() const
 
 QString MenuItem::shortcutsTitle() const
 {
-    return mu::shortcuts::sequencesToNativeText(m_action.shortcuts);
+    return shortcuts::sequencesToNativeText(m_action.shortcuts);
 }
 
 QString MenuItem::portableShortcuts() const
 {
-    return QString::fromStdString(mu::shortcuts::Shortcut::sequencesToString(m_action.shortcuts));
+    return QString::fromStdString(shortcuts::Shortcut::sequencesToString(m_action.shortcuts));
 }
 
 void MenuItem::setId(const QString& id)
@@ -171,6 +181,26 @@ void MenuItem::setSelected(bool selected)
     emit selectedChanged(m_selected);
 }
 
+void MenuItem::setCheckable(bool checkable)
+{
+    const Checkable actionCeckable = checkable ? Checkable::Yes : Checkable::No;
+    if (m_action.checkable == actionCeckable) {
+        return;
+    }
+
+    m_action.checkable = actionCeckable;
+}
+
+void MenuItem::setChecked(bool checked)
+{
+    if (m_state.checked == checked) {
+        return;
+    }
+
+    m_state.checked = checked;
+    emit stateChanged();
+}
+
 void MenuItem::setRole(MenuItemRole role)
 {
     if (m_role == role) {
@@ -201,12 +231,12 @@ void MenuItem::setAction(const UiAction& action)
     emit actionChanged();
 }
 
-void MenuItem::setArgs(const mu::actions::ActionData& args)
+void MenuItem::setArgs(const muse::actions::ActionData& args)
 {
     m_args = args;
 }
 
-QString mu::uicomponents::MenuItem::code_property() const
+QString muse::uicomponents::MenuItem::code_property() const
 {
     return QString::fromStdString(m_action.code);
 }
@@ -219,6 +249,11 @@ QString MenuItem::description_property() const
 int MenuItem::icon_property() const
 {
     return static_cast<int>(m_action.iconCode);
+}
+
+QString MenuItem::iconColor_property() const
+{
+    return m_action.iconColor;
 }
 
 bool MenuItem::enabled_property() const

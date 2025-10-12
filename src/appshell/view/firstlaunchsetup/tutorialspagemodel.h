@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2024 MuseScore BVBA and others
+ * Copyright (C) 2024 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -30,16 +30,16 @@
 class QUrl;
 
 namespace mu::appshell {
-class TutorialsPageModel : public QObject
+class TutorialsPageModel : public QObject, public muse::Injectable
 {
     Q_OBJECT
 
-    INJECT(mu::update::IUpdateConfiguration, updateConfiguration)
+    Inject<muse::update::IUpdateConfiguration> updateConfiguration = { this };
 
 public:
     explicit TutorialsPageModel(QObject* parent = nullptr);
 
-    Q_INVOKABLE QVariant museScorePrivacyPolicyUrl() const;
+    Q_INVOKABLE QUrl museScorePrivacyPolicyUrl() const;
 };
 }
 

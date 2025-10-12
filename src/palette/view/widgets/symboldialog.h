@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -27,6 +27,7 @@
 
 #include "modularity/ioc.h"
 #include "engraving/iengravingfontsprovider.h"
+#include "context/iglobalcontext.h"
 
 namespace mu::palette {
 class PaletteWidget;
@@ -38,13 +39,14 @@ class PaletteWidget;
 class SymbolDialog : public QWidget, Ui::SymbolDialogBase
 {
     Q_OBJECT
+    INJECT(mu::context::IGlobalContext, globalContext)
     INJECT(engraving::IEngravingFontsProvider, engravingFonts)
 
 public:
     SymbolDialog(const QString&, QWidget* parent = 0);
 
 private slots:
-    void systemFlagChanged(int);
+    void systemFlagChanged(Qt::CheckState);
     void systemFontChanged(int);
     void on_search_textChanged(const QString& searchPhrase);
     void on_clearSearch_clicked();

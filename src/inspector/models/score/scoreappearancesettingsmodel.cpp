@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -30,7 +30,7 @@ ScoreAppearanceSettingsModel::ScoreAppearanceSettingsModel(QObject* parent, IEle
     : AbstractInspectorModel(parent, repository)
 {
     setSectionType(InspectorSectionType::SECTION_SCORE_APPEARANCE);
-    setTitle(qtrc("inspector", "Score appearance"));
+    setTitle(muse::qtrc("inspector", "Score appearance"));
 }
 
 bool ScoreAppearanceSettingsModel::hideEmptyStaves() const
@@ -76,8 +76,6 @@ bool ScoreAppearanceSettingsModel::isEmpty() const
 
 void ScoreAppearanceSettingsModel::onCurrentNotationChanged()
 {
-    AbstractInspectorModel::onCurrentNotationChanged();
-
     emit hideEmptyStavesChanged();
     emit dontHideEmptyStavesInFirstSystemChanged();
     emit showBracketsWhenSpanningSingleStaffChanged();
@@ -85,15 +83,15 @@ void ScoreAppearanceSettingsModel::onCurrentNotationChanged()
 
 void ScoreAppearanceSettingsModel::onNotationChanged(const engraving::PropertyIdSet&, const engraving::StyleIdSet& changedStyleIdSet)
 {
-    if (mu::contains(changedStyleIdSet, StyleId::hideEmptyStaves)) {
+    if (muse::contains(changedStyleIdSet, StyleId::hideEmptyStaves)) {
         emit hideEmptyStavesChanged();
     }
 
-    if (mu::contains(changedStyleIdSet, StyleId::dontHideStavesInFirstSystem)) {
+    if (muse::contains(changedStyleIdSet, StyleId::dontHideStavesInFirstSystem)) {
         emit dontHideEmptyStavesInFirstSystemChanged();
     }
 
-    if (mu::contains(changedStyleIdSet, StyleId::alwaysShowBracketsWhenEmptyStavesAreHidden)) {
+    if (muse::contains(changedStyleIdSet, StyleId::alwaysShowBracketsWhenEmptyStavesAreHidden)) {
         emit showBracketsWhenSpanningSingleStaffChanged();
     }
 }

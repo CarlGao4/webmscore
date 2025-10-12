@@ -21,10 +21,16 @@
  */
 #include "uiactionsregister.h"
 
+#include <QTimer>
+
 #include "log.h"
 
-using namespace mu::ui;
-using namespace mu::actions;
+using namespace muse;
+using namespace muse::ui;
+using namespace muse::actions;
+
+//! NOTE Prevents repeated updates when it is requested multiple times in a row
+constexpr int REQUEST_UPDATE_TIMEOUT = 16; // msec
 
 void UiActionsRegister::init()
 {
@@ -35,13 +41,17 @@ void UiActionsRegister::init()
     updateShortcutsAll();
 
     // listen
-    uicontextResolver()->currentUiContextChanged().onNotify(this, [this]() {
-        updateEnabledAll();
-    });
+    if (uicontextResolver()) {
+        uicontextResolver()->currentUiContextChanged().onNotify(this, [this]() {
+            requestUpdateEnabledAll();
+        });
+    }
 
-    shortcutsRegister()->shortcutsChanged().onNotify(this, [this]() {
-        updateShortcutsAll();
-    });
+    if (shortcutsRegister()) {
+        shortcutsRegister()->shortcutsChanged().onNotify(this, [this]() {
+            updateShortcutsAll();
+        });
+    }
 }
 
 void UiActionsRegister::reg(const IUiActionsModulePtr& module)
@@ -61,6 +71,10 @@ void UiActionsRegister::reg(const IUiActionsModulePtr& module)
     updateChecked(newActionCodeList);
     updateShortcuts(newActionCodeList);
 
+    module->actionsChanged().onReceive(this, [this](const UiActionList& actions) {
+        updateActions(actions);
+    });
+
     module->actionEnabledChanged().onReceive(this, [this](const ActionCodeList& codes) {
         updateEnabled(codes);
         m_actionStateChanged.send(codes);
@@ -72,7 +86,7 @@ void UiActionsRegister::reg(const IUiActionsModulePtr& module)
     });
 }
 
-UiActionsRegister::Info& UiActionsRegister::info(const actions::ActionCode& code)
+UiActionsRegister::Info& UiActionsRegister::info(const ActionCode& code)
 {
     auto it = m_actions.find(code);
     if (it != m_actions.end()) {
@@ -83,23 +97,27 @@ UiActionsRegister::Info& UiActionsRegister::info(const actions::ActionCode& code
     return null;
 }
 
-const UiActionsRegister::Info& UiActionsRegister::info(const actions::ActionCode& code) const
+const UiActionsRegister::Info& UiActionsRegister::info(const ActionCode& code) const
 {
     auto it = m_actions.find(code);
     if (it != m_actions.end()) {
         return it->second;
     }
 
+    // is query?
+    ActionQuery q(code);
+    if (q.isValid()) {
+        it = m_actions.find(q.uri().toString());
+        if (it != m_actions.end()) {
+            return it->second;
+        }
+    }
+
     static Info null;
     return null;
 }
 
-const UiAction& UiActionsRegister::action(const ActionCode& code) const
-{
-    return info(code).action;
-}
-
-const std::vector<UiAction> UiActionsRegister::getActions() const
+std::vector<UiAction> UiActionsRegister::actionList() const
 {
     std::vector<UiAction> allActions;
 
@@ -108,6 +126,16 @@ const std::vector<UiAction> UiActionsRegister::getActions() const
     }
 
     return allActions;
+}
+
+const UiAction& UiActionsRegister::action(const ActionCode& code) const
+{
+    return info(code).action;
+}
+
+async::Channel<UiActionList> UiActionsRegister::actionsChanged() const
+{
+    return m_actionsChanged;
 }
 
 UiActionState UiActionsRegister::actionState(const ActionCode& code) const
@@ -123,8 +151,12 @@ UiActionState UiActionsRegister::actionState(const ActionCode& code) const
 
 void UiActionsRegister::updateShortcuts(const ActionCodeList& codes)
 {
+    if (!shortcutsRegister()) {
+        return;
+    }
+
     auto screg = shortcutsRegister();
-    for (const actions::ActionCode& code : codes) {
+    for (const ActionCode& code : codes) {
         Info& inf = info(code);
         if (!inf.isValid()) {
             continue;
@@ -138,11 +170,35 @@ void UiActionsRegister::updateShortcutsAll()
 {
     TRACEFUNC;
 
+    if (!shortcutsRegister()) {
+        return;
+    }
+
     auto screg = shortcutsRegister();
     for (auto it = m_actions.begin(); it != m_actions.end(); ++it) {
         Info& inf = it->second;
         inf.action.shortcuts = screg->shortcut(inf.action.code).sequences;
     }
+}
+
+void UiActionsRegister::updateActions(const UiActionList& actions)
+{
+    ActionCodeList codes;
+    for (const UiAction& act : actions) {
+        Info& inf = info(act.code);
+        IF_ASSERT_FAILED(inf.isValid()) {
+            continue;
+        }
+
+        inf.action = act;
+
+        codes.push_back(act.code);
+    }
+
+    m_actionsChanged.send(actions);
+
+    updateEnabled(codes);
+    updateChecked(codes);
 }
 
 void UiActionsRegister::doUpdateEnabled(Info& inf,
@@ -162,14 +218,18 @@ void UiActionsRegister::doUpdateEnabled(Info& inf,
     }
 }
 
-void UiActionsRegister::updateEnabled(const actions::ActionCodeList& codes)
+void UiActionsRegister::updateEnabled(const ActionCodeList& codes)
 {
     TRACEFUNC;
+
+    if (!uicontextResolver()) {
+        return;
+    }
 
     ActionCodeList changedList;
     auto ctxResolver = uicontextResolver();
     ui::UiContext currentCtx = ctxResolver->currentUiContext();
-    for (const actions::ActionCode& code : codes) {
+    for (const ActionCode& code : codes) {
         Info& inf = info(code);
         if (!inf.isValid()) {
             continue;
@@ -183,9 +243,26 @@ void UiActionsRegister::updateEnabled(const actions::ActionCodeList& codes)
     }
 }
 
+void UiActionsRegister::requestUpdateEnabledAll()
+{
+    if (m_isUpdateEnabledAllRequested) {
+        return;
+    }
+
+    m_isUpdateEnabledAllRequested = true;
+    QTimer::singleShot(REQUEST_UPDATE_TIMEOUT, [this]() {
+        updateEnabledAll();
+        m_isUpdateEnabledAllRequested = false;
+    });
+}
+
 void UiActionsRegister::updateEnabledAll()
 {
     TRACEFUNC;
+
+    if (!uicontextResolver()) {
+        return;
+    }
 
     ActionCodeList changedList;
     auto ctxResolver = uicontextResolver();
@@ -222,12 +299,12 @@ void UiActionsRegister::updateCheckedAll()
     }
 }
 
-void UiActionsRegister::updateChecked(const actions::ActionCodeList& codes)
+void UiActionsRegister::updateChecked(const ActionCodeList& codes)
 {
     TRACEFUNC;
 
     ActionCodeList changedList;
-    for (const actions::ActionCode& code : codes) {
+    for (const ActionCode& code : codes) {
         Info& inf = info(code);
         if (!inf.isValid()) {
             continue;
@@ -246,7 +323,7 @@ void UiActionsRegister::updateChecked(const actions::ActionCodeList& codes)
     }
 }
 
-mu::async::Channel<ActionCodeList> UiActionsRegister::actionStateChanged() const
+async::Channel<ActionCodeList> UiActionsRegister::actionStateChanged() const
 {
     return m_actionStateChanged;
 }

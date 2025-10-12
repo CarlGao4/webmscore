@@ -20,13 +20,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_UICOMPONENTS_QMLLISTPROPERTY_H
-#define MU_UICOMPONENTS_QMLLISTPROPERTY_H
+#ifndef MUSE_UICOMPONENTS_QMLLISTPROPERTY_H
+#define MUSE_UICOMPONENTS_QMLLISTPROPERTY_H
 
 #include <QObject>
 #include <QQmlListProperty>
 
-namespace mu::uicomponents {
+namespace muse::uicomponents {
 class QmlListPropertyNotifier : public QObject
 {
     Q_OBJECT
@@ -106,14 +106,14 @@ private:
         get(list)->append(t);
     }
 
-    static int s_count(QQmlListProperty<T>* list)
+    static qsizetype s_count(QQmlListProperty<T>* list)
     {
         return get(list)->count();
     }
 
-    static T* s_at(QQmlListProperty<T>* list, int index)
+    static T* s_at(QQmlListProperty<T>* list, qsizetype index)
     {
-        return get(list)->at(index);
+        return get(list)->at(static_cast<int>(index));
     }
 
     static void s_clear(QQmlListProperty<T>* list)
@@ -127,4 +127,4 @@ private:
 };
 }
 
-#endif // MU_UICOMPONENTS_QMLLISTPROPERTY_H
+#endif // MUSE_UICOMPONENTS_QMLLISTPROPERTY_H

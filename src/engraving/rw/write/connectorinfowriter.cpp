@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -121,7 +121,7 @@ SpannerWriter::SpannerWriter(XmlWriter& xml, WriteContext* ctx, const EngravingI
             Measure* m = sp->score()->tick2measure(sp->tick());
             fillSpannerPosition(m_prevLoc, m, sp->tick(), clipboardmode);
         } else {
-            const track_idx_t track2 = (sp->track2() != mu::nidx) ? sp->track2() : sp->track();
+            const track_idx_t track2 = (sp->track2() != muse::nidx) ? sp->track2() : sp->track();
             m_nextLoc.setTrack(static_cast<int>(track2));
             Measure* m = sp->score()->tick2measure(sp->tick2());
             fillSpannerPosition(m_nextLoc, m, sp->tick2(), clipboardmode);

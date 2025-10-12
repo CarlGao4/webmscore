@@ -19,8 +19,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_GLOBAL_BYTEARRAY_H
-#define MU_GLOBAL_BYTEARRAY_H
+#ifndef MUSE_GLOBAL_BYTEARRAY_H
+#define MUSE_GLOBAL_BYTEARRAY_H
 
 #include <cstdint>
 #include <memory>
@@ -30,7 +30,7 @@
 #include <QByteArray>
 #endif
 
-namespace mu {
+namespace muse {
 class ByteArray
 {
 public:
@@ -49,8 +49,10 @@ public:
     bool operator!=(const ByteArray& other) const { return !operator==(other); }
 
     uint8_t* data();
+    std::vector<uint8_t>& vdata();
     const uint8_t* constData() const;
     const char* constChar() const; // data as char*
+    const std::vector<uint8_t>& constVData() const;
     size_t size() const;
     bool empty() const;
 
@@ -108,4 +110,4 @@ private:
 };
 }
 
-#endif // MU_GLOBAL_BYTEARRAY_H
+#endif // MUSE_GLOBAL_BYTEARRAY_H

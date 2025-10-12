@@ -19,8 +19,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_UI_NAVIGATIONPANEL_H
-#define MU_UI_NAVIGATIONPANEL_H
+#ifndef MUSE_UI_NAVIGATIONPANEL_H
+#define MUSE_UI_NAVIGATIONPANEL_H
 
 #include <QObject>
 #include <QList>
@@ -28,12 +28,14 @@
 #include "abstractnavigation.h"
 #include "navigationcontrol.h"
 
-namespace mu::ui {
+Q_MOC_INCLUDE("ui/view/navigationsection.h")
+
+namespace muse::ui {
 class NavigationSection;
 class NavigationPanel : public AbstractNavigation, public INavigationPanel
 {
     Q_OBJECT
-    Q_PROPERTY(mu::ui::NavigationSection * section READ section_property WRITE setSection_property NOTIFY sectionChanged)
+    Q_PROPERTY(muse::ui::NavigationSection * section READ section_property WRITE setSection_property NOTIFY sectionChanged)
     Q_PROPERTY(QmlDirection direction READ direction_property WRITE setDirection NOTIFY directionChanged)
     Q_PROPERTY(QString directionInfo READ directionInfo NOTIFY directionChanged)
 
@@ -65,6 +67,7 @@ public:
     void onEvent(EventPtr e) override;
 
     QWindow* window() const override;
+    QQuickItem* visualItem() const override;
 
     QmlDirection direction_property() const;
     QString directionInfo() const;
@@ -82,6 +85,8 @@ public:
     //! NOTE Can be called from QML without args
     Q_INVOKABLE void requestActive(INavigationControl* control = nullptr, bool enableHighlight = false,
                                    ActivationType activationType = ActivationType::None) override;
+
+    void componentComplete() override;
 
 public slots:
     void setSection_property(NavigationSection* section);
@@ -103,4 +108,4 @@ private:
 };
 }
 
-#endif // MU_UI_NAVIGATIONPANEL_H
+#endif // MUSE_UI_NAVIGATIONPANEL_H

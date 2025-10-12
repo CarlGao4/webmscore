@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -25,12 +25,13 @@
 
 #include <QObject>
 
-#include "audio/audiotypes.h"
+#include "async/asyncable.h"
 
-#include "types/uri.h"
+#include "audio/audiotypes.h"
+#include "actions/actiontypes.h"
 
 namespace mu::playback {
-class AbstractAudioResourceItem : public QObject
+class AbstractAudioResourceItem : public QObject, public muse::async::Asyncable
 {
     Q_OBJECT
 
@@ -43,8 +44,10 @@ public:
     explicit AbstractAudioResourceItem(QObject* parent);
     ~AbstractAudioResourceItem() override;
 
+    Q_INVOKABLE void requestToLaunchNativeEditorView();
+    void requestToCloseNativeEditorView();
+
     virtual Q_INVOKABLE void requestAvailableResources() {}
-    virtual Q_INVOKABLE void requestToLaunchNativeEditorView();
     virtual Q_INVOKABLE void handleMenuItem(const QString& menuItemId) { Q_UNUSED(menuItemId) }
 
     virtual QString title() const;
@@ -52,8 +55,8 @@ public:
     virtual bool isActive() const;
     virtual bool hasNativeEditorSupport() const;
 
-    const UriQuery& editorUri() const;
-    void setEditorUri(const UriQuery& uri);
+    const muse::actions::ActionQuery& editorAction() const;
+    void setEditorAction(const muse::actions::ActionQuery& action);
 
 signals:
     void titleChanged();
@@ -71,14 +74,14 @@ protected:
 
     QVariantMap buildSeparator() const;
 
-    void sortResourcesList(audio::AudioResourceMetaList& list);
+    QVariantMap buildExternalLinkMenuItem(const QString& menuId, const QString& title) const;
 
-    void updateNativeEditorView();
+    void sortResourcesList(muse::audio::AudioResourceMetaList& list);
 
 private:
     void doRequestToLaunchNativeEditorView();
 
-    UriQuery m_editorUri;
+    muse::actions::ActionQuery m_editorAction;
 };
 }
 

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2024 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -19,15 +19,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_INSTRUMENTSSCENE_STAFFTREEITEM_H
-#define MU_INSTRUMENTSSCENE_STAFFTREEITEM_H
 
-#include "abstractinstrumentspaneltreeitem.h"
+#pragma once
+
+#include "abstractlayoutpaneltreeitem.h"
 
 #include "notation/inotationparts.h"
 
 namespace mu::instrumentsscene {
-class StaffTreeItem : public AbstractInstrumentsPanelTreeItem
+class StaffTreeItem : public AbstractLayoutPanelTreeItem
 {
     Q_OBJECT
 
@@ -36,11 +36,7 @@ public:
 
     void init(const notation::Staff* masterStaff);
 
-    bool isSelectable() const override;
-
 private:
     bool m_isInited = false;
 };
 }
-
-#endif // MU_INSTRUMENTSSCENE_STAFFTREEITEM_H

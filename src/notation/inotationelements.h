@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -40,8 +40,8 @@ public:
 
     virtual Measure* measure(const int measureIndex) const = 0;
 
-    virtual PageList pages() const = 0;
-    virtual const Page* pageByPoint(const PointF& point) const = 0;
+    virtual const PageList& pages() const = 0;
+    virtual const Page* pageByPoint(const muse::PointF& point) const = 0;
 };
 
 using INotationElementsPtr = std::shared_ptr<INotationElements>;

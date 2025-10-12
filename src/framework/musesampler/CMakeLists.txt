@@ -18,7 +18,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-set(MODULE musesampler)
+declare_module(muse_musesampler)
+set(MODULE_ALIAS muse::musesampler)
 
 set(MODULE_SRC
     ${CMAKE_CURRENT_LIST_DIR}/musesamplermodule.cpp
@@ -44,9 +45,4 @@ set(MODULE_SRC
     ${CMAKE_CURRENT_LIST_DIR}/internal/musesampleractioncontroller.h
     )
 
-if (MUSESAMPLER_SRC_PATH)
-    add_subdirectory("ms_src")
-    set(MODULE_LINK ms_src)
-endif()
-
-include(${PROJECT_SOURCE_DIR}/build/module.cmake)
+setup_module()

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -24,7 +24,8 @@
 
 #include "async/asyncable.h"
 #include "modularity/ioc.h"
-#include "iengravingconfiguration.h"
+
+#include "engraving/iengravingconfiguration.h"
 
 #include "../inotation.h"
 #include "igetscore.h"
@@ -37,16 +38,14 @@ class Score;
 namespace mu::notation {
 class NotationInteraction;
 class NotationPlayback;
-class Notation : virtual public INotation, public IGetScore, public async::Asyncable
+class Notation : virtual public INotation, public IGetScore, public muse::Injectable, public muse::async::Asyncable
 {
-    INJECT_STATIC(INotationConfiguration, configuration)
-    INJECT(engraving::IEngravingConfiguration, engravingConfiguration)
+    muse::Inject<INotationConfiguration> configuration = { this };
+    muse::Inject<engraving::IEngravingConfiguration> engravingConfiguration = { this };
 
 public:
-    explicit Notation(engraving::Score* score = nullptr);
+    explicit Notation(const muse::modularity::ContextPtr& iocCtx, engraving::Score* score = nullptr);
     ~Notation() override;
-
-    static void init();
 
     QString name() const override;
     QString projectName() const override;
@@ -58,16 +57,19 @@ public:
 
     bool isOpen() const override;
     void setIsOpen(bool open) override;
-    async::Notification openChanged() const override;
+    muse::async::Notification openChanged() const override;
 
     bool hasVisibleParts() const override;
 
+    bool isMaster() const override;
+
     ViewMode viewMode() const override;
     void setViewMode(const ViewMode& viewMode) override;
-    async::Notification viewModeChanged() const override;
+    muse::async::Notification viewModeChanged() const override;
 
     INotationPaintingPtr painting() const override;
     INotationViewStatePtr viewState() const override;
+    INotationSoloMuteStatePtr soloMuteState() const override;
     INotationInteractionPtr interaction() const override;
     INotationMidiInputPtr midiInput() const override;
     INotationUndoStackPtr undoStack() const override;
@@ -76,30 +78,31 @@ public:
     INotationAccessibilityPtr accessibility() const override;
     INotationPartsPtr parts() const override;
 
-    async::Notification notationChanged() const override;
+    muse::async::Notification notationChanged() const override;
 
 protected:
     mu::engraving::Score* score() const override;
     void setScore(mu::engraving::Score* score);
-    async::Notification scoreInited() const override;
+    muse::async::Notification scoreInited() const override;
 
     void notifyAboutNotationChanged();
 
     INotationPartsPtr m_parts = nullptr;
     INotationUndoStackPtr m_undoStack = nullptr;
-    async::Notification m_notationChanged;
+    muse::async::Notification m_notationChanged;
 
 private:
     friend class NotationInteraction;
     friend class NotationPainting;
 
     engraving::Score* m_score = nullptr;
-    async::Notification m_scoreInited;
+    muse::async::Notification m_scoreInited;
 
-    async::Notification m_openChanged;
+    muse::async::Notification m_openChanged;
 
     INotationPaintingPtr m_painting = nullptr;
     INotationViewStatePtr m_viewState = nullptr;
+    INotationSoloMuteStatePtr m_soloMuteState = nullptr;
     INotationInteractionPtr m_interaction = nullptr;
     INotationStylePtr m_style = nullptr;
     INotationMidiInputPtr m_midiInput = nullptr;

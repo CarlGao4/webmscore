@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -37,27 +37,27 @@
 #include "multiinstances/imultiinstancesprovider.h"
 
 namespace mu::project {
-class RecentFilesController : public IRecentFilesController, public async::Asyncable
+class RecentFilesController : public IRecentFilesController, public muse::async::Asyncable
 {
     INJECT(IProjectConfiguration, configuration)
     INJECT(IMscMetaReader, mscMetaReader)
-    INJECT(io::IFileSystem, fileSystem)
-    INJECT(mi::IMultiInstancesProvider, multiInstancesProvider)
+    INJECT(muse::io::IFileSystem, fileSystem)
+    INJECT(muse::mi::IMultiInstancesProvider, multiInstancesProvider)
 
 public:
     void init();
 
     const RecentFilesList& recentFilesList() const override;
-    async::Notification recentFilesListChanged() const override;
+    muse::async::Notification recentFilesListChanged() const override;
 
     void prependRecentFile(const RecentFile& file) override;
-    void moveRecentFile(const io::path_t& before, const RecentFile& after) override;
+    void moveRecentFile(const muse::io::path_t& before, const RecentFile& after) override;
     void clearRecentFiles() override;
 
-    async::Promise<QPixmap> thumbnail(const io::path_t& file) const override;
+    muse::async::Promise<QPixmap> thumbnail(const muse::io::path_t& file) const override;
 
 protected:
-    virtual void prependPlatformRecentFile(const io::path_t& path);
+    virtual void prependPlatformRecentFile(const muse::io::path_t& path);
     virtual void clearPlatformRecentFiles();
 
 private:
@@ -70,16 +70,16 @@ private:
 
     mutable bool m_dirty = true;
     mutable RecentFilesList m_recentFilesList;
-    async::Notification m_recentFilesListChanged;
+    muse::async::Notification m_recentFilesListChanged;
     mutable bool m_isSaving = false;
 
     struct CachedThumbnail {
         QPixmap thumbnail;
-        DateTime lastModified;
+        muse::DateTime lastModified;
     };
 
     mutable std::mutex m_thumbnailCacheMutex;
-    mutable std::map<io::path_t, CachedThumbnail> m_thumbnailCache;
+    mutable std::map<muse::io::path_t, CachedThumbnail> m_thumbnailCache;
 };
 }
 

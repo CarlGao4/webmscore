@@ -7,14 +7,17 @@
 #include "stringutils.h"
 
 using namespace mu::playback;
-using namespace mu::audio;
+using namespace muse;
+using namespace muse::audio;
 
 static const QString& NO_FX_MENU_ITEM_ID()
 {
-    static std::string id = mu::trc("playback", "No effect");
+    static std::string id = muse::trc("playback", "No effect");
     static QString resultStr = QString::fromStdString(id);
     return resultStr;
 }
+
+static const QString GET_MORE_EFFECTS("getMoreEffects");
 
 OutputResourceItem::OutputResourceItem(QObject* parent, const audio::AudioFxParams& params)
     : AbstractAudioResourceItem(parent),
@@ -24,7 +27,7 @@ OutputResourceItem::OutputResourceItem(QObject* parent, const audio::AudioFxPara
 
 void OutputResourceItem::requestAvailableResources()
 {
-    playback()->audioOutput()->availableOutputResources()
+    playback()->availableOutputResources()
     .onResolve(this, [this](const AudioResourceMetaList& availableFxResources) {
         updateAvailableFxVendorsMap(availableFxResources);
 
@@ -66,6 +69,9 @@ void OutputResourceItem::requestAvailableResources()
                                     subItems);
         }
 
+        result << buildSeparator();
+        result << buildExternalLinkMenuItem(GET_MORE_EFFECTS, muse::qtrc("playback", "Get more effects"));
+
         emit availableResourceListResolved(result);
     })
     .onReject(this, [](const int errCode, const std::string& errText) {
@@ -79,6 +85,11 @@ void OutputResourceItem::handleMenuItem(const QString& menuItemId)
 {
     if (menuItemId == NO_FX_MENU_ITEM_ID()) {
         updateCurrentFxParams(AudioResourceMeta());
+        return;
+    } else if (menuItemId == GET_MORE_EFFECTS) {
+        const QString url = QString::fromStdString(globalConfiguration()->museHubWebUrl());
+        const QString urlParams("plugins?utm_source=mss-mixer-fx&utm_medium=mh-fx&utm_campaign=mss-mixer-fx-mainpage");
+        interactive()->openUrl(url + urlParams);
         return;
     }
 
@@ -159,12 +170,14 @@ void OutputResourceItem::updateCurrentFxParams(const AudioResourceMeta& newMeta)
         return;
     }
 
+    requestToCloseNativeEditorView();
+
     audio::AudioFxParams newParams = m_currentFxParams;
     newParams.resourceMeta = newMeta;
     newParams.active = newMeta.isValid();
 
     setParams(newParams);
-    updateNativeEditorView();
+    requestToLaunchNativeEditorView();
 }
 
 void OutputResourceItem::updateAvailableFxVendorsMap(const audio::AudioResourceMetaList& availableFxResources)

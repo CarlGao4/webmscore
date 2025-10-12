@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -30,11 +30,29 @@ class ChordSettingsModel : public AbstractInspectorModel
     Q_OBJECT
 
     Q_PROPERTY(PropertyItem * isStemless READ isStemless CONSTANT)
+    Q_PROPERTY(PropertyItem * showStemSlash READ showStemSlash CONSTANT)
+    Q_PROPERTY(PropertyItem * combineVoice READ combineVoice CONSTANT)
+
+    Q_PROPERTY(bool showStemSlashVisible READ showStemSlashVisible NOTIFY showStemSlashVisibleChanged)
+    Q_PROPERTY(bool showStemSlashEnabled READ showStemSlashEnabled NOTIFY showStemSlashEnabledChanged)
 
 public:
     explicit ChordSettingsModel(QObject* parent, IElementRepositoryService* repository);
 
     PropertyItem* isStemless() const;
+    PropertyItem* showStemSlash() const;
+    PropertyItem* combineVoice() const;
+
+    bool showStemSlashVisible() const;  //  chord is grace
+    bool showStemSlashEnabled() const;  //  chord is not stemless
+
+public slots:
+    void setShowStemSlashVisible(bool showStemSlashVisible);
+    void setShowStemSlashEnabled(bool showStemSlashEnabled);
+
+signals:
+    void showStemSlashVisibleChanged(bool showStemSlashVisible);
+    void showStemSlashEnabledChanged(bool showStemSlashEnabled);
 
 private:
     void createProperties() override;
@@ -42,7 +60,15 @@ private:
     void loadProperties() override;
     void resetProperties() override;
 
+    void updateShowStemSlashVisible();
+    void updateShowStemSlashEnabled();
+
     PropertyItem* m_isStemless = nullptr;
+    PropertyItem* m_showStemSlash = nullptr;
+    PropertyItem* m_combineVoice = nullptr;
+
+    bool m_showStemSlashVisible = false;
+    bool m_showStemSlashEnabled = false;
 };
 }
 

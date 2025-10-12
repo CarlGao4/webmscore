@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -30,7 +30,7 @@ using namespace mu::inspector;
 FermataPlaybackModel::FermataPlaybackModel(QObject* parent, IElementRepositoryService* repository)
     : AbstractInspectorModel(parent, repository)
 {
-    setTitle(qtrc("inspector", "Fermatas"));
+    setTitle(muse::qtrc("inspector", "Fermatas"));
     setModelType(InspectorModelType::TYPE_FERMATA);
 
     createProperties();
@@ -51,7 +51,7 @@ void FermataPlaybackModel::requestElements()
 void FermataPlaybackModel::loadProperties()
 {
     loadPropertyItem(m_timeStretch, [](const QVariant& elementPropertyValue) -> QVariant {
-        return DataFormatter::roundDouble(elementPropertyValue.toDouble()) * 100;
+        return muse::DataFormatter::roundDouble(elementPropertyValue.toDouble()) * 100;
     });
 }
 

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -40,7 +40,7 @@ Score* NoteGroups::createScore(int n, DurationType t, std::vector<Chord*>* chord
 {
     MCursor c;
     c.setTimeSig(_sig);
-    c.createScore(u"");
+    c.createScore(iocContext(), u"");
     c.addPart(u"voice");
     c.move(0, Fraction(0, 1));
     c.addKeySig(Key::C);
@@ -78,7 +78,7 @@ Score* NoteGroups::createScore(int n, DurationType t, std::vector<Chord*>* chord
 }
 
 NoteGroups::NoteGroups(QWidget* parent)
-    : QGroupBox(parent)
+    : QGroupBox(parent), muse::Injectable(muse::iocCtxForQWidget(this))
 {
     setupUi(this);
 

@@ -19,12 +19,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_DRAW_IPAINTPROVIDER_H
-#define MU_DRAW_IPAINTPROVIDER_H
+#ifndef MUSE_DRAW_IPAINTPROVIDER_H
+#define MUSE_DRAW_IPAINTPROVIDER_H
 
 #include <memory>
 
-#include "types/color.h"
 #include "types/brush.h"
 #include "types/drawtypes.h"
 #include "types/geometry.h"
@@ -34,7 +33,7 @@
 #include "types/transform.h"
 #include "types/painterpath.h"
 
-namespace mu::draw {
+namespace muse::draw {
 class Painter;
 class IPaintProvider
 {
@@ -90,10 +89,11 @@ public:
     virtual bool hasClipping() const = 0;
 
     virtual void setClipRect(const RectF& rect) = 0;
+    virtual void setMask(const RectF& background, const std::vector<RectF>& maskRects) = 0;
     virtual void setClipping(bool enable) = 0;
 };
 
 using IPaintProviderPtr = std::shared_ptr<IPaintProvider>;
 }
 
-#endif // MU_DRAW_IPAINTPROVIDER_H
+#endif // MUSE_DRAW_IPAINTPROVIDER_H

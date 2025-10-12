@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -25,15 +25,15 @@
 
 #include <list>
 
-#include "containers.h"
-#include "types/string.h"
+#include "global/containers.h"
+#include "global/types/string.h"
 
 #include "clef.h"
 #include "interval.h"
 #include "notifier.h"
 #include "stringdata.h"
 
-#include "compat/midi/midicoreevent.h"
+#include "../compat/midi/midicoreevent.h"
 
 namespace mu::engraving {
 class ChannelListener;
@@ -276,7 +276,7 @@ private:
 //   Trait
 //---------------------------------------------------------
 
-enum class TraitType
+enum class TraitType : unsigned char
 {
     Unknown,
     Tuning,
@@ -309,9 +309,8 @@ public:
 
     NamedEventList* midiAction(const String& s, int channel) const;
     int channelIdx(const String& s) const;
-    void updateVelocity(int* velocity, int channel, const String& name);
-    double getVelocityMultiplier(const String& name);
-    void updateGateTime(int* gateTime, int channelIdx, const String& name);
+    double getVelocityMultiplier(const String& name) const;
+    void updateGateTime(int* gateTime, const String& name) const;
 
     String recognizeMusicXmlId() const;
     String recognizeId() const;
@@ -343,8 +342,8 @@ public:
     void setUseDrumset(bool val);
     void setAmateurPitchRange(int a, int b) { m_minPitchA = a; m_maxPitchA = b; }
     void setProfessionalPitchRange(int a, int b) { m_minPitchP = a; m_maxPitchP = b; }
-    InstrChannel* channel(int idx) { return mu::value(m_channel, idx); }
-    const InstrChannel* channel(int idx) const { return mu::value(m_channel, idx); }
+    InstrChannel* channel(int idx) { return muse::value(m_channel, idx); }
+    const InstrChannel* channel(int idx) const { return muse::value(m_channel, idx); }
     InstrChannel* playbackChannel(int idx, MasterScore*);
     const InstrChannel* playbackChannel(int idx, const MasterScore*) const;
     size_t cleffTypeCount() const;
@@ -359,7 +358,7 @@ public:
 
     const std::vector<InstrChannel*>& channel() const { return m_channel; }
     void appendChannel(InstrChannel* c) { m_channel.push_back(c); }
-    void removeChannel(InstrChannel* c) { mu::remove(m_channel, c); }
+    void removeChannel(InstrChannel* c) { muse::remove(m_channel, c); }
     void clearChannels() { m_channel.clear(); }
 
     void setMidiActions(const std::list<NamedEventList>& l) { m_midiActions = l; }
@@ -409,6 +408,12 @@ public:
     bool getSingleNoteDynamicsFromTemplate() const;
     void switchExpressive(MasterScore* score, Synthesizer* synth, bool expressive, bool force = false);
 
+    bool isVocalInstrument() const;
+    bool isNormallyMultiStaveInstrument() const;
+
+    GlissandoStyle glissandoStyle() const;
+    void setGlissandoStyle(GlissandoStyle style);
+
 private:
 
     StaffNameList m_longNames;
@@ -437,6 +442,8 @@ private:
 
     Trait m_trait;
     bool m_isPrimary = false;
+
+    GlissandoStyle m_glissandoStyle = GlissandoStyle::CHROMATIC;
 };
 
 //---------------------------------------------------------

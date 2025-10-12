@@ -22,8 +22,9 @@
 #include "dataformatter.h"
 
 #include "translation.h"
+#include "types/datetime.h"
 
-using namespace mu;
+using namespace muse;
 
 double DataFormatter::roundDouble(const double& val, const int decimals)
 {

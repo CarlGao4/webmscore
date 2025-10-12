@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -29,7 +29,7 @@ using namespace mu::inspector;
 NotePlaybackModel::NotePlaybackModel(QObject* parent, IElementRepositoryService* repository)
     : AbstractInspectorModel(parent, repository)
 {
-    setTitle(qtrc("inspector", "Notes"));
+    setTitle(muse::qtrc("inspector", "Notes"));
     setModelType(InspectorModelType::TYPE_NOTE);
 
     createProperties();
@@ -43,7 +43,7 @@ void NotePlaybackModel::createProperties()
 
 void NotePlaybackModel::requestElements()
 {
-    m_elementList = m_repository->findElementsByType(mu::engraving::ElementType::NOTE);
+    m_elementList = m_repository->findElementsByType(mu::engraving::ElementType::NOTEHEAD);
 }
 
 void NotePlaybackModel::loadProperties()

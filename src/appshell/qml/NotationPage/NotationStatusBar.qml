@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -24,8 +24,8 @@ import QtQuick.Window 2.15
 import QtQuick.Layouts 1.15
 
 import MuseScore.AppShell 1.0
-import MuseScore.UiComponents 1.0
-import MuseScore.Ui 1.0
+import Muse.UiComponents 1.0
+import Muse.Ui 1.0
 import MuseScore.NotationScene 1.0
 import MuseScore.Playback 1.0
 
@@ -36,23 +36,20 @@ Item {
         id: model
     }
 
-    NavigationSection {
+    property NavigationSection navigationSection: NavigationSection {
         id: navSec
         name: "NotationStatusBar"
         enabled: root.enabled && root.visible
         order: 8
     }
 
-    property NavigationPanel navigationPanel: NavigationPanel {
+    NavigationPanel {
+        id: navPanel
         name: "NotationStatusBar"
         enabled: root.enabled && root.visible
         order: 0
         direction: NavigationPanel.Horizontal
         section: navSec
-    }
-
-    Component.onCompleted: {
-        model.load()
     }
 
     RowLayout {
@@ -75,9 +72,7 @@ Item {
 
         PlaybackLoadingInfo {
             id: playbackLoadingInfo
-            Layout.alignment: Qt.AlignVCenter
-            Layout.preferredHeight: 28
-            Layout.preferredWidth: 312
+            Layout.fillWidth: false
 
             onStarted: {
                 visible = true
@@ -88,7 +83,12 @@ Item {
             }
         }
 
-        SeparatorLine { orientation: Qt.Vertical; visible: playbackLoadingInfo.visible }
+        SeparatorLine { 
+            Layout.leftMargin: 2
+            Layout.rightMargin: 2
+            orientation: Qt.Vertical
+            visible: playbackLoadingInfo.visible 
+        }
 
         StyledTextLabel {
             id: accessibiityInfo
@@ -101,6 +101,16 @@ Item {
             visible: !hiddenControlsMenuButton.visible
         }
 
+        OnlineSoundsStatusView {
+            id: onlineSoundsStatusView
+
+            Layout.alignment: Qt.AlignVCenter
+            Layout.preferredHeight: 28
+
+            navigationPanel: navPanel
+            navigationOrder: 1
+        }
+
         SeparatorLine { orientation: Qt.Vertical; visible: workspaceControl.visible }
 
         FlatButton {
@@ -109,14 +119,27 @@ Item {
             Layout.preferredHeight: 28
 
             text: model.currentWorkspaceItem.title
+            icon: IconCode.WORKSPACE
+            orientation: Qt.Horizontal
+
             transparent: true
             visible: statusBarRow.remainingSpace > width + concertPitchControl.width
 
-            navigation.panel: root.navigationPanel
-            navigation.order: 1
+            navigation.panel: navPanel
+            navigation.order: 2
 
             onClicked: {
-                Qt.callLater(model.selectWorkspace)
+                menuLoader.toggleOpened(model.currentWorkspaceItem.subitems)
+            }
+
+            StyledMenuLoader {
+                id: menuLoader
+
+                menuAnchorItem: ui.rootItem
+
+                onHandleMenuItem: function(itemId) {
+                    Qt.callLater(model.handleWorkspacesMenuItem, itemId)
+                }
             }
         }
 
@@ -133,8 +156,8 @@ Item {
             enabled: model.concertPitchItem.enabled
             visible: statusBarRow.remainingSpace > width
 
-            navigation.panel: root.navigationPanel
-            navigation.order: 2
+            navigation.panel: navPanel
+            navigation.order: 3
 
             onToggleConcertPitchRequested: {
                 model.toggleConcertPitch()
@@ -151,8 +174,8 @@ Item {
             currentViewMode: model.currentViewMode
             availableViewModeList: model.availableViewModeList
 
-            navigation.panel: root.navigationPanel
-            navigation.order: 3
+            navigation.panel: navPanel
+            navigation.order: 4
 
             onChangeCurrentViewModeRequested: function(newViewMode) {
                 model.setCurrentViewMode(newViewMode)
@@ -170,8 +193,8 @@ Item {
             maxZoomPercentage: model.maxZoomPercentage()
             availableZoomList: model.availableZoomList
 
-            navigationPanel: root.navigationPanel
-            navigationOrderMin: 4
+            navigationPanel: navPanel
+            navigationOrderMin: 5
 
             onChangeZoomPercentageRequested: function(newZoomPercentage) {
                 model.currentZoomPercentage = newZoomPercentage
@@ -200,7 +223,7 @@ Item {
             visible: !concertPitchControl.visible ||
                      !workspaceControl.visible
 
-            navigation.panel: root.navigationPanel
+            navigation.panel: navPanel
             navigation.order: zoomControl.navigationOrderMax + 1
 
             menuModel: {
@@ -223,7 +246,7 @@ Item {
                     model.handleAction(model.concertPitchItem.code)
                     break
                 case model.currentWorkspaceItem.id:
-                    model.handleAction(model.concertPitchItem.code)
+                    model.handleAction(model.currentWorkspaceItem.code)
                     break
                 }
             }

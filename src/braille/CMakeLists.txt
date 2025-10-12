@@ -1,11 +1,7 @@
-set(MODULE braille)
+declare_module(braille)
 
 add_subdirectory(tables)
 add_subdirectory(thirdparty/liblouis)
-
-if (MUE_BUILD_UNIT_TESTS)
-    add_subdirectory(tests)
-endif()
 
 set(MODULE_QRC ${CMAKE_CURRENT_LIST_DIR}/braille.qrc)
 
@@ -44,4 +40,12 @@ set(MODULE_LINK
     liblouis
     )
 
-include(${PROJECT_SOURCE_DIR}/build/module.cmake)
+if (QT_SUPPORT)
+    list(APPEND MODULE_LINK Qt::Qml)
+endif()
+
+setup_module()
+
+if (MUE_BUILD_BRAILLE_TESTS)
+    add_subdirectory(tests)
+endif()

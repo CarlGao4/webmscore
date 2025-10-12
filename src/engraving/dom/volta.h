@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -73,7 +73,8 @@ public:
 
     LineSegment* createLineSegment(System* parent) override;
 
-    void setVelocity() const;
+    bool allowTimeAnchor() const override { return false; }
+
     void setChannel() const;
     void setTempo() const;
 
@@ -89,11 +90,15 @@ public:
     void setVoltaType(Volta::Type);       // deprecated
     Type voltaType() const;               // deprecated
 
+    bool isFirstVolta() const { return m_endings.size() == 1 && hasEnding(1); }
+
     PropertyValue getProperty(Pid propertyId) const override;
     bool setProperty(Pid propertyId, const PropertyValue&) override;
     PropertyValue propertyDefault(Pid) const override;
 
     String accessibleInfo() const override;
+
+    PointF linePos(Grip grip, System** system) const override;
 
 private:
     std::vector<int> m_endings;

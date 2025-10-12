@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,11 +22,9 @@
 
 #include "engravingobject.h"
 
-#include <iterator>
-#include <unordered_set>
+#include "global/containers.h"
 
 #include "style/textstyle.h"
-#include "types/translatablestring.h"
 #include "types/typesconv.h"
 
 #include "bracketItem.h"
@@ -42,11 +40,6 @@ using namespace mu::engraving;
 
 namespace mu::engraving {
 ElementStyle const EngravingObject::EMPTY_STYLE;
-
-EngravingObject* EngravingObjectList::at(size_t i) const
-{
-    return *std::next(begin(), i);
-}
 
 EngravingObject::EngravingObject(const ElementType& type, EngravingObject* parent)
     : m_type(type)
@@ -68,8 +61,11 @@ EngravingObject::EngravingObject(const ElementType& type, EngravingObject* paren
         m_score = static_cast<Score*>(this);
     }
 
-    if (elementsProvider()) {
-        elementsProvider()->reg(this);
+    // reg to debug
+    if (type != ElementType::SCORE) {
+        if (m_score && m_score->elementsProvider()) {
+            m_score->elementsProvider()->reg(this);
+        }
     }
 }
 
@@ -89,8 +85,11 @@ EngravingObject::EngravingObject(const EngravingObject& se)
     }
     m_links = 0;
 
-    if (elementsProvider()) {
-        elementsProvider()->reg(this);
+    // reg to debug
+    if (m_type != ElementType::SCORE) {
+        if (m_score && m_score->elementsProvider()) {
+            m_score->elementsProvider()->reg(this);
+        }
     }
 }
 
@@ -109,8 +108,9 @@ EngravingObject::~EngravingObject()
         bool canMoveToDummy = !this->isType(ElementType::ROOT_ITEM)
                               && !this->isType(ElementType::DUMMY)
                               && !this->isType(ElementType::SCORE)
-                              && score()->dummy() != nullptr;
+                              && score()->rootItem() && score()->rootItem()->dummy();
 
+        // copy because moveToDummy might modify children
         EngravingObjectList children = m_children;
         for (EngravingObject* c : children) {
             if (canMoveToDummy) {
@@ -125,8 +125,8 @@ EngravingObject::~EngravingObject()
         m_children.clear();
     }
 
-    if (elementsProvider()) {
-        elementsProvider()->unreg(this);
+    if (score() && score()->elementsProvider()) {
+        score()->elementsProvider()->unreg(this);
     }
 
     if (m_links) {
@@ -217,7 +217,7 @@ void EngravingObject::removeChild(EngravingObject* o)
         return;
     }
     o->m_parent = nullptr;
-    m_children.remove(o);
+    muse::remove(m_children, o);
 }
 
 EngravingObject* EngravingObject::parent() const
@@ -234,6 +234,11 @@ EngravingObject* EngravingObject::explicitParent() const
 }
 
 void EngravingObject::setParent(EngravingObject* p)
+{
+    setParentInternal(p);
+}
+
+void EngravingObject::setParentInternal(EngravingObject* p)
 {
     IF_ASSERT_FAILED(this != p) {
         return;
@@ -477,6 +482,10 @@ void EngravingObject::undoChangeProperty(Pid id, const PropertyValue& v, Propert
                 toEngravingItem(this)->manageExclusionFromParts(v.toBool());
             }
         }
+    } else if (id == Pid::VOICE_ASSIGNMENT) {
+        if (v.value<VoiceAssignment>() != VoiceAssignment::CURRENT_VOICE_ONLY) {
+            changeProperties(this, Pid::VOICE, 0, ps);
+        }
     }
     changeProperties(this, id, v, ps);
     if (id != Pid::GENERATED) {
@@ -491,7 +500,7 @@ void EngravingObject::undoChangeProperty(Pid id, const PropertyValue& v, Propert
 void EngravingObject::undoPushProperty(Pid id)
 {
     PropertyValue val = getProperty(id);
-    score()->undoStack()->push1(new ChangeProperty(this, id, val));
+    score()->undoStack()->pushWithoutPerforming(new ChangeProperty(this, id, val));
 }
 
 //---------------------------------------------------------
@@ -518,11 +527,7 @@ void EngravingObject::linkTo(EngravingObject* element)
         setLinks(element->m_links);
         assert(m_links->contains(element));
     } else {
-        if (isStaff()) {
-            setLinks(new LinkedObjects(score(), -1));       // don’t use lid
-        } else {
-            setLinks(new LinkedObjects(score()));
-        }
+        setLinks(new LinkedObjects());
         m_links->push_back(element);
         element->setLinks(m_links);
     }
@@ -682,7 +687,7 @@ const char* EngravingObject::typeName() const
 
 TranslatableString EngravingObject::typeUserName() const
 {
-    return TConv::userName(type());
+    return TConv::capitalizedUserName(type());
 }
 
 String EngravingObject::translatedTypeUserName() const
@@ -692,10 +697,17 @@ String EngravingObject::translatedTypeUserName() const
 
 EID EngravingObject::eid() const
 {
-    if (!m_eid.isValid()) {
-        m_eid = score()->masterScore()->getEID()->newEID(m_type);
-    }
-    return m_eid;
+    return masterScore()->eidRegister()->EIDFromItem(this);
+}
+
+void EngravingObject::setEID(EID id) const
+{
+    masterScore()->eidRegister()->registerItemEID(id, this);
+}
+
+EID EngravingObject::assignNewEID() const
+{
+    return masterScore()->eidRegister()->newEIDForItem(this);
 }
 
 //---------------------------------------------------------
@@ -727,6 +739,7 @@ bool EngravingObject::isTextBase() const
            || type() == ElementType::STAFF_TEXT
            || type() == ElementType::SYSTEM_TEXT
            || type() == ElementType::TRIPLET_FEEL
+           || type() == ElementType::PLAY_COUNT_TEXT
            || type() == ElementType::PLAYTECH_ANNOTATION
            || type() == ElementType::CAPO
            || type() == ElementType::STRING_TUNINGS
@@ -739,7 +752,8 @@ bool EngravingObject::isTextBase() const
            || type() == ElementType::MMREST_RANGE
            || type() == ElementType::STICKING
            || type() == ElementType::HARP_DIAGRAM
-           || type() == ElementType::GUITAR_BEND_TEXT;
+           || type() == ElementType::GUITAR_BEND_TEXT
+           || type() == ElementType::HAMMER_ON_PULL_OFF_TEXT;
 }
 
 //---------------------------------------------------------

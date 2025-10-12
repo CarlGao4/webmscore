@@ -19,11 +19,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_GLOBAL_XMLSTREAMREADER_H
-#define MU_GLOBAL_XMLSTREAMREADER_H
+#ifndef MUSE_GLOBAL_XMLSTREAMREADER_H
+#define MUSE_GLOBAL_XMLSTREAMREADER_H
 
 #include <vector>
-#include <list>
 #include <map>
 
 #include "io/iodevice.h"
@@ -34,7 +33,7 @@
 #include <QByteArray>
 #endif
 
-namespace mu {
+namespace muse {
 class XmlStreamReader
 {
 public:
@@ -106,6 +105,8 @@ public:
     double doubleAttribute(const char* name, double def) const;
     std::vector<Attribute> attributes() const;
 
+    String readBody() const;
+
     String text() const;
     AsciiStringView asciiText() const;
     String readText();
@@ -113,8 +114,7 @@ public:
     int readInt(bool* ok = nullptr, int base = 10);
     double readDouble(bool* ok = nullptr);
 
-    int64_t lineNumber() const;
-    int64_t columnNumber() const;
+    int64_t byteOffset() const;
     Error error() const;
     bool isError() const;
     String errorString() const;
@@ -133,4 +133,4 @@ private:
 };
 }
 
-#endif // MU_GLOBAL_XMLSTREAMREADER_H
+#endif // MUSE_GLOBAL_XMLSTREAMREADER_H

@@ -22,47 +22,18 @@
 
 #include "topleveldialog.h"
 
-#include <QApplication>
-#include <QKeyEvent>
 #include <QWindow>
 
-using namespace mu::uicomponents;
+using namespace muse::uicomponents;
 
 TopLevelDialog::TopLevelDialog(QWidget* parent)
-    : QDialog(parent)
+    : QDialog(parent), muse::Injectable(muse::iocCtxForQWidget(this))
 {
     setWindowFlag(Qt::WindowContextHelpButtonHint, false);
 
-    // We want some windows to be on top of the main window.
-    // But not on top of all other applications when MuseScore isn't active.
-    // On Windows, we achieve this by setting the transient parent.
-    // On macOS, we have to use a workaround:
-    // When the application becomes active, the windows will get the StayOnTop hint.
-    // and when the application becomes inactive, the hint will be removed.
 #ifdef Q_OS_MAC
-    auto updateStayOnTopHint = [this]() {
-        bool stay = qApp->applicationState() == Qt::ApplicationActive;
-
-        bool wasShown = isVisible();
-        bool wasActive = isActiveWindow();
-
-        setWindowFlag(Qt::WindowStaysOnTopHint, stay);
-        if (wasShown) {
-            if (!wasActive) {
-                setAttribute(Qt::WA_ShowWithoutActivating, true);
-            }
-            show();
-            setAttribute(Qt::WA_ShowWithoutActivating, false);
-        }
-    };
-    updateStayOnTopHint();
-    connect(qApp, &QApplication::applicationStateChanged, this, updateStayOnTopHint);
+    setWindowFlags(Qt::Tool);
 #endif
-}
-
-TopLevelDialog::TopLevelDialog(const TopLevelDialog& dialog)
-    : QDialog(dialog.parentWidget())
-{
 }
 
 bool TopLevelDialog::event(QEvent* e)
@@ -72,15 +43,6 @@ bool TopLevelDialog::event(QEvent* e)
         windowHandle()->setTransientParent(mainWindow()->qWindow());
     }
 #endif
-
-    if (e->type() == QEvent::ShortcutOverride) {
-        if (QKeyEvent* keyEvent = dynamic_cast<QKeyEvent*>(e)) {
-            if (keyEvent->key() == Qt::Key_Escape && keyEvent->modifiers() == Qt::NoModifier) {
-                close();
-                return true;
-            }
-        }
-    }
 
     return QDialog::event(e);
 }

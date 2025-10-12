@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2022 MuseScore BVBA and others
+ * Copyright (C) 2022 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -27,19 +27,24 @@
 
 using namespace mu::playback;
 using namespace mu::project;
-using namespace mu::framework;
 
 SoundProfilesModel::SoundProfilesModel(QObject* parent)
-    : QAbstractListModel(parent)
+    : QAbstractListModel(parent), muse::Injectable(muse::iocCtxForQmlObject(this))
 {
+}
+
+void SoundProfilesModel::init()
+{
+    beginResetModel();
+
     const SoundProfilesMap& availableProfiles = profilesRepo()->availableProfiles();
     for (const auto& pair : availableProfiles) {
         m_profiles.push_back(pair.second);
     }
 
-    std::sort(m_profiles.begin(), m_profiles.end(), [](const SoundProfile& left, const SoundProfile& right) {
+    std::sort(m_profiles.begin(), m_profiles.end(), [this](const SoundProfile& left, const SoundProfile& right) {
         if (left.name == config()->basicSoundProfileName()
-            && right.name == config()->museSoundProfileName()) {
+            && right.name == config()->museSoundsProfileName()) {
             return true;
         }
 
@@ -52,6 +57,8 @@ SoundProfilesModel::SoundProfilesModel(QObject* parent)
     }
 
     m_defaultProjectsProfile = config()->defaultProfileForNewProjects().toQString();
+
+    endResetModel();
 }
 
 int SoundProfilesModel::rowCount(const QModelIndex& /*parent*/) const
@@ -144,21 +151,21 @@ bool SoundProfilesModel::askAboutChangingSounds()
         return true;
     }
 
-    if (!notationPlayback()->hasSoundFlags()) {
+    if (!notationPlayback()->hasSoundFlags(notationPlayback()->existingTrackIdSet())) {
         return true;
     }
 
-    int changeBtn = int(IInteractive::Button::Apply);
-    IInteractive::Options options = IInteractive::Option::WithIcon | IInteractive::Option::WithDontShowAgainCheckBox;
-    IInteractive::ButtonDatas buttons = {
-        interactive()->buttonData(IInteractive::Button::Cancel),
-        IInteractive::ButtonData(changeBtn, trc("playback", "Change sounds"), true /*accent*/)
+    int changeBtn = int(muse::IInteractive::Button::Apply);
+    muse::IInteractive::Options options = muse::IInteractive::Option::WithIcon | muse::IInteractive::Option::WithDontShowAgainCheckBox;
+    muse::IInteractive::ButtonDatas buttons = {
+        interactive()->buttonData(muse::IInteractive::Button::Cancel),
+        muse::IInteractive::ButtonData(changeBtn, muse::trc("playback", "Change sounds"), true /*accent*/)
     };
 
-    IInteractive::Result result = interactive()->warning(trc("playback", "Are you sure you want to change sounds?"),
-                                                         trc("playback",
-                                                             "Sound flags may be reset, but staff text will remain. This action can’t be undone."),
-                                                         buttons, changeBtn, options);
+    muse::IInteractive::Result result = interactive()->warningSync(muse::trc("playback", "Are you sure you want to change sounds?"),
+                                                                   muse::trc("playback",
+                                                                             "Sound flags may be reset, but staff text will remain. This action can’t be undone."),
+                                                                   buttons, changeBtn, options);
 
     if (result.button() == changeBtn) {
         if (!result.showAgain()) {

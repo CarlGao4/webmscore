@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -33,6 +33,8 @@ class HairpinSettingsModel : public TextLineSettingsModel
 
     Q_PROPERTY(PropertyItem * height READ height CONSTANT)
     Q_PROPERTY(PropertyItem * continuousHeight READ continuousHeight CONSTANT)
+    Q_PROPERTY(PropertyItem * snapBefore READ snapBefore CONSTANT)
+    Q_PROPERTY(PropertyItem * snapAfter READ snapAfter CONSTANT)
 
 public:
     explicit HairpinSettingsModel(QObject* parent, IElementRepositoryService* repository);
@@ -41,6 +43,9 @@ public:
 
     PropertyItem* height() const;
     PropertyItem* continuousHeight() const;
+
+    PropertyItem* snapBefore() const;
+    PropertyItem* snapAfter() const;
 
 private:
     void createProperties() override;
@@ -56,6 +61,9 @@ private:
 
     PropertyItem* m_height = nullptr;
     PropertyItem* m_continuousHeight = nullptr;
+
+    PropertyItem* m_snapBefore = nullptr;
+    PropertyItem* m_snapAfter = nullptr;
 };
 }
 

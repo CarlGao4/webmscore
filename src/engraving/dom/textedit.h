@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -71,14 +71,20 @@ class TextEditUndoCommand : public UndoCommand
     OBJECT_ALLOCATOR(engraving, TextEditUndoCommand)
 
 public:
+    UNDO_TYPE(CommandType::TextEdit)
+    UNDO_NAME("TextEdit")
+    UNDO_CHANGED_OBJECTS({ m_cursor.text() })
+
     TextEditUndoCommand(const TextCursor& tc)
         : m_cursor(tc) {}
+
     bool isFiltered(UndoCommand::Filter f, const EngravingItem* target) const override
     {
         return f == UndoCommand::Filter::TextEdit && m_cursor.text() == target;
     }
 
     TextCursor& cursor() { return m_cursor; }
+    const TextCursor& cursor() const { return m_cursor; }
 
 protected:
     TextCursor m_cursor;

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -32,12 +32,12 @@
 #include "log.h"
 
 using namespace mu;
-using namespace mu::draw;
+using namespace muse::draw;
 using namespace mu::notation;
 using namespace mu::engraving;
 
 ExampleView::ExampleView(QWidget* parent)
-    : QFrame(parent)
+    : QFrame(parent), muse::Injectable(muse::iocCtxForQWidget(this))
 {
     m_score = nullptr;
     setFocusPolicy(Qt::StrongFocus);
@@ -137,11 +137,7 @@ void ExampleView::setDropRectangle(const RectF&)
 {
 }
 
-void ExampleView::cmdAddSlur(Note* /*firstNote*/, Note* /*lastNote*/)
-{
-}
-
-void ExampleView::drawBackground(mu::draw::Painter* p, const RectF& r) const
+void ExampleView::drawBackground(Painter* p, const RectF& r) const
 {
     if (m_backgroundPixmap == 0 || m_backgroundPixmap->isNull()) {
         p->fillRect(r, m_backgroundColor);
@@ -150,13 +146,13 @@ void ExampleView::drawBackground(mu::draw::Painter* p, const RectF& r) const
     }
 }
 
-void ExampleView::drawElements(mu::draw::Painter& painter, const std::vector<EngravingItem*>& el)
+void ExampleView::drawElements(Painter& painter, const std::vector<EngravingItem*>& el)
 {
     for (EngravingItem* e : el) {
         e->itemDiscovered = 0;
         PointF pos(e->pagePos());
         painter.translate(pos);
-        EngravingItem::renderer()->drawItem(e, &painter);
+        e->renderer()->drawItem(e, &painter);
         painter.translate(-pos);
     }
 }
@@ -169,7 +165,7 @@ void ExampleView::paintEvent(QPaintEvent* event)
         return;
     }
 
-    mu::draw::Painter painter(this, "exampleview");
+    Painter painter(this, "exampleview");
     painter.setAntialiasing(true);
     const RectF rect = RectF::fromQRectF(event->rect());
 
@@ -185,7 +181,7 @@ void ExampleView::paintEvent(QPaintEvent* event)
 
 void ExampleView::mousePressEvent(QMouseEvent* event)
 {
-    m_moveStartPoint = toLogical(event->pos());
+    m_moveStartPoint = toLogical(event->position());
 }
 
 PointF ExampleView::toLogical(const QPointF& point)
@@ -212,7 +208,7 @@ QSize ExampleView::sizeHint() const
 
 void ExampleView::dragExampleView(QMouseEvent* event)
 {
-    PointF delta = PointF::fromQPointF(event->pos()) - m_matrix.map(m_moveStartPoint);
+    PointF delta = PointF::fromQPointF(event->position()) - m_matrix.map(m_moveStartPoint);
     int dx = delta.x();
     if (dx == 0) {
         return;

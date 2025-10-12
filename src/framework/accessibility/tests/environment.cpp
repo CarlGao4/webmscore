@@ -22,14 +22,13 @@
 
 #include "testing/environment.h"
 
-#include "log.h"
-#include "framework/accessibility/accessibilitymodule.h"
-#include "framework/ui/uimodule.h"
-#include "framework/global/globalmodule.h"
+#include "accessibility/accessibilitymodule.h"
 
-static mu::testing::SuiteEnvironment accessibility_senv(
+#include "log.h"
+
+static muse::testing::SuiteEnvironment accessibility_senv(
 {
-    new mu::accessibility::AccessibilityModule()
+    new muse::accessibility::AccessibilityModule()
 },
     nullptr,
     []() {

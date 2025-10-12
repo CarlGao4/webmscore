@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -33,7 +33,7 @@ StemSettingsModel::StemSettingsModel(QObject* parent, IElementRepositoryService*
     : AbstractInspectorModel(parent, repository)
 {
     setModelType(InspectorModelType::TYPE_STEM);
-    setTitle(qtrc("inspector", "Stem"));
+    setTitle(muse::qtrc("inspector", "Stem"));
 
     createProperties();
 }
@@ -111,7 +111,7 @@ void StemSettingsModel::setUseStraightNoteFlags(bool use)
 
 void StemSettingsModel::onStemDirectionChanged(DirectionV newDirection)
 {
-    beginCommand();
+    beginCommand(muse::TranslatableString("undoableAction", "Change stem direction"));
 
     for (EngravingItem* element : m_elementList) {
         Stem* stem = toStem(element);
@@ -135,26 +135,26 @@ void StemSettingsModel::onNotationChanged(const PropertyIdSet& changedPropertyId
 {
     loadProperties(changedPropertyIdSet);
 
-    if (mu::contains(changedStyleIdSet, Sid::useStraightNoteFlags)) {
+    if (muse::contains(changedStyleIdSet, Sid::useStraightNoteFlags)) {
         emit useStraightNoteFlagsChanged();
     }
 }
 
 void StemSettingsModel::loadProperties(const PropertyIdSet& propertyIdSet)
 {
-    if (mu::contains(propertyIdSet, Pid::LINE_WIDTH)) {
+    if (muse::contains(propertyIdSet, Pid::LINE_WIDTH)) {
         loadPropertyItem(m_thickness, formatDoubleFunc);
     }
 
-    if (mu::contains(propertyIdSet, Pid::USER_LEN)) {
+    if (muse::contains(propertyIdSet, Pid::USER_LEN)) {
         loadPropertyItem(m_length, formatDoubleFunc);
     }
 
-    if (mu::contains(propertyIdSet, Pid::STEM_DIRECTION)) {
+    if (muse::contains(propertyIdSet, Pid::STEM_DIRECTION)) {
         loadPropertyItem(m_stemDirection);
     }
 
-    if (mu::contains(propertyIdSet, Pid::OFFSET)) {
+    if (muse::contains(propertyIdSet, Pid::OFFSET)) {
         loadPropertyItem(m_offset);
     }
 }

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -30,6 +30,7 @@
 #include "../../dom/chordrest.h"
 #include "../../dom/measure.h"
 #include "../../dom/note.h"
+#include "../../dom/noteline.h"
 #include "../../dom/tie.h"
 #include "../../dom/chord.h"
 #include "../../dom/staff.h"
@@ -338,6 +339,7 @@ void ConnectorInfoReader::readAddConnector(Measure* item, ConnectorInfoReader* i
         Fraction spTick   = pasteMode ? lTick : (item->tick() + lTick);
         if (info->isStart()) {
             sp->setTrack(l.track());
+            sp->setTrack2(sp->track());
             sp->setTick(spTick);
             item->score()->addSpanner(sp);
         } else if (info->isEnd()) {
@@ -386,8 +388,9 @@ void ConnectorInfoReader::readAddConnector(Note* item, ConnectorInfoReader* info
             if (sp->isTie()) {
                 item->setTieBack(toTie(sp));
             } else {
-                if (sp->isGlissando() && item->explicitParent() && item->explicitParent()->isChord()) {
-                    toChord(item->explicitParent())->setEndsGlissandoOrGuitarBend(true);
+                bool isNoteAnchoredTextLine = sp->isNoteLine() && toNoteLine(sp)->enforceMinLength();
+                if ((sp->isGlissando() || isNoteAnchoredTextLine) && item->explicitParent() && item->explicitParent()->isChord()) {
+                    toChord(item->explicitParent())->setEndsNoteAnchoredLine(true);
                 }
                 item->addSpannerBack(sp);
             }

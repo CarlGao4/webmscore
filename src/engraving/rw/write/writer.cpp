@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -21,7 +21,7 @@
  */
 #include "writer.h"
 
-#include "types/types.h"
+#include "../types/types.h"
 
 #include "dom/score.h"
 #include "dom/masterscore.h"
@@ -35,15 +35,21 @@
 #include "twrite.h"
 #include "staffwrite.h"
 
+using namespace muse;
 using namespace mu::engraving;
 using namespace mu::engraving::write;
 
-bool Writer::writeScore(Score* score, io::IODevice* device, bool onlySelection, rw::WriteInOutData* inout)
+Writer::Writer(const muse::modularity::ContextPtr& iocCtx)
+    : muse::Injectable(iocCtx)
+{
+}
+
+bool Writer::writeScore(Score* score, io::IODevice* device, rw::WriteInOutData* inout)
 {
     TRACEFUNC;
 
     XmlWriter xml(device);
-    WriteContext ctx;
+    WriteContext ctx(score);
     if (inout) {
         ctx = inout->ctx;
     }
@@ -53,20 +59,19 @@ bool Writer::writeScore(Score* score, io::IODevice* device, bool onlySelection, 
     xml.startElement("museScore", { { "version", Constants::MSC_VERSION_STR } });
 
     if (!MScore::testMode) {
-        xml.tag("programVersion", MUSESCORE_VERSION);
-        xml.tag("programRevision", MUSESCORE_REVISION);
-        xml.tag("LastEID", score->masterScore()->getEID()->lastID());
+        xml.tag("programVersion", application()->version().toString());
+        xml.tag("programRevision", application()->revision());
     }
 
     compat::WriteScoreHook hook;
-    write(score, xml, ctx, onlySelection, hook);
+    write(score, xml, ctx, hook);
 
     xml.endElement();
 
-    if (!onlySelection) {
+    if (!inout || !inout->ctx.shouldWriteRange()) {
         //update version values for i.e. plugin access
-        score->m_mscoreVersion = String::fromAscii(MUSESCORE_VERSION);
-        score->m_mscoreRevision = AsciiStringView(MUSESCORE_REVISION).toInt(nullptr, 16);
+        score->m_mscoreVersion = application()->version().toString();
+        score->m_mscoreRevision = application()->revision().toInt(nullptr, 16);
         score->m_mscVersion = Constants::MSC_VERSION;
     }
 
@@ -77,13 +82,13 @@ bool Writer::writeScore(Score* score, io::IODevice* device, bool onlySelection, 
     return true;
 }
 
-void Writer::write(Score* score, XmlWriter& xml, WriteContext& ctx, bool selectionOnly, compat::WriteScoreHook& hook)
+void Writer::write(Score* score, XmlWriter& xml, WriteContext& ctx, compat::WriteScoreHook& hook)
 {
     TRACEFUNC;
 
     // if we have multi measure rests and some parts are hidden,
     // then some layout information is missing:
-    // relayout with all parts set visible
+    // relayout with all parts set visible (but rollback at end)
 
     std::list<Part*> hiddenParts;
     bool unhide = false;
@@ -91,7 +96,7 @@ void Writer::write(Score* score, XmlWriter& xml, WriteContext& ctx, bool selecti
         for (Part* part : score->m_parts) {
             if (!part->show()) {
                 if (!unhide) {
-                    score->startCmd();
+                    score->startCmd(TranslatableString::untranslatable("Unhide instruments for save"));
                     unhide = true;
                 }
                 part->undoChangeProperty(Pid::VISIBLE, true);
@@ -107,6 +112,8 @@ void Writer::write(Score* score, XmlWriter& xml, WriteContext& ctx, bool selecti
     }
 
     xml.startElement(score);
+
+    TWrite::writeItemEid(score, xml, ctx);
 
     if (Excerpt* e = score->excerpt()) {
         if (!e->name().empty()) {
@@ -132,7 +139,7 @@ void Writer::write(Score* score, XmlWriter& xml, WriteContext& ctx, bool selecti
         xml.tag("layoutMode", "system");
     }
 
-    if (score->m_audio && ctx.isMsczMode()) {
+    if (score->m_audio) {
         xml.tag("playMode", int(score->m_playMode));
         TWrite::write(score->m_audio, xml, ctx);
     }
@@ -145,7 +152,7 @@ void Writer::write(Score* score, XmlWriter& xml, WriteContext& ctx, bool selecti
         xml.tag("page-offset", score->pageNumberOffset());
     }
     xml.tag("Division", Constants::DIVISION);
-    ctx.setCurTrack(mu::nidx);
+    ctx.setCurTrack(muse::nidx);
 
     hook.onWriteStyle302(score, xml);
 
@@ -179,65 +186,46 @@ void Writer::write(Score* score, XmlWriter& xml, WriteContext& ctx, bool selecti
     if (!score->m_systemObjectStaves.empty()) {
         bool saveSysObjStaves = false;
         for (Staff* s : score->m_systemObjectStaves) {
-            IF_ASSERT_FAILED(s->idx() != mu::nidx) {
+            IF_ASSERT_FAILED(s->idx() != muse::nidx) {
                 continue;
             }
             saveSysObjStaves = true;
             break;
         }
         if (saveSysObjStaves) {
-            // write which staves currently have system objects above them
             xml.startElement("SystemObjects");
             for (Staff* s : score->m_systemObjectStaves) {
-                IF_ASSERT_FAILED(s->idx() != mu::nidx) {
+                IF_ASSERT_FAILED(s->idx() != muse::nidx) {
                     continue;
                 }
-                // TODO: when we add more granularity to system object display, construct this string per staff
-                String sysObjForStaff = u"barNumbers=\"false\"";
-                // for now, everything except bar numbers is shown on system object staves
-                // (also, the code to display bar numbers on system staves other than the first currently does not exist!)
-                xml.tag("Instance", { { "staffId", s->idx() + 1 }, { "barNumbers", "false" } });
+                xml.tag("Instance", { { "staffId", s->idx() + 1 } });
             }
             xml.endElement();
         }
     }
 
     ctx.setCurTrack(0);
-    staff_idx_t staffStart;
-    staff_idx_t staffEnd;
-    MeasureBase* measureStart;
-    MeasureBase* measureEnd;
 
-    if (selectionOnly) {
-        staffStart   = score->m_selection.staffStart();
-        staffEnd     = score->m_selection.staffEnd();
-        // make sure we select full parts
-        Staff* sStaff = score->staff(staffStart);
-        Part* sPart = sStaff->part();
-        Staff* eStaff = score->staff(staffEnd - 1);
-        Part* ePart = eStaff->part();
-        staffStart = score->staffIdx(sPart);
-        staffEnd = score->staffIdx(ePart) + ePart->nstaves();
-        measureStart = score->m_selection.startSegment()->measure();
-        if (measureStart->isMeasure() && toMeasure(measureStart)->isMMRest()) {
-            measureStart = toMeasure(measureStart)->mmRestFirst();
-        }
-        if (score->m_selection.endSegment()) {
-            measureEnd   = score->m_selection.endSegment()->measure()->next();
-        } else {
-            measureEnd   = 0;
-        }
+    staff_idx_t staffStart = 0;
+    staff_idx_t staffEnd = 0;
+    MeasureBase* measureStart = nullptr;
+    MeasureBase* measureEnd = nullptr;
+
+    if (ctx.shouldWriteRange()) {
+        const WriteRange& r = ctx.range().value();
+        staffStart = r.startStaffIdx;
+        staffEnd = r.endStaffIdx;
+        measureStart = r.startMeasure;
+        measureEnd = r.endMeasure;
     } else {
-        staffStart   = 0;
         staffEnd     = score->nstaves();
         measureStart = score->first();
-        measureEnd   = 0;
     }
 
     // Let's decide: write midi mapping to a file or not
     score->masterScore()->checkMidiMapping();
     for (const Part* part : score->m_parts) {
-        if (!selectionOnly || ((score->staffIdx(part) >= staffStart) && (staffEnd >= score->staffIdx(part) + part->nstaves()))) {
+        if (!ctx.shouldWriteRange() || ((score->staffIdx(part) >= staffStart) && (staffEnd >= score->staffIdx(part) + part->nstaves()))) {
             TWrite::write(part, xml, ctx);
         }
     }
@@ -247,14 +235,16 @@ void Writer::write(Score* score, XmlWriter& xml, WriteContext& ctx, bool selecti
     if (measureStart) {
         for (staff_idx_t staffIdx = staffStart; staffIdx < staffEnd; ++staffIdx) {
             const Staff* st = score->staff(staffIdx);
-            StaffWrite::writeStaff(st, xml, ctx, measureStart, measureEnd, staffStart, staffIdx, selectionOnly);
+            StaffWrite::writeStaff(st, xml, ctx, measureStart, measureEnd, staffStart, staffIdx);
         }
     }
-    ctx.setCurTrack(mu::nidx);
+    ctx.setCurTrack(muse::nidx);
 
-    hook.onWriteExcerpts302(score, xml, ctx, selectionOnly);
+    hook.onWriteExcerpts302(score, xml, ctx);
 
-    xml.endElement();
+    TWrite::writeSystemLocks(score, xml);
+
+    xml.endElement(); // score
 
     if (unhide) {
         score->endCmd(true);
@@ -264,7 +254,7 @@ void Writer::write(Score* score, XmlWriter& xml, WriteContext& ctx, bool selecti
 void Writer::writeSegments(XmlWriter& xml, SelectionFilter* filter, track_idx_t strack, track_idx_t etrack,
                            Segment* sseg, Segment* eseg, bool writeSystemElements, bool forceTimeSig, Fraction& curTick)
 {
-    WriteContext ctx;
+    WriteContext ctx(sseg->score());
     ctx.setClipboardmode(true);
     ctx.setFilter(*filter);
     ctx.setCurTrack(strack);
@@ -275,7 +265,7 @@ void Writer::writeSegments(XmlWriter& xml, SelectionFilter* filter, track_idx_t 
 
 void Writer::doWriteItem(const EngravingItem* item, XmlWriter& xml)
 {
-    WriteContext ctx;
+    WriteContext ctx(item->score());
     ctx.setClipboardmode(true);
     TWrite::writeItem(item, xml, ctx);
 }

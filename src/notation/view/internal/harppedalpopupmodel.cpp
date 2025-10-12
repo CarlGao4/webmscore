@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2022 MuseScore BVBA and others
+ * Copyright (C) 2022 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -136,11 +136,11 @@ QRectF HarpPedalPopupModel::staffPos() const
     if (staves.size() > 0) {
         engraving::StaffLines* topStaff = staves.front();
         engraving::StaffLines* bottomStaff = staves.back();
-        RectF staffRect
-            = RectF(measure->canvasBoundingRect().x(),
-                    topStaff->canvasBoundingRect().y(),
-                    measure->canvasBoundingRect().width(),
-                    bottomStaff->canvasBoundingRect().bottomLeft().y() - topStaff->canvasBoundingRect().topLeft().y());
+        muse::RectF staffRect
+            = muse::RectF(measure->canvasBoundingRect().x(),
+                          topStaff->canvasBoundingRect().y(),
+                          measure->canvasBoundingRect().width(),
+                          bottomStaff->canvasBoundingRect().bottomLeft().y() - topStaff->canvasBoundingRect().topLeft().y());
 
         return fromLogical(staffRect).toQRectF();
     }
@@ -176,7 +176,7 @@ void HarpPedalPopupModel::setDiagramPedalState(QVector<Position> pedalState)
         return;
     }
 
-    beginCommand();
+    beginCommand(muse::TranslatableString("undoableAction", "Edit harp pedal diagram"));
     setPopupPedalState(stdPedalState);
     toHarpPedalDiagram(m_item)->undoChangePedalState(getPopupPedalState());
     updateNotation();

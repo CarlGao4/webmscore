@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -28,7 +28,7 @@
 #include "iprojectconfiguration.h"
 
 namespace mu::project {
-class AudioGenerationSettingsModel : public QObject
+class AudioGenerationSettingsModel : public QObject, public muse::async::Asyncable
 {
     Q_OBJECT
 
@@ -39,6 +39,8 @@ class AudioGenerationSettingsModel : public QObject
 
 public:
     explicit AudioGenerationSettingsModel(QObject* parent = nullptr);
+
+    Q_INVOKABLE void load();
 
     int timePeriodType() const;
     int numberOfSaves() const;

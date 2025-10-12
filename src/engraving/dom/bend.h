@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -26,7 +26,7 @@
 #include "draw/types/font.h"
 
 #include "engravingitem.h"
-#include "types.h"
+#include "../types/types.h"
 
 namespace mu::engraving {
 class Note;
@@ -42,7 +42,7 @@ class Factory;
  *    replaced by the GuitarBend class.
  *********************************************************/
 
-enum class BendType {
+enum class BendType : unsigned char {
     BEND = 0,
     BEND_RELEASE,
     BEND_RELEASE_BEND,
@@ -76,10 +76,10 @@ public:
     void setFontSize(double s) { m_fontSize = s; }
     FontStyle fontStyle() const { return m_fontStyle; }
     void setFontStyle(FontStyle s) { m_fontStyle = s; }
-    Millimetre lineWidth() const { return m_lineWidth; }
-    void setLineWidth(Millimetre w) { m_lineWidth = w; }
+    Spatium lineWidth() const { return m_lineWidth; }
+    void setLineWidth(Spatium w) { m_lineWidth = w; }
 
-    mu::draw::Font font(double) const;
+    muse::draw::Font font(double) const;
 
     // property methods
     PropertyValue getProperty(Pid propertyId) const override;
@@ -108,7 +108,7 @@ private:
     String m_fontFace;
     double m_fontSize = 0.0;
     FontStyle m_fontStyle = FontStyle::Undefined;
-    Millimetre m_lineWidth;
+    Spatium m_lineWidth;
 };
 } // namespace mu::engraving
 #endif

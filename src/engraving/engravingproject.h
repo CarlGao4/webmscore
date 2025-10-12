@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -31,7 +31,7 @@
 #include "types/types.h"
 
 #include "modularity/ioc.h"
-#include "diagnostics/iengravingelementsprovider.h"
+#include "devtools/iengravingelementsprovider.h"
 
 //! NOTE In addition to the score itself, the mscz file also stores other data,
 //! such as synthesizer, mixer settings, omr, etc.
@@ -43,19 +43,24 @@
 //! we need to strive to ensure that there is work with the project everywhere;
 //! accordingly, only the project should create and load the master score.
 
+namespace mu::engraving::write {
+struct WriteRange;
+}
+
 namespace mu::engraving {
 class MasterScore;
 class MStyle;
 
-class EngravingProject : public std::enable_shared_from_this<EngravingProject>
+class EngravingProject : public std::enable_shared_from_this<EngravingProject>, public muse::Injectable
 {
-    INJECT_STATIC(diagnostics::IEngravingElementsProvider, engravingElementsProvider)
+public:
+    Inject<IEngravingElementsProvider> engravingElementsProvider = { this };
 
 public:
     ~EngravingProject();
 
-    static std::shared_ptr<EngravingProject> create();
-    static std::shared_ptr<EngravingProject> create(const MStyle& style);
+    static std::shared_ptr<EngravingProject> create(const muse::modularity::ContextPtr& iocCtx);
+    static std::shared_ptr<EngravingProject> create(const MStyle& style, const muse::modularity::ContextPtr& iocCtx);
 
     IFileInfoProviderPtr fileInfoProvider() const;
     void setFileInfoProvider(IFileInfoProviderPtr fileInfoProvider);
@@ -66,22 +71,22 @@ public:
     bool readOnly() const;
 
     MasterScore* masterScore() const;
-    Ret setupMasterScore(bool forceMode);
+    muse::Ret setupMasterScore(bool forceMode);
 
-    Ret loadMscz(const MscReader& msc, SettingsCompat& settingsCompat, bool ignoreVersionError);
-    bool writeMscz(MscWriter& writer, bool onlySelection, bool createThumbnail);
+    muse::Ret loadMscz(const MscReader& msc, SettingsCompat& settingsCompat, bool ignoreVersionError);
+    bool writeMscz(MscWriter& writer, bool createThumbnail, const write::WriteRange* range = nullptr);
 
     bool isCorruptedUponLoading() const;
-    Ret checkCorrupted() const;
+    muse::Ret checkCorrupted() const;
 
 private:
     friend class MasterScore;
 
-    EngravingProject();
+    EngravingProject(const muse::modularity::ContextPtr& iocCtx);
 
     void init(const MStyle& style);
 
-    Ret doSetupMasterScore(bool forceMode);
+    muse::Ret doSetupMasterScore(bool forceMode);
 
     MasterScore* m_masterScore = nullptr;
 

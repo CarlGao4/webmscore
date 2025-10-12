@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -29,6 +29,8 @@
 #include "models/inspectormodelcreator.h"
 #include "models/measures/measuressettingsmodel.h"
 #include "models/notation/notes/noteheads/noteheadgroupsmodel.h"
+#include "models/text/textstylepopupmodel.h"
+
 #include "models/inspectorpopupcontroller.h"
 
 #include "view/widgets/fretcanvas.h"
@@ -56,10 +58,11 @@
 #include "types/bendtypes.h"
 #include "types/tremolobartypes.h"
 #include "types/tremolotypes.h"
+#include "types/voicetypes.h"
 #include "types/linetypes.h"
 
 using namespace mu::inspector;
-using namespace mu::modularity;
+using namespace muse::modularity;
 
 static void inspector_init_qrc()
 {
@@ -89,6 +92,7 @@ void InspectorModule::registerUiTypes()
 
     qmlRegisterUncreatableType<MeasuresSettingsModel>("MuseScore.Inspector", 1, 0, "MeasuresSettingsModel", "Not creatable from QML");
     qmlRegisterType<NoteheadGroupsModel>("MuseScore.Inspector", 1, 0, "NoteheadGroupsModel");
+    qmlRegisterType<TextStylePopupModel>("MuseScore.Inspector", 1, 0, "TextStylePopupModel");
 
     qmlRegisterUncreatableType<DirectionTypes>("MuseScore.Inspector", 1, 0, "DirectionTypes", "Not creatable as it is an enum type");
     qmlRegisterUncreatableType<SlurTieTypes>("MuseScore.Inspector", 1, 0, "SlurTieTypes", "Not creatable as it is an enum type");
@@ -116,6 +120,7 @@ void InspectorModule::registerUiTypes()
     qmlRegisterUncreatableType<TremoloBarTypes>("MuseScore.Inspector", 1, 0, "TremoloBarTypes", "Not creatable as it is an enum type");
     qmlRegisterUncreatableType<TremoloTypes>("MuseScore.Inspector", 1, 0, "TremoloTypes", "Not creatable as it is an enum type");
     qmlRegisterType<InspectorPopupController>("MuseScore.Inspector", 1, 0, "InspectorPopupController");
+    qmlRegisterUncreatableType<VoiceTypes>("MuseScore.Inspector", 1, 0, "VoiceTypes", "Not creatable as it is an enum type");
 
-    modularity::ioc()->resolve<ui::IUiEngine>(moduleName())->addSourceImportPath(inspector_QML_IMPORT);
+    ioc()->resolve<muse::ui::IUiEngine>(moduleName())->addSourceImportPath(inspector_QML_IMPORT);
 }

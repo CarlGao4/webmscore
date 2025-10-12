@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2023 MuseScore BVBA and others
+ * Copyright (C) 2023 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -59,13 +59,13 @@ void CloudScoreStatusWatcher::onProjectBeingDownloadedChanged()
         return;
     }
 
-    download.progress->progressChanged.onReceive(this, [this](int64_t current, int64_t total, const std::string&) {
+    download.progress->progressChanged().onReceive(this, [this](int64_t current, int64_t total, const std::string&) {
         m_progressCurrent = current;
         m_progressTotal = total;
         emit progressChanged();
     });
 
-    download.progress->finished.onReceive(this, [this](const framework::ProgressResult&) {
+    download.progress->finished().onReceive(this, [this](const muse::ProgressResult&) {
         clearProgress();
     });
 }

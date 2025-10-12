@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -19,8 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_NOTATION_EDITSTRINGDATA_H
-#define MU_NOTATION_EDITSTRINGDATA_H
+#pragma once
 
 #include <QDialog>
 
@@ -35,18 +34,14 @@ namespace mu::notation {
 //   EditStringData
 //---------------------------------------------------------
 
-class EditStringData : public QDialog, private Ui::EditStringDataBase
+class EditStringData : public QDialog, private Ui::EditStringDataBase, public muse::Injectable
 {
     Q_OBJECT
 
-    INJECT(context::IGlobalContext, globalContext)
+    muse::Inject<context::IGlobalContext> globalContext = { this };
 
 public:
     EditStringData(QWidget* parent = nullptr, const std::vector<engraving::instrString>& strings = {}, int frets = 0);
-    EditStringData(const EditStringData&);
-    ~EditStringData();
-
-    static int metaTypeId();
 
     std::vector<mu::engraving::instrString> strings() const;
     int frets() const;
@@ -65,7 +60,8 @@ private:
     void init();
     void initStringsData();
 
-    virtual void hideEvent(QHideEvent*) override;
+    void showEvent(QShowEvent*) override;
+    void hideEvent(QHideEvent*) override;
     bool eventFilter(QObject* obj, QEvent* event) override;
 
     QString openColumnAccessibleText(const QTableWidgetItem* item) const;
@@ -81,7 +77,3 @@ private:
     Instrument* m_instrument = nullptr;
 };
 }
-
-Q_DECLARE_METATYPE(mu::notation::EditStringData)
-
-#endif // MU_NOTATION_EDITSTRINGDATA_H

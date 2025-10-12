@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -71,7 +71,6 @@ void MeasureRead::readMeasure(Measure* measure, XmlReader& e, ReadContext& ctx, 
         return;
     }
 
-    double _spatium = measure->spatium();
     ctx.setCurrentMeasure(measure);
     int nextTrack = staffIdx * VOICES;
     ctx.setTrack(nextTrack);
@@ -86,24 +85,18 @@ void MeasureRead::readMeasure(Measure* measure, XmlReader& e, ReadContext& ctx, 
         measure->m_mstaves.push_back(s);
     }
 
-    bool irregular;
+    bool irregular = false;
     if (e.hasAttribute("len")) {
-        StringList sl = e.attribute("len").split(u'/');
-        if (sl.size() == 2) {
-            measure->m_len = Fraction(sl.at(0).toInt(), sl.at(1).toInt());
-        } else {
-            LOGD("illegal measure size <%s>", muPrintable(e.attribute("len")));
-        }
-        irregular = true;
-        if (measure->m_len.numerator() <= 0 || measure->m_len.denominator() <= 0 || measure->m_len.denominator() > 128) {
-            e.raiseError(mtrc("engraving",
-                              "MSCX error at line %1: invalid measure length: %2").arg(e.lineNumber()).arg(measure->m_len.toString()));
+        bool ok = true;
+        measure->m_len = Fraction::fromString(e.attribute("len"), &ok);
+        if (!ok || measure->m_len < Fraction(1, 128)) {
+            e.raiseError(muse::mtrc("engraving", "MSCX error at byte offset %1: invalid measure length: %2")
+                         .arg(e.byteOffset()).arg(e.attribute("len")));
             return;
         }
+        irregular = true;
         ctx.compatTimeSigMap()->add(measure->tick().ticks(), SigEvent(measure->m_len, measure->m_timesig));
         ctx.compatTimeSigMap()->add((measure->tick() + measure->ticks()).ticks(), SigEvent(measure->m_timesig));
-    } else {
-        irregular = false;
     }
 
     while (e.readNextStartElement()) {
@@ -153,7 +146,7 @@ void MeasureRead::readMeasure(Measure* measure, XmlReader& e, ReadContext& ctx, 
                 spacer->setTrack(staffIdx * VOICES);
                 measure->add(spacer);
             }
-            measure->m_mstaves[staffIdx]->vspacerDown()->setGap(Millimetre(e.readDouble() * _spatium));
+            measure->m_mstaves[staffIdx]->vspacerDown()->setGap(Spatium(e.readDouble()));
         } else if (tag == "vspacerFixed") {
             if (!measure->m_mstaves[staffIdx]->vspacerDown()) {
                 Spacer* spacer = Factory::createSpacer(measure);
@@ -161,7 +154,7 @@ void MeasureRead::readMeasure(Measure* measure, XmlReader& e, ReadContext& ctx, 
                 spacer->setTrack(staffIdx * VOICES);
                 measure->add(spacer);
             }
-            measure->m_mstaves[staffIdx]->vspacerDown()->setGap(Millimetre(e.readDouble() * _spatium));
+            measure->m_mstaves[staffIdx]->vspacerDown()->setGap(Spatium(e.readDouble()));
         } else if (tag == "vspacerUp") {
             if (!measure->m_mstaves[staffIdx]->vspacerUp()) {
                 Spacer* spacer = Factory::createSpacer(measure);
@@ -169,7 +162,7 @@ void MeasureRead::readMeasure(Measure* measure, XmlReader& e, ReadContext& ctx, 
                 spacer->setTrack(staffIdx * VOICES);
                 measure->add(spacer);
             }
-            measure->m_mstaves[staffIdx]->vspacerUp()->setGap(Millimetre(e.readDouble() * _spatium));
+            measure->m_mstaves[staffIdx]->vspacerUp()->setGap(Spatium(e.readDouble()));
         } else if (tag == "visible") {
             measure->m_mstaves[staffIdx]->setVisible(e.readInt());
         } else if ((tag == "slashStyle") || (tag == "stemless")) {
@@ -263,7 +256,7 @@ void MeasureRead::readVoice(Measure* measure, XmlReader& e, ReadContext& ctx, in
             if (barLine) {
                 segment = measure->getSegmentR(st, t);
                 segment->add(barLine);
-                EngravingItem::renderer()->layoutItem(barLine);
+                barLine->renderer()->layoutItem(barLine);
             }
             if (fermata) {
                 segment->add(fermata);
@@ -389,6 +382,12 @@ void MeasureRead::readVoice(Measure* measure, XmlReader& e, ReadContext& ctx, in
                 }
             } else {
                 header = clef->isHeader();
+            }
+
+            // Clef segments are sorted on layout now.  Previously, clef barline position could be out of sync with segment placement.
+            if (ctx.tick() != Fraction(0, 1) && ctx.tick() == measure->tick()
+                && !(measure->prevMeasure() && measure->prevMeasure()->repeatEnd()) && !header) {
+                clef->setClefToBarlinePosition(ClefToBarlinePosition::AFTER);
             }
 
             segment = measure->getSegment(header ? SegmentType::HeaderClef : SegmentType::Clef, ctx.tick());
@@ -552,7 +551,7 @@ void MeasureRead::readVoice(Measure* measure, XmlReader& e, ReadContext& ctx, in
                 Interval vi = staff->part()->instrument(tick)->transpose();
                 Interval vk = calculateInterval(cKey, key);
                 bool concertPitch = ctx.style().styleB(Sid::concertPitch);
-                if (!concertPitch && vk.chromatic != abs(vi.chromatic)) {
+                if (!concertPitch && vk.chromatic != std::abs(vi.chromatic)) {
                     InstrumentChange* ic = toInstrumentChange(el);
                     for (KeySig* ks : ic->keySigs(true)) {
                         KeySigEvent ke = ks->keySigEvent();
@@ -565,7 +564,7 @@ void MeasureRead::readVoice(Measure* measure, XmlReader& e, ReadContext& ctx, in
                 }
             }
         } else if (tag == "Fermata") {
-            fermata = Factory::createFermata(ctx.dummy());
+            fermata = Factory::createFermata(ctx.dummy()->segment());
             fermata->setTrack(ctx.track());
             fermata->setPlacement(fermata->track() & 1 ? PlacementV::BELOW : PlacementV::ABOVE);
             TRead::read(fermata, e, ctx);

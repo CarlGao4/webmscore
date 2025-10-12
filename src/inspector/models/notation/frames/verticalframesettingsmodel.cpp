@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -21,6 +21,8 @@
  */
 #include "verticalframesettingsmodel.h"
 
+#include "engraving/dom/box.h"
+
 #include "dataformatter.h"
 
 #include "translation.h"
@@ -32,20 +34,82 @@ VerticalFrameSettingsModel::VerticalFrameSettingsModel(QObject* parent, IElement
     : AbstractInspectorModel(parent, repository)
 {
     setModelType(InspectorModelType::TYPE_VERTICAL_FRAME);
-    setTitle(qtrc("inspector", "Vertical frame"));
-    setIcon(ui::IconCode::Code::VERTICAL_FRAME);
+    setTitle(muse::qtrc("inspector", "Vertical frame"));
+    setIcon(muse::ui::IconCode::Code::VERTICAL_FRAME);
     createProperties();
 }
 
 void VerticalFrameSettingsModel::createProperties()
 {
-    m_frameHeight = buildPropertyItem(Pid::BOX_HEIGHT);
+    m_frameHeight = buildPropertyItem(Pid::BOX_HEIGHT,
+                                      [this](const Pid pid, const QVariant& newValue) { onFrameHeightSet(pid, newValue); },
+                                      nullptr,
+                                      [this](const Pid pid) { onFrameHeightReset(pid); });
     m_gapAbove = buildPropertyItem(Pid::TOP_GAP);
     m_gapBelow = buildPropertyItem(Pid::BOTTOM_GAP);
     m_frameLeftMargin = buildPropertyItem(Pid::LEFT_MARGIN);
     m_frameRightMargin = buildPropertyItem(Pid::RIGHT_MARGIN);
     m_frameTopMargin = buildPropertyItem(Pid::TOP_MARGIN);
     m_frameBottomMargin = buildPropertyItem(Pid::BOTTOM_MARGIN);
+    m_isSizeSpatiumDependent = buildPropertyItem(Pid::SIZE_SPATIUM_DEPENDENT);
+    m_paddingToNotationAbove = buildPropertyItem(Pid::PADDING_TO_NOTATION_ABOVE);
+    m_paddingToNotationBelow = buildPropertyItem(Pid::PADDING_TO_NOTATION_BELOW);
+}
+
+void VerticalFrameSettingsModel::onFrameHeightSet(const Pid pid, const QVariant& newValue)
+{
+    if (m_elementList.empty()) {
+        return;
+    }
+
+    beginCommand(TranslatableString("undoableAction", "Edit %1").arg(propertyUserName(pid)));
+
+    for (EngravingItem* element : m_elementList) {
+        VBox* vbox = toVBox(element);
+        IF_ASSERT_FAILED(vbox) {
+            continue;
+        }
+
+        vbox->undoChangeProperty(Pid::BOX_AUTOSIZE, false);
+
+        mu::engraving::PropertyFlags ps = vbox->propertyFlags(pid);
+
+        if (ps == mu::engraving::PropertyFlags::STYLED) {
+            ps = mu::engraving::PropertyFlags::UNSTYLED;
+        }
+
+        PropertyValue propValue = valueToElementUnits(pid, newValue, vbox);
+        vbox->undoChangeProperty(pid, propValue, ps);
+    }
+
+    loadPropertyItem(m_frameHeight);
+
+    updateNotation();
+    endCommand();
+}
+
+void VerticalFrameSettingsModel::onFrameHeightReset(const Pid pid)
+{
+    if (m_elementList.empty()) {
+        return;
+    }
+
+    beginCommand(TranslatableString("undoableAction", "Reset %1").arg(propertyUserName(pid)));
+
+    for (EngravingItem* element : m_elementList) {
+        VBox* vbox = toVBox(element);
+        IF_ASSERT_FAILED(vbox) {
+            continue;
+        }
+
+        vbox->undoResetProperty(pid);
+        vbox->undoChangeProperty(Pid::BOX_AUTOSIZE, true);
+    }
+
+    loadPropertyItem(m_frameHeight);
+
+    updateNotation();
+    endCommand();
 }
 
 void VerticalFrameSettingsModel::requestElements()
@@ -63,6 +127,9 @@ void VerticalFrameSettingsModel::loadProperties()
         Pid::RIGHT_MARGIN,
         Pid::TOP_MARGIN,
         Pid::BOTTOM_MARGIN,
+        Pid::SIZE_SPATIUM_DEPENDENT,
+        Pid::PADDING_TO_NOTATION_ABOVE,
+        Pid::PADDING_TO_NOTATION_BELOW,
     };
 
     loadProperties(propertyIdSet);
@@ -77,6 +144,9 @@ void VerticalFrameSettingsModel::resetProperties()
     m_frameRightMargin->resetToDefault();
     m_frameTopMargin->resetToDefault();
     m_frameBottomMargin->resetToDefault();
+    m_isSizeSpatiumDependent->resetToDefault();
+    m_paddingToNotationAbove->resetToDefault();
+    m_paddingToNotationBelow->resetToDefault();
 }
 
 void VerticalFrameSettingsModel::onNotationChanged(const PropertyIdSet& changedPropertyIdSet, const StyleIdSet&)
@@ -86,32 +156,44 @@ void VerticalFrameSettingsModel::onNotationChanged(const PropertyIdSet& changedP
 
 void VerticalFrameSettingsModel::loadProperties(const mu::engraving::PropertyIdSet& propertyIdSet)
 {
-    if (mu::contains(propertyIdSet, Pid::BOX_HEIGHT)) {
+    if (muse::contains(propertyIdSet, Pid::BOX_HEIGHT)) {
         loadPropertyItem(m_frameHeight, formatDoubleFunc);
     }
 
-    if (mu::contains(propertyIdSet, Pid::TOP_GAP)) {
+    if (muse::contains(propertyIdSet, Pid::TOP_GAP)) {
         loadPropertyItem(m_gapAbove, formatDoubleFunc);
     }
 
-    if (mu::contains(propertyIdSet, Pid::BOTTOM_GAP)) {
+    if (muse::contains(propertyIdSet, Pid::BOTTOM_GAP)) {
         loadPropertyItem(m_gapBelow, formatDoubleFunc);
     }
 
-    if (mu::contains(propertyIdSet, Pid::LEFT_MARGIN)) {
+    if (muse::contains(propertyIdSet, Pid::LEFT_MARGIN)) {
         loadPropertyItem(m_frameLeftMargin);
     }
 
-    if (mu::contains(propertyIdSet, Pid::RIGHT_MARGIN)) {
+    if (muse::contains(propertyIdSet, Pid::RIGHT_MARGIN)) {
         loadPropertyItem(m_frameRightMargin);
     }
 
-    if (mu::contains(propertyIdSet, Pid::TOP_MARGIN)) {
+    if (muse::contains(propertyIdSet, Pid::TOP_MARGIN)) {
         loadPropertyItem(m_frameTopMargin);
     }
 
-    if (mu::contains(propertyIdSet, Pid::BOTTOM_MARGIN)) {
+    if (muse::contains(propertyIdSet, Pid::BOTTOM_MARGIN)) {
         loadPropertyItem(m_frameBottomMargin);
+    }
+
+    if (muse::contains(propertyIdSet, Pid::SIZE_SPATIUM_DEPENDENT)) {
+        loadPropertyItem(m_isSizeSpatiumDependent);
+    }
+
+    if (muse::contains(propertyIdSet, Pid::PADDING_TO_NOTATION_ABOVE)) {
+        loadPropertyItem(m_paddingToNotationAbove);
+    }
+
+    if (muse::contains(propertyIdSet, Pid::PADDING_TO_NOTATION_BELOW)) {
+        loadPropertyItem(m_paddingToNotationBelow);
     }
 }
 
@@ -148,4 +230,19 @@ PropertyItem* VerticalFrameSettingsModel::frameTopMargin() const
 PropertyItem* VerticalFrameSettingsModel::frameBottomMargin() const
 {
     return m_frameBottomMargin;
+}
+
+PropertyItem* VerticalFrameSettingsModel::isSizeSpatiumDependent() const
+{
+    return m_isSizeSpatiumDependent;
+}
+
+PropertyItem* VerticalFrameSettingsModel::paddingToNotationAbove() const
+{
+    return m_paddingToNotationAbove;
+}
+
+PropertyItem* VerticalFrameSettingsModel::paddingToNotationBelow() const
+{
+    return m_paddingToNotationBelow;
 }

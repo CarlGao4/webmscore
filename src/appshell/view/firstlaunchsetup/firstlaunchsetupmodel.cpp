@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,13 +22,14 @@
 #include "firstlaunchsetupmodel.h"
 
 #include "translation.h"
+#include "global/async/async.h"
 
+using namespace muse;
 using namespace mu;
 using namespace mu::appshell;
-using namespace mu::framework;
 
 FirstLaunchSetupModel::FirstLaunchSetupModel(QObject* parent)
-    : QObject(parent)
+    : QObject(parent), muse::Injectable(muse::iocCtxForQmlObject(this))
 {
     m_pages = {
         Page { "ThemesPage.qml", "musescore://notation" },
@@ -92,22 +93,56 @@ void FirstLaunchSetupModel::setCurrentPageIndex(int index)
     m_currentPageIndex = index;
     emit currentPageChanged();
 
-    interactive()->open(m_pages.at(m_currentPageIndex).backgroundUri);
+    async::Async::call(this, [this]() {
+        interactive()->open(m_pages.at(m_currentPageIndex).backgroundUri);
+    });
 }
 
 bool FirstLaunchSetupModel::askAboutClosingEarly()
 {
-    IInteractive::ButtonDatas buttons {
-        IInteractive::ButtonData(IInteractive::Button::Cancel, trc("global", "Cancel")),
-        IInteractive::ButtonData(IInteractive::Button::Continue, trc("appshell/gettingstarted", "Keep going"), /*accentButton*/ true)
+    const std::string title = muse::trc("appshell/gettingstarted", "Are you sure you want to cancel?");
+    const std::string body = muse::qtrc("appshell/gettingstarted",
+                                        "If you choose to cancel, then be sure to check out our free "
+                                        "MuseSounds playback libraries on <a href=\"%1\">MuseHub.com</a>.")
+                             .arg(QString::fromStdString(configuration()->museHubFreeMuseSoundsUrl()))
+                             .toStdString();
+    const IInteractive::Text text(body, IInteractive::TextFormat::RichText);
+
+    static constexpr int visitMuseHubBtnId = int(IInteractive::Button::CustomButton) + 1;
+    const IInteractive::ButtonData visitMuseHubBtn {
+        visitMuseHubBtnId,
+        muse::trc("appshell/gettingstarted", "Visit MuseHub"),
+        false,
+        false,
+#ifdef Q_OS_WINDOWS
+        IInteractive::ApplyRole
+#else
+        IInteractive::AcceptRole
+#endif
     };
 
-    IInteractive::Result result
-        = interactive()->warning(trc("appshell/gettingstarted", "Are you sure you want to cancel?"),
-                                 trc("appshell/gettingstarted", "If you choose to cancel, then be sure to check out "
-                                                                "our free Muse Sounds playback library on musescore.org."),
-                                 buttons,
-                                 int(IInteractive::Button::Cancel));
+    const IInteractive::ButtonData keepGoingBtn {
+        IInteractive::Button::Continue,
+        muse::trc("appshell/gettingstarted", "Keep going"),
+        true,
+        false,
+#ifdef Q_OS_WINDOWS
+        IInteractive::AcceptRole
+#else
+        IInteractive::ContinueRole
+#endif
+    };
+
+    const IInteractive::ButtonDatas buttons {
+        interactive()->buttonData(IInteractive::Button::Cancel), visitMuseHubBtn, keepGoingBtn
+    };
+
+    IInteractive::Result result = interactive()->warningSync(title, text, buttons, int(IInteractive::Button::Cancel));
+
+    if (result.isButton(visitMuseHubBtnId)) {
+        interactive()->openUrl(configuration()->museHubFreeMuseSoundsUrl());
+        return true;
+    }
 
     return result.standardButton() == IInteractive::Button::Cancel;
 }

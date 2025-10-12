@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,7 +22,6 @@
 #include "aboutmodel.h"
 
 #include "translation.h"
-#include "muversion.h"
 
 #include <QApplication>
 #include <QClipboard>
@@ -31,15 +30,15 @@
 using namespace mu::appshell;
 
 AboutModel::AboutModel(QObject* parent)
-    : QObject(parent)
+    : QObject(parent), muse::Injectable(muse::iocCtxForQmlObject(this))
 {
 }
 
 QString AboutModel::museScoreVersion() const
 {
     QString version = QString::fromStdString(configuration()->museScoreVersion());
-    return mu::framework::MUVersion::unstable()
-           ? qtrc("appshell/about", "Unstable prerelease for %1").arg(version)
+    return application()->unstable()
+           ? muse::qtrc("appshell/about", "Unstable prerelease for %1").arg(version)
            : version;
 }
 
@@ -93,9 +92,9 @@ void AboutModel::copyRevisionToClipboard() const
                 ? " or later" : ""))
         .arg(QSysInfo::currentCpuArchitecture())
         .arg(QSysInfo::WordSize)
-        .arg(MUSESCORE_VERSION)
-        .arg(MUSESCORE_BUILD_NUMBER)
-        .arg(MUSESCORE_REVISION));
+        .arg(application()->version().toString())
+        .arg(application()->build())
+        .arg(application()->revision()));
 }
 
 void AboutModel::toggleDevMode()

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -24,12 +24,14 @@
 
 #include <QObject>
 
+#include "global/async/asyncable.h"
+
 #include "modularity/ioc.h"
 #include "iappshellconfiguration.h"
 #include "iinteractive.h"
 
 namespace mu::appshell {
-class FirstLaunchSetupModel : public QObject
+class FirstLaunchSetupModel : public QObject, public muse::Injectable, public muse::async::Asyncable
 {
     Q_OBJECT
 
@@ -41,8 +43,8 @@ class FirstLaunchSetupModel : public QObject
     Q_PROPERTY(bool canGoForward READ canGoForward NOTIFY currentPageChanged)
     Q_PROPERTY(bool canFinish READ canFinish NOTIFY currentPageChanged)
 
-    INJECT(IAppShellConfiguration, configuration)
-    INJECT(framework::IInteractive, interactive)
+    muse::Inject<IAppShellConfiguration> configuration = { this };
+    muse::Inject<muse::IInteractive> interactive = { this };
 
 public:
     explicit FirstLaunchSetupModel(QObject* parent = nullptr);

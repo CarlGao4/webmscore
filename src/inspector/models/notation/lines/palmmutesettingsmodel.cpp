@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -27,8 +27,8 @@ PalmMuteSettingsModel::PalmMuteSettingsModel(QObject* parent, IElementRepository
     : TextLineSettingsModel(parent, repository, mu::engraving::ElementType::PALM_MUTE)
 {
     setModelType(InspectorModelType::TYPE_PALM_MUTE);
-    setTitle(qtrc("inspector", "Palm mute"));
-    setIcon(ui::IconCode::Code::PALM_MUTE);
+    setTitle(muse::qtrc("inspector", "Palm mute"));
+    setIcon(muse::ui::IconCode::Code::PALM_MUTE);
 
     setPossibleStartHookTypes({});
     setPossibleEndHookTypes({});

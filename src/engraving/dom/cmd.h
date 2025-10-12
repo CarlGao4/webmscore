@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2023 MuseScore BVBA and others
+ * Copyright (C) 2023 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -24,7 +24,7 @@
 
 #include <list>
 
-#include "types/types.h"
+#include "../types/types.h"
 #include "engravingobject.h"
 
 namespace mu::engraving {
@@ -34,7 +34,7 @@ namespace mu::engraving {
 
 struct UpdateState
 {
-    mu::RectF refresh;           ///< area to update, canvas coordinates
+    RectF refresh;           ///< area to update, canvas coordinates
     bool playNote = false;       ///< play selected note after command
     bool playChord = false;      ///< play whole chord for the selected note
     bool selectionChanged = false;
@@ -86,8 +86,8 @@ private:
     UpdateMode m_updateMode = UpdateMode::DoNothing;
     Fraction m_startTick { -1, 1 };            // start tick for mode LayoutTick
     Fraction m_endTick   { -1, 1 };              // end tick for mode LayoutTick
-    staff_idx_t m_startStaff = mu::nidx;
-    staff_idx_t m_endStaff = mu::nidx;
+    staff_idx_t m_startStaff = muse::nidx;
+    staff_idx_t m_endStaff = muse::nidx;
     const EngravingItem* m_el = nullptr;
     const MeasureBase* m_mb = nullptr;
     bool m_oneElement = true;

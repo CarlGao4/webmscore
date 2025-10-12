@@ -25,9 +25,9 @@
 #include "log.h"
 #include "framework/actions/actionsmodule.h"
 
-static mu::testing::SuiteEnvironment ui_senv(
+static muse::testing::SuiteEnvironment ui_senv(
 {
-    new mu::actions::ActionsModule()
+    new muse::actions::ActionsModule()
 },
     nullptr,
     []() {

@@ -29,11 +29,12 @@
 
 #include "log.h"
 
-using namespace mu::ui;
-using namespace mu::modularity;
+using namespace muse;
+using namespace muse::ui;
+using namespace muse::modularity;
 
 MainWindowBridge::MainWindowBridge(QObject* parent)
-    : QObject(parent), m_window(nullptr)
+    : QObject(parent), Injectable(muse::iocCtxForQmlObject(this)), m_window(nullptr)
 {
 }
 
@@ -54,10 +55,19 @@ void MainWindowBridge::setWindow(QWindow* window)
         return;
     }
 
+    if (m_window) {
+        windowsController()->unregWindow(m_window->winId());
+    }
+
     m_window = window;
+
     emit windowChanged();
 
     init();
+
+    if (m_window) {
+        windowsController()->regWindow(m_window->winId());
+    }
 }
 
 void MainWindowBridge::init()
@@ -134,7 +144,7 @@ bool MainWindowBridge::isFullScreen() const
     return m_isFullScreen;
 }
 
-mu::async::Notification MainWindowBridge::isFullScreenChanged() const
+async::Notification MainWindowBridge::isFullScreenChanged() const
 {
     return m_isFullScreenChanged;
 }

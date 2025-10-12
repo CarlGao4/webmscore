@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -28,8 +28,9 @@
 #include "paletteconfigurationstub.h"
 
 using namespace mu::palette;
-using namespace mu::modularity;
-using namespace mu::ui;
+using namespace muse;
+using namespace muse::modularity;
+using namespace muse::ui;
 
 static void palette_init_qrc()
 {
@@ -65,7 +66,7 @@ void PaletteModule::registerResources()
 
 void PaletteModule::registerUiTypes()
 {
-    std::shared_ptr<ui::IUiEngine> ui = ioc()->resolve<ui::IUiEngine>(moduleName());
+    std::shared_ptr<muse::ui::IUiEngine> ui = ioc()->resolve<muse::ui::IUiEngine>(moduleName());
     if (ui) {
         ui->addSourceImportPath(palette_QML_IMPORT);
     }

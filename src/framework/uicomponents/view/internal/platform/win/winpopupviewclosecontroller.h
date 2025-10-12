@@ -20,27 +20,27 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_UICOMPONENTS_WINPOPUPVIEWCLOSECONTROLLER_H
-#define MU_UICOMPONENTS_WINPOPUPVIEWCLOSECONTROLLER_H
+#ifndef MUSE_UICOMPONENTS_WINPOPUPVIEWCLOSECONTROLLER_H
+#define MUSE_UICOMPONENTS_WINPOPUPVIEWCLOSECONTROLLER_H
 
 #include <QAbstractNativeEventFilter>
 
 #include "../../popupviewclosecontroller.h"
 
-namespace mu::uicomponents {
+namespace muse::uicomponents {
 class WinPopupViewCloseController : public PopupViewCloseController, public QAbstractNativeEventFilter
 {
     Q_OBJECT
 
 public:
-    explicit WinPopupViewCloseController(QObject* parent = nullptr);
+    explicit WinPopupViewCloseController(const muse::modularity::ContextPtr& iocCtx, QObject* parent = nullptr);
     ~WinPopupViewCloseController() override = default;
 
 private:
-    bool nativeEventFilter(const QByteArray& eventType, void* message, long* result) override;
+    bool nativeEventFilter(const QByteArray& eventType, void* message, qintptr* result) override;
 
     void doUpdateEventFilters() override;
 };
 }
 
-#endif // MU_UICOMPONENTS_WINPOPUPVIEWCLOSECONTROLLER_H
+#endif // MUSE_UICOMPONENTS_WINPOPUPVIEWCLOSECONTROLLER_H

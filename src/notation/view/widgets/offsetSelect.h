@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -19,11 +19,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
-#ifndef MU_OFFSET_SELECT_H
-#define MU_OFFSET_SELECT_H
+#pragma once
 
 #include "ui_offset_select.h"
+
+#include "draw/types/geometry.h"
 
 namespace mu::notation {
 class OffsetSelect : public QWidget, public Ui::OffsetSelect
@@ -33,18 +33,16 @@ class OffsetSelect : public QWidget, public Ui::OffsetSelect
 public:
     OffsetSelect(QWidget* parent);
     void setSuffix(const QString&);
-    QPointF offset() const;
-    void setOffset(const QPointF&);
+    muse::PointF offset() const;
+    void setOffset(const muse::PointF&);
 
 signals:
-    void offsetChanged(const QPointF&);
+    void offsetChanged(const muse::PointF&);
 
 private:
     void blockOffset(bool val);
 
 private slots:
-    void _offsetChanged();
+    void onOffsetChanged();
 };
 }
-
-#endif

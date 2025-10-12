@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -26,10 +26,13 @@
 #include "engraving/dom/masterscore.h"
 #include "engraving/dom/staff.h"
 #include "engraving/dom/stringdata.h"
+#include "engraving/style/textstyle.h"
 
 #include "engraving/types/typesconv.h"
 #include "engraving/compat/scoreaccess.h"
 #include "engraving/compat/mscxcompat.h"
+
+#include "actions/iactionsdispatcher.h"
 
 #include "ui/view/widgetstatestore.h"
 
@@ -39,7 +42,8 @@
 
 using namespace mu::notation;
 using namespace mu::engraving;
-using namespace mu::ui;
+using namespace muse;
+using namespace muse::ui;
 
 //---------------------------------------------------------
 //   noteHeadSchemes
@@ -62,19 +66,25 @@ mu::engraving::NoteHeadScheme noteHeadSchemes[] = {
 //---------------------------------------------------------
 
 EditStaffType::EditStaffType(QWidget* parent)
-    : QDialog(parent)
+    : QDialog(parent), muse::Injectable(muse::iocCtxForQWidget(this))
 {
     setObjectName("EditStaffType");
     setWindowFlags(this->windowFlags() & ~Qt::WindowContextHelpButtonHint);
     setupUi(this);
 
     // tab page configuration
-    std::vector<String> fontNames = mu::engraving::StaffType::fontNames(false);
+    std::vector<QString> styleNames = textStyleNames();
+    for (QString& item : styleNames) {
+        textStyleComboBox->addItem(item);
+    }
+    textStyleComboBox->setCurrentIndex(0);
+
+    std::vector<String> fontNames = mu::engraving::StaffType::tabFontNames(false);
     for (const String& fn : fontNames) {   // fill fret font name combo
         fretFontName->addItem(fn.toQString());
     }
     fretFontName->setCurrentIndex(0);
-    fontNames = mu::engraving::StaffType::fontNames(true);
+    fontNames = mu::engraving::StaffType::tabFontNames(true);
     for (const String& fn : fontNames) {  // fill duration font name combo
         durFontName->addItem(fn.toQString());
     }
@@ -85,7 +95,7 @@ EditStaffType::EditStaffType(QWidget* parent)
     }
 
     // load a sample standard score in preview
-    mu::engraving::MasterScore* sc = mu::engraving::compat::ScoreAccess::createMasterScoreWithDefaultStyle();
+    mu::engraving::MasterScore* sc = mu::engraving::compat::ScoreAccess::createMasterScoreWithDefaultStyle(iocContext());
     if (loadScore(sc, ":/view/resources/data/std_sample.mscx")) {
         standardPreview->setScore(sc);
     } else {
@@ -93,7 +103,7 @@ EditStaffType::EditStaffType(QWidget* parent)
     }
 
     // load a sample tablature score in preview
-    sc = mu::engraving::compat::ScoreAccess::createMasterScoreWithDefaultStyle();
+    sc = mu::engraving::compat::ScoreAccess::createMasterScoreWithDefaultStyle(iocContext());
     if (loadScore(sc, ":/view/resources/data/tab_sample.mscx")) {
         tabPreview->setScore(sc);
     } else {
@@ -103,14 +113,14 @@ EditStaffType::EditStaffType(QWidget* parent)
 
     connect(name, &QLineEdit::textEdited, this, &EditStaffType::nameEdited);
 
-    connect(lines,        QOverload<int>::of(&QSpinBox::valueChanged),          this, &EditStaffType::updatePreview);
-    connect(lineDistance, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &EditStaffType::updatePreview);
+    connect(lines,        &QSpinBox::valueChanged,       this, &EditStaffType::updatePreview);
+    connect(lineDistance, &QDoubleSpinBox::valueChanged, this, &EditStaffType::updatePreview);
 
     connect(showBarlines, &QCheckBox::toggled, this, &EditStaffType::updatePreview);
     connect(genClef,      &QCheckBox::toggled, this, &EditStaffType::updatePreview);
     connect(genTimesig,   &QCheckBox::toggled, this, &EditStaffType::updatePreview);
 
-    connect(noteHeadScheme, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &EditStaffType::updatePreview);
+    connect(noteHeadScheme, &QComboBox::currentIndexChanged, this, &EditStaffType::updatePreview);
 
     connect(genKeysigPitched,          &QCheckBox::toggled, this, &EditStaffType::updatePreview);
     connect(showLedgerLinesPitched,    &QCheckBox::toggled, this, &EditStaffType::updatePreview);
@@ -133,12 +143,15 @@ EditStaffType::EditStaffType(QWidget* parent)
     connect(minimSlashedRadio,   &QRadioButton::toggled, this, &EditStaffType::updatePreview);
     connect(showRests,           &QRadioButton::toggled, this, &EditStaffType::updatePreview);
 
-    connect(durFontName, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &EditStaffType::durFontNameChanged);
-    connect(durFontSize, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &EditStaffType::updatePreview);
-    connect(durY,        QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &EditStaffType::updatePreview);
-    connect(fretFontName, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &EditStaffType::fretFontNameChanged);
-    connect(fretFontSize, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &EditStaffType::updatePreview);
-    connect(fretY,        QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &EditStaffType::updatePreview);
+    connect(textStyleRadioButton, &QRadioButton::toggled, this, &EditStaffType::textStylesToggled);
+    connect(presetRadioButton, &QRadioButton::toggled, this, &EditStaffType::presetsToggled);
+    connect(textStyleComboBox, &QComboBox::currentIndexChanged, this, &EditStaffType::updatePreview);
+    connect(fretFontName, &QComboBox::currentIndexChanged, this, &EditStaffType::fretFontNameChanged);
+    connect(fretFontSize, &QDoubleSpinBox::valueChanged, this, &EditStaffType::updatePreview);
+    connect(fretY,        &QDoubleSpinBox::valueChanged, this, &EditStaffType::updatePreview);
+    connect(durFontName, &QComboBox::currentIndexChanged, this, &EditStaffType::durFontNameChanged);
+    connect(durFontSize, &QDoubleSpinBox::valueChanged, this, &EditStaffType::updatePreview);
+    connect(durY,        &QDoubleSpinBox::valueChanged, this, &EditStaffType::updatePreview);
 
     connect(linesThroughRadio, &QRadioButton::toggled, this, &EditStaffType::updatePreview);
     connect(onLinesRadio,      &QRadioButton::toggled, this, &EditStaffType::updatePreview);
@@ -149,11 +162,14 @@ EditStaffType::EditStaffType(QWidget* parent)
     connect(templateReset,  &QPushButton::clicked, this, &EditStaffType::resetToTemplateClicked);
     connect(addToTemplates, &QPushButton::clicked, this, &EditStaffType::addToTemplatesClicked);
 
-    //connect(groupCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &EditStaffType::staffGroupChanged);
+    connect(editTextStyleButton, &QPushButton::clicked, this, [=]() {
+        UriQuery uri("musescore://notation/style");
+        uri.addParam("currentPageCode", Val("text-styles"));
+        uri.addParam("currentSubPageCode", Val("tab-fret-number"));
+        interactive()->open(uri);
+    });
 
     addToTemplates->setVisible(false);
-
-    WidgetStateStore::restoreGeometry(this);
 
     //! NOTE: It is necessary for the correct start of navigation in the dialog
     setFocus();
@@ -187,7 +203,61 @@ void EditStaffType::setInstrument(const Instrument& instrument)
     templateCombo->setCurrentIndex(-1);
 }
 
-mu::Ret EditStaffType::loadScore(mu::engraving::MasterScore* score, const mu::io::path_t& path)
+void EditStaffType::enablePresets()
+{
+    textStyleComboBox->setVisible(false);
+    editTextStyleButton->setVisible(false);
+
+    fretFontLabel->setVisible(true);
+    fretFontSizeLabel->setVisible(true);
+    fretYLabel->setVisible(true);
+    fretFontName->setVisible(true);
+    fretFontSize->setVisible(true);
+    fretY->setVisible(true);
+
+    fretFontName->setCurrentIndex(static_cast<int>(staffType.fretPresetIdx()));
+    fretFontSize->setValue(staffType.fretFontSize());
+    fretY->setValue(staffType.fretFontUserY());
+}
+
+void EditStaffType::enableTextStyles()
+{
+    fretFontLabel->setVisible(false);
+    fretFontSizeLabel->setVisible(false);
+    fretYLabel->setVisible(false);
+    fretFontName->setVisible(false);
+    fretFontSize->setVisible(false);
+    fretY->setVisible(false);
+
+    textStyleComboBox->setVisible(true);
+    editTextStyleButton->setVisible(true);
+    textStyleComboBox->setCurrentIndex((int)staffType.fretTextStyle() - 1);
+}
+
+std::vector<QString> EditStaffType::textStyleNames() const
+{
+    std::vector<QString> names;
+    for (const TextStyleType& tid : allTextStyles()) {
+        muse::TranslatableString styleName = staffType.score() ? staffType.score()->getTextStyleUserName(tid) : TConv::userName(tid);
+        names.push_back(styleName.qTranslated());
+    }
+    return names;
+}
+
+TextStyleType EditStaffType::getTextStyle(const QString& styleName) const
+{
+    for (const TextStyleType& tid : allTextStyles()) {
+        muse::TranslatableString textStyleName = staffType.score() ? staffType.score()->getTextStyleUserName(tid) : TConv::userName(tid);
+
+        if (textStyleName.str == styleName) {
+            return tid;
+        }
+    }
+
+    return TextStyleType::FRET_DIAGRAM_FINGERING;
+}
+
+Ret EditStaffType::loadScore(mu::engraving::MasterScore* score, const muse::io::path_t& path)
 {
     mu::engraving::ScoreLoad sl;
 
@@ -204,7 +274,6 @@ mu::Ret EditStaffType::loadScore(mu::engraving::MasterScore* score, const mu::io
     score->rebuildMidiMapping();
     for (mu::engraving::Score* s : score->scoreList()) {
         s->setPlaylistDirty();
-        s->addLayoutFlags(mu::engraving::LayoutFlag::FIX_PITCH_VELO);
         s->setLayoutAll();
     }
     score->updateChannel();
@@ -212,6 +281,16 @@ mu::Ret EditStaffType::loadScore(mu::engraving::MasterScore* score, const mu::io
     score->update();
 
     return score->sanityCheck();
+}
+
+//---------------------------------------------------------
+//   showEvent
+//---------------------------------------------------------
+
+void EditStaffType::showEvent(QShowEvent* ev)
+{
+    WidgetStateStore::restoreGeometry(this);
+    QDialog::showEvent(ev);
 }
 
 //---------------------------------------------------------
@@ -225,18 +304,6 @@ void EditStaffType::hideEvent(QHideEvent* ev)
 }
 
 //---------------------------------------------------------
-//   staffGroupChanged
-//---------------------------------------------------------
-/*
-void EditStaffType::staffGroupChanged(int n)
-      {
-      int groupIdx = groupCombo->itemData(groupCombo->currentIndex()).toInt();
-      StaffGroup group = StaffGroup(groupIdx);
-      staffType = *StaffType::getDefaultPreset(group); // overwrite with default
-      setValues();
-      }
-*/
-//---------------------------------------------------------
 //   setValues
 //---------------------------------------------------------
 
@@ -248,7 +315,6 @@ void EditStaffType::setValues()
     int i = int(group);
     stack->setCurrentIndex(i);
     groupName->setText(TConv::translatedUserName(group));
-//      groupCombo->setCurrentIndex(i);
 
     name->setText(staffType.name());
     lines->setValue(staffType.lines());
@@ -269,13 +335,15 @@ void EditStaffType::setValues()
     {
         upsideDown->setChecked(staffType.upsideDown());
         showTabFingering->setChecked(staffType.showTabFingering());
-        int idx = fretFontName->findText(staffType.fretFontName(), Qt::MatchFixedString);
-        if (idx == -1) {
-            idx = 0;                      // if name not found, use first name
+
+        textStyleRadioButton->setChecked(staffType.fretUseTextStyle());
+        presetRadioButton->setChecked(!staffType.fretUseTextStyle());
+
+        if (staffType.fretUseTextStyle()) {
+            enableTextStyles();
+        } else {
+            enablePresets();
         }
-        fretFontName->setCurrentIndex(idx);
-        fretFontSize->setValue(staffType.fretFontSize());
-        fretY->setValue(staffType.fretFontUserY());
 
         numbersRadio->setChecked(staffType.useNumbers());
         lettersRadio->setChecked(!staffType.useNumbers());
@@ -284,7 +352,7 @@ void EditStaffType::setValues()
         linesThroughRadio->setChecked(staffType.linesThrough());
         linesBrokenRadio->setChecked(!staffType.linesThrough());
 
-        idx = durFontName->findText(staffType.durationFontName(), Qt::MatchFixedString);
+        int idx = durFontName->findText(staffType.durationFontName(), Qt::MatchFixedString);
         if (idx == -1) {
             idx = 0;                      // if name not found, use first name
         }
@@ -366,7 +434,7 @@ void EditStaffType::nameEdited(const QString& /*s*/)
 void EditStaffType::durFontNameChanged(int idx)
 {
     qreal size, yOff;
-    if (mu::engraving::StaffType::fontData(true, idx, 0, 0, &size, &yOff)) {
+    if (mu::engraving::StaffType::tabFontData(true, idx, size, yOff)) {
         durFontSize->setValue(size);
         durY->setValue(yOff);
     }
@@ -376,10 +444,32 @@ void EditStaffType::durFontNameChanged(int idx)
 void EditStaffType::fretFontNameChanged(int idx)
 {
     qreal size, yOff;
-    if (mu::engraving::StaffType::fontData(false, idx, 0, 0, &size, &yOff)) {
+    if (mu::engraving::StaffType::tabFontData(false, idx, size, yOff)) {
         fretFontSize->setValue(size);
         fretY->setValue(yOff);
     }
+    updatePreview();
+}
+
+void EditStaffType::textStylesToggled(bool checked)
+{
+    if (checked) {
+        enableTextStyles();
+    } else {
+        enablePresets();
+    }
+
+    updatePreview();
+}
+
+void EditStaffType::presetsToggled(bool checked)
+{
+    if (checked) {
+        enablePresets();
+    } else {
+        enableTextStyles();
+    }
+
     updatePreview();
 }
 
@@ -442,30 +532,35 @@ void EditStaffType::setFromDlg()
         staffType.setShowLedgerLines(showLedgerLinesPercussion->isChecked());
         staffType.setStemless(stemlessPercussion->isChecked());
     }
-    staffType.setDurationFontName(durFontName->currentText());
-    staffType.setDurationFontSize(durFontSize->value());
-    staffType.setDurationFontUserY(durY->value());
-    staffType.setFretFontName(fretFontName->currentText());
-    staffType.setFretFontSize(fretFontSize->value());
-    staffType.setFretFontUserY(fretY->value());
-    staffType.setLinesThrough(linesThroughRadio->isChecked());
-    staffType.setMinimStyle(minimNoneRadio->isChecked() ? mu::engraving::TablatureMinimStyle::NONE
-                            : (minimShortRadio->isChecked() ? mu::engraving::TablatureMinimStyle::SHORTER : mu::engraving::
-                               TablatureMinimStyle::
-                               SLASHED));
-    staffType.setSymbolRepeat(valuesRepeatNever->isChecked() ? mu::engraving::TablatureSymbolRepeat::NEVER
-                              : (valuesRepeatSystem->isChecked() ? mu::engraving::TablatureSymbolRepeat::SYSTEM
-                                 : valuesRepeatMeasure->isChecked() ? mu::engraving::TablatureSymbolRepeat::MEASURE
-                                 : mu::engraving::TablatureSymbolRepeat::ALWAYS));
-    staffType.setOnLines(onLinesRadio->isChecked());
-    staffType.setShowRests(showRests->isChecked());
-    staffType.setUpsideDown(upsideDown->isChecked());
-    staffType.setShowTabFingering(showTabFingering->isChecked());
-    staffType.setUseNumbers(numbersRadio->isChecked());
-    //note values
-    staffType.setStemsDown(stemBelowRadio->isChecked());
-    staffType.setStemsThrough(stemThroughRadio->isChecked());
     if (staffType.group() == mu::engraving::StaffGroup::TAB) {
+        staffType.setDurationFontName(durFontName->currentText());
+        staffType.setDurationFontSize(durFontSize->value());
+        staffType.setDurationFontUserY(durY->value());
+        staffType.setFretUseTextStyle(textStyleRadioButton->isChecked());
+        if (staffType.fretUseTextStyle()) {
+            staffType.setFretTextStyle(getTextStyle(textStyleComboBox->currentText()));
+        } else {
+            staffType.setFretPresetIdx(fretFontName->currentIndex());
+            staffType.setFretFontSize(fretFontSize->value());
+            staffType.setFretFontUserY(fretY->value());
+        }
+        staffType.setLinesThrough(linesThroughRadio->isChecked());
+        staffType.setMinimStyle(minimNoneRadio->isChecked() ? mu::engraving::TablatureMinimStyle::NONE
+                                : (minimShortRadio->isChecked() ? mu::engraving::TablatureMinimStyle::SHORTER : mu::engraving::
+                                   TablatureMinimStyle::
+                                   SLASHED));
+        staffType.setSymbolRepeat(valuesRepeatNever->isChecked() ? mu::engraving::TablatureSymbolRepeat::NEVER
+                                  : (valuesRepeatSystem->isChecked() ? mu::engraving::TablatureSymbolRepeat::SYSTEM
+                                     : valuesRepeatMeasure->isChecked() ? mu::engraving::TablatureSymbolRepeat::MEASURE
+                                     : mu::engraving::TablatureSymbolRepeat::ALWAYS));
+        staffType.setOnLines(onLinesRadio->isChecked());
+        staffType.setShowRests(showRests->isChecked());
+        staffType.setUpsideDown(upsideDown->isChecked());
+        staffType.setShowTabFingering(showTabFingering->isChecked());
+        staffType.setUseNumbers(numbersRadio->isChecked());
+        //note values
+        staffType.setStemsDown(stemBelowRadio->isChecked());
+        staffType.setStemsThrough(stemThroughRadio->isChecked());
         staffType.setGenKeysig(false);
         staffType.setStemless(true);                       // assume no note values
         staffType.setGenDurations(false);                  //    "     "
@@ -499,6 +594,10 @@ void EditStaffType::blockSignals(bool block)
 
     upsideDown->blockSignals(block);
     showTabFingering->blockSignals(block);
+
+    textStyleRadioButton->blockSignals(block);
+    presetRadioButton->blockSignals(block);
+    textStyleComboBox->blockSignals(block);
 
     fretFontName->blockSignals(block);
     fretFontSize->blockSignals(block);

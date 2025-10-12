@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -78,6 +78,9 @@ public:
     static Location positionForElement(const EngravingItem* e, bool absfrac = true);
     static PropertyValue getLocationProperty(Pid pid, const EngravingItem* start, const EngravingItem* end);
 
+    void setIsTimeTick(bool v) { m_isTimeTick = v; }
+    bool isTimeTick() const { return m_isTimeTick; }
+
     bool operator==(const Location& other) const;
     bool operator!=(const Location& other) const { return !(*this == other); }
 
@@ -95,6 +98,7 @@ private:
     int m_graceIndex = 0;
     int m_note = 0;
     bool m_rel = false;
+    bool m_isTimeTick = false;
 };
 } // namespace mu::engraving
 #endif

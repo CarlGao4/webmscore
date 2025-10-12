@@ -19,28 +19,37 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_UI_IUIACTIONSMODULE_H
-#define MU_UI_IUIACTIONSMODULE_H
+#ifndef MUSE_UI_IUIACTIONSMODULE_H
+#define MUSE_UI_IUIACTIONSMODULE_H
 
 #include <memory>
 
-#include "uitypes.h"
-#include "async/channel.h"
+#include "global/async/channel.h"
 
-namespace mu::ui {
+#include "uiaction.h"
+
+namespace muse::ui {
 class IUiActionsModule
 {
 public:
     virtual ~IUiActionsModule() = default;
 
     virtual const UiActionList& actionsList() const = 0;
+    virtual async::Channel<UiActionList> actionsChanged() const
+    {
+        //! NOTE Usually actions don't change,
+        //! so let's add a default implementation here.
+        static async::Channel<UiActionList> ch;
+        return ch;
+    }
+
     virtual bool actionEnabled(const UiAction& act) const = 0;
-    virtual async::Channel<actions::ActionCodeList> actionEnabledChanged() const = 0;
+    virtual async::Channel<muse::actions::ActionCodeList> actionEnabledChanged() const = 0;
 
     virtual bool actionChecked(const UiAction& act) const = 0;
-    virtual async::Channel<actions::ActionCodeList> actionCheckedChanged() const = 0;
+    virtual async::Channel<muse::actions::ActionCodeList> actionCheckedChanged() const = 0;
 };
 using IUiActionsModulePtr = std::shared_ptr<IUiActionsModule>;
 }
 
-#endif // MU_UI_IUIACTIONSMODULE_H
+#endif // MUSE_UI_IUIACTIONSMODULE_H

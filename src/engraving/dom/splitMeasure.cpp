@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -20,12 +20,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "factory.h"
 #include "chordrest.h"
 #include "measure.h"
 #include "range.h"
 #include "score.h"
 #include "segment.h"
 #include "spanner.h"
+#include "stafftypechange.h"
 #include "tie.h"
 #include "undo.h"
 #include "utils.h"
@@ -94,26 +96,14 @@ void MasterScore::splitMeasure(const Fraction& tick)
         }
     }
 
-    // Make sure ties to the beginning of the split measure are restored.
-    std::vector<Tie*> ties;
-    for (size_t track = 0; track < ntracks(); track++) {
-        Chord* chord = measure->findChord(stick, static_cast<int>(track));
-        if (chord) {
-            for (Note* note : chord->notes()) {
-                Tie* tie = note->tieBack();
-                if (tie) {
-                    ties.push_back(tie->clone());
-                }
-            }
-        }
-    }
-
     MeasureBase* nm = measure->next();
 
     // create empty measures:
     InsertMeasureOptions options;
     options.createEmptyMeasures = true;
     options.moveSignaturesClef = false;
+    options.moveStaffTypeChanges = false;
+    options.ignoreBarLines = true;
 
     insertMeasure(nm, options);
     Measure* m2 = toMeasure(nm ? nm->prev() : lastMeasure());
@@ -122,7 +112,7 @@ void MasterScore::splitMeasure(const Fraction& tick)
 
     for (Score* s : scoreList()) {
         Measure* m = s->tick2measure(tick);
-        s->undoRemoveMeasures(m, m, true);
+        s->undoRemoveMeasures(m, m, true, false);
     }
     undoInsertTime(measure->tick(), -measure->ticks());
 
@@ -177,12 +167,6 @@ void MasterScore::splitMeasure(const Fraction& tick)
 
     range.write(this, m1->tick());
 
-    // Restore ties to the beginning of the split measure.
-    for (auto tie : ties) {
-        tie->setEndNote(searchTieNote(tie->startNote()));
-        undoAddElement(tie);
-    }
-
     for (auto i : sl) {
         Spanner* s      = std::get<0>(i);
         Fraction t      = std::get<1>(i);
@@ -192,6 +176,16 @@ void MasterScore::splitMeasure(const Fraction& tick)
         }
         if (s->ticks() != ticks) {
             s->undoChangeProperty(Pid::SPANNER_TICKS, ticks);
+        }
+    }
+
+    for (size_t staffIdx = 0; staffIdx < nstaves(); ++staffIdx) {
+        Staff* staff = staves().at(staffIdx);
+        if (staff->isStaffTypeStartFrom(stick)) {
+            StaffTypeChange* stc = engraving::Factory::createStaffTypeChange(m1);
+            stc->setParent(m1);
+            stc->setTrack(staffIdx * VOICES);
+            addElement(stc);
         }
     }
 }

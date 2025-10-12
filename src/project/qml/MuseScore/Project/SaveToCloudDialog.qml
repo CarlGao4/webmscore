@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -21,11 +21,11 @@
  */
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
-import QtGraphicalEffects 1.15
 
-import MuseScore.Ui 1.0
-import MuseScore.UiComponents 1.0
-import MuseScore.Cloud 1.0
+import Muse.Ui 1.0
+import Muse.UiComponents 1.0
+import Muse.GraphicalEffects 1.0
+import Muse.Cloud 1.0
 
 StyledDialogView {
     id: root
@@ -90,10 +90,10 @@ StyledDialogView {
                         anchors.left: parent.left
 
                         source: contentItem.cloudInfo.cloudLogoUrl
-                        sourceSize.height: 20
+                        sourceSize.height: 26
                     }
 
-                    ColorOverlay {
+                    EffectColorOverlay {
                         visible: root.isPublishShare
 
                         anchors.fill: cloudLogo
@@ -114,12 +114,16 @@ StyledDialogView {
                         CloudsModel {
                             id: cloudsModel
 
+                            property bool loaded: false
+
                             Component.onCompleted: {
                                 load()
 
                                 contentItem.cloudInfo = cloudsModel.cloudInfo(root.cloudCode)
                                 contentItem.dialogText = cloudsModel.dialogText(root.cloudCode, existingScoreOrAudioUrl)
                                 contentItem.visibilityModel = cloudsModel.visibilityModel(root.cloudCode)
+
+                                loaded = true
                             }
                         }
                     }
@@ -208,12 +212,12 @@ StyledDialogView {
 
                     visible: root.isPublishShare && Boolean(root.existingScoreOrAudioUrl)
 
-                    model: [
+                    model: cloudsModel.loaded ? [
                         { text: Boolean(contentItem.dialogText) ? contentItem.dialogText.replaceButtonText
                                                                 : qsTrc("project/save", "Replace existing"), value: true },
                         { text: Boolean(contentItem.dialogText) ? contentItem.dialogText.newButtonText
                                                                 : qsTrc("project/save", "Create new"), value: false }
-                    ]
+                    ] : null
 
                     delegate: RoundedRadioButton {
                         checked: modelData.value === root.replaceExisting
@@ -278,4 +282,3 @@ StyledDialogView {
         }
     }
 }
-

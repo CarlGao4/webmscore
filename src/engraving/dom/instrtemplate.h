@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -87,7 +87,7 @@ public:
     String trackName;
     StaffNameList longNames;     ///< shown on first system
     StaffNameList shortNames;    ///< shown on followup systems
-    String musicXMLid;          ///< used in MusicXML 3.0
+    String musicXmlId;          ///< used in MusicXML 3.0
     String description;         ///< a longer description of the instrument
 
     size_t staffCount = 0;
@@ -126,6 +126,8 @@ public:
     bool singleNoteDynamics = false;
 
     String groupId;
+
+    GlissandoStyle glissandoStyle = GlissandoStyle::CHROMATIC;
 
     bool isValid() const;
 
@@ -175,12 +177,15 @@ extern std::vector<const InstrumentGroup*> instrumentGroups;
 extern std::vector<MidiArticulation> midiArticulations;
 extern std::vector<ScoreOrder> instrumentOrders;
 extern void clearInstrumentTemplates();
-extern bool loadInstrumentTemplates(const mu::io::path_t& instrTemplatesPath);
+extern bool loadInstrumentTemplates(const muse::io::path_t& instrTemplatesPath);
+extern const InstrumentTemplate* combinedTemplateSearch(const String& mxmlId, const String& name, const int transposition, const int bank,
+                                                        const int program);
 extern InstrumentIndex searchTemplateIndexForTrackName(const String& trackName);
 extern InstrumentIndex searchTemplateIndexForId(const String& id);
 extern const InstrumentTemplate* searchTemplate(const String& name);
 extern const InstrumentTemplate* searchTemplateForMusicXmlId(const String& mxmlId);
-extern const InstrumentTemplate* searchTemplateForInstrNameList(const std::list<String>& nameList, bool useDrumset = false);
+extern const InstrumentTemplate* searchTemplateForInstrNameList(const std::list<String>& nameList, bool useDrumset = false,
+                                                                bool caseSensitive = true);
 extern const InstrumentTemplate* searchTemplateForMidiProgram(int bank, int program, bool useDrumset = false);
 extern const InstrumentGenre* searchInstrumentGenre(const String& id);
 

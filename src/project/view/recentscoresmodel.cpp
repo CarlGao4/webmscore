@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -29,6 +29,7 @@
 
 #include "log.h"
 
+using namespace muse;
 using namespace mu::project;
 
 RecentScoresModel::RecentScoresModel(QObject* parent)
@@ -64,7 +65,7 @@ void RecentScoresModel::updateRecentScores()
     items.reserve(recentScores.size());
 
     QVariantMap addItem;
-    addItem[NAME_KEY] = qtrc("project", "New score");
+    addItem[NAME_KEY] = muse::qtrc("project", "New score");
     addItem[IS_CREATE_NEW_KEY] = true;
     addItem[IS_NO_RESULTS_FOUND_KEY] = false;
     addItem[IS_CLOUD_KEY] = false;

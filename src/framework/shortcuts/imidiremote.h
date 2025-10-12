@@ -19,15 +19,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_SHORTCUTS_IMIDIREMOTE_H
-#define MU_SHORTCUTS_IMIDIREMOTE_H
+#ifndef MUSE_SHORTCUTS_IMIDIREMOTE_H
+#define MUSE_SHORTCUTS_IMIDIREMOTE_H
 
 #include "modularity/imoduleinterface.h"
 #include "midi/miditypes.h"
 #include "types/ret.h"
 #include "shortcutstypes.h"
 
-namespace mu::shortcuts {
+namespace muse::shortcuts {
 class IMidiRemote : MODULE_EXPORT_INTERFACE
 {
     INTERFACE_ID(IMidiRemote)
@@ -43,11 +43,11 @@ public:
     virtual void setIsSettingMode(bool arg) = 0;
     virtual bool isSettingMode() const = 0;
 
-    virtual void setCurrentActionEvent(const midi::Event& ev) = 0;
+    virtual void setCurrentActionEvent(const muse::midi::Event& ev) = 0;
 
     // Process
-    virtual Ret process(const midi::Event& ev) = 0;
+    virtual Ret process(const muse::midi::Event& ev) = 0;
 };
 }
 
-#endif // MU_SHORTCUTS_IMIDIREMOTE_H
+#endif // MUSE_SHORTCUTS_IMIDIREMOTE_H

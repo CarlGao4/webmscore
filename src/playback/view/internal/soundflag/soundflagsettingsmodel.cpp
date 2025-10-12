@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2024 MuseScore BVBA and others
+ * Copyright (C) 2024 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -36,7 +36,7 @@
 using namespace mu;
 using namespace mu::playback;
 using namespace mu::engraving;
-using namespace mu::audio;
+using namespace muse::audio;
 
 static const QString RESET_MENU_ID = "reset";
 static const QString MULTI_SELECTION_MENU_ID = "multi-selection";
@@ -61,7 +61,7 @@ static QVariantList buildAvailablePresetsModel(const SoundPresetList& availableP
     return model;
 }
 
-static QVariantList buildAvailablePlayingTechniquesModel(const std::set<String>& availableTechniqueCodes)
+static QVariantList buildAvailablePlayingTechniquesModel(const std::set<muse::String>& availableTechniqueCodes)
 {
     QVariantList model;
 
@@ -70,11 +70,11 @@ static QVariantList buildAvailablePlayingTechniquesModel(const std::set<String>&
     }
 
     QVariantMap ordinaryItem;
-    ordinaryItem["code"] = QString::fromStdString(mpe::ORDINARY_PLAYING_TECHNIQUE_CODE);
-    ordinaryItem["name"] = qtrc("playback", "Ord. (default)");
+    ordinaryItem["code"] = muse::mpe::ORDINARY_PLAYING_TECHNIQUE_CODE.toQString();
+    ordinaryItem["name"] = muse::qtrc("playback", "Ord. (default)");
     model << ordinaryItem;
 
-    for (const String& playingTechniqueCode : availableTechniqueCodes) {
+    for (const muse::String& playingTechniqueCode : availableTechniqueCodes) {
         QVariantMap item;
         item["code"] = playingTechniqueCode.toQString();
         item["name"] = playingTechniqueCode.toQString();
@@ -129,10 +129,10 @@ void SoundFlagSettingsModel::load()
 
 void SoundFlagSettingsModel::initTitle()
 {
-    const audio::AudioInputParams& params = currentAudioInputParams();
+    const AudioInputParams& params = currentAudioInputParams();
 
-    QString name = audio::audioSourceName(params).toQString();
-    QString category = audio::audioSourceCategoryName(params).toQString();
+    QString name = muse::audio::audioSourceName(params).toQString();
+    QString category = muse::audio::audioSourceCategoryName(params).toQString();
     QString title = category + ": " + name;
 
     setTitle(title);
@@ -180,7 +180,7 @@ void SoundFlagSettingsModel::togglePreset(const QString& presetCode)
 
     SoundFlag* soundFlag = toSoundFlag(m_item);
 
-    beginCommand();
+    beginCommand(TranslatableString("undoableAction", "Toggle sound flag preset"));
     soundFlag->undoChangeSoundFlag(StringList(newPresetCodes), soundFlag->playingTechnique());
     bool needUpdateNotation = updateStaffText();
     endCommand();
@@ -207,8 +207,8 @@ void SoundFlagSettingsModel::togglePlayingTechnique(const QString& playingTechni
 
     SoundFlag* soundFlag = toSoundFlag(m_item);
 
-    beginCommand();
-    soundFlag->undoChangeSoundFlag(soundFlag->soundPresets(), String(playingTechniqueCode));
+    beginCommand(TranslatableString("undoableAction", "Toggle sound flag playing technique"));
+    soundFlag->undoChangeSoundFlag(soundFlag->soundPresets(), muse::String(playingTechniqueCode));
     bool needUpdateNotation = updateStaffText();
     endCommand();
 
@@ -224,17 +224,19 @@ void SoundFlagSettingsModel::togglePlayingTechnique(const QString& playingTechni
     emit contextMenuModelChanged();
 }
 
-uicomponents::MenuItem* SoundFlagSettingsModel::buildMenuItem(const QString& actionCode, const TranslatableString& title, bool enabled)
+muse::uicomponents::MenuItem* SoundFlagSettingsModel::buildMenuItem(const QString& actionCode,
+                                                                    const muse::TranslatableString& title,
+                                                                    bool enabled)
 {
-    uicomponents::MenuItem* item = new uicomponents::MenuItem(this);
+    muse::uicomponents::MenuItem* item = new muse::uicomponents::MenuItem(this);
     item->setId(actionCode);
 
-    ui::UiAction action;
-    action.code = actions::codeFromQString(actionCode);
+    muse::ui::UiAction action;
+    action.code = muse::actions::codeFromQString(actionCode);
     action.title = title;
     item->setAction(action);
 
-    ui::UiActionState state;
+    muse::ui::UiActionState state;
     state.enabled = enabled;
     item->setState(state);
 
@@ -249,13 +251,13 @@ QString SoundFlagSettingsModel::defaultPresetCode() const
 QString SoundFlagSettingsModel::defaultPlayingTechniqueCode() const
 {
     return !m_availablePlayingTechniquesModel.empty()
-           ? String(m_availablePlayingTechniquesModel.front().toMap()["code"].toString())
-           : String();
+           ? muse::String(m_availablePlayingTechniquesModel.front().toMap()["code"].toString())
+           : muse::String();
 }
 
 QVariantList SoundFlagSettingsModel::contextMenuModel()
 {
-    uicomponents::MenuItemList items;
+    muse::uicomponents::MenuItemList items;
 
     SoundFlag* soundFlag = toSoundFlag(m_item);
     if (!soundFlag) {
@@ -266,7 +268,7 @@ QVariantList SoundFlagSettingsModel::contextMenuModel()
         bool enabled = false;
 
         const SoundFlag::PresetCodes& activePresetCodes = soundFlag->soundPresets();
-        const String playingTechnique = soundFlag->playingTechnique();
+        const muse::String playingTechnique = soundFlag->playingTechnique();
 
         if (!activePresetCodes.empty()) {
             enabled = activePresetCodes != StringList { defaultPresetCode() };
@@ -279,45 +281,45 @@ QVariantList SoundFlagSettingsModel::contextMenuModel()
         return enabled;
     };
 
-    uicomponents::MenuItem* resetItem = buildMenuItem(RESET_MENU_ID, TranslatableString("playback", "Reset to default sound"),
-                                                      isResetEnabled());
+    muse::uicomponents::MenuItem* resetItem = buildMenuItem(RESET_MENU_ID, TranslatableString("playback", "Reset to default sound"),
+                                                            isResetEnabled());
 
-    ui::UiAction resetAction = resetItem->action();
-    resetAction.iconCode = ui::IconCode::Code::UNDO;
+    muse::ui::UiAction resetAction = resetItem->action();
+    resetAction.iconCode = muse::ui::IconCode::Code::UNDO;
     resetItem->setAction(resetAction);
 
     items << resetItem;
 
     bool isMultiSelectionEnabled = !m_availablePresetsModel.isEmpty();
 
-    mu::uicomponents::MenuItem* multiSelectionItem
+    muse::uicomponents::MenuItem* multiSelectionItem
         = buildMenuItem(MULTI_SELECTION_MENU_ID, TranslatableString("playback", "Allow multiple selection"), isMultiSelectionEnabled);
 
-    ui::UiAction multiSelectionAction = multiSelectionItem->action();
-    multiSelectionAction.checkable = ui::Checkable::Yes;
+    muse::ui::UiAction multiSelectionAction = multiSelectionItem->action();
+    multiSelectionAction.checkable = muse::ui::Checkable::Yes;
     multiSelectionItem->setAction(multiSelectionAction);
 
-    ui::UiActionState multiSelectionActionState = multiSelectionItem->state();
+    muse::ui::UiActionState multiSelectionActionState = multiSelectionItem->state();
     multiSelectionActionState.checked = playbackConfiguration()->soundPresetsMultiSelectionEnabled();
     multiSelectionItem->setState(multiSelectionActionState);
 
     items << multiSelectionItem;
 
-    mu::uicomponents::MenuItem* applyToAllStavesItem = buildMenuItem(APPLY_TO_ALL_STAVES_MENU_ID,
-                                                                     TranslatableString("playback", "Apply selection to all staves"));
+    muse::uicomponents::MenuItem* applyToAllStavesItem = buildMenuItem(APPLY_TO_ALL_STAVES_MENU_ID,
+                                                                       TranslatableString("playback", "Apply selection to all staves"));
 
-    mu::ui::UiAction applyToAllStavesAction = applyToAllStavesItem->action();
-    applyToAllStavesAction.checkable = mu::ui::Checkable::Yes;
+    muse::ui::UiAction applyToAllStavesAction = applyToAllStavesItem->action();
+    applyToAllStavesAction.checkable = muse::ui::Checkable::Yes;
     applyToAllStavesItem->setAction(applyToAllStavesAction);
 
-    mu::ui::UiActionState applyToAllStavesState;
+    muse::ui::UiActionState applyToAllStavesState;
     applyToAllStavesState.enabled = true;
     applyToAllStavesState.checked = soundFlag->applyToAllStaves();
     applyToAllStavesItem->setState(applyToAllStavesState);
 
     items << applyToAllStavesItem;
 
-    return mu::uicomponents::menuItemListToVariantList(items);
+    return muse::uicomponents::menuItemListToVariantList(items);
 }
 
 void SoundFlagSettingsModel::handleContextMenuItem(const QString& menuId)
@@ -328,7 +330,7 @@ void SoundFlagSettingsModel::handleContextMenuItem(const QString& menuId)
     }
 
     if (menuId == RESET_MENU_ID) {
-        beginCommand();
+        beginCommand(TranslatableString("undoableAction", "Reset sound flag"));
 
         const SoundFlag::PresetCodes oldPresetCodes = soundFlag->soundPresets();
         const SoundFlag::PresetCodes newPresetCodes = { defaultPresetCode() };
@@ -354,7 +356,7 @@ void SoundFlagSettingsModel::handleContextMenuItem(const QString& menuId)
         playbackConfiguration()->setSoundPresetsMultiSelectionEnabled(!playbackConfiguration()->soundPresetsMultiSelectionEnabled());
         emit contextMenuModelChanged();
     } else if (menuId == APPLY_TO_ALL_STAVES_MENU_ID) {
-        beginCommand();
+        beginCommand(TranslatableString("undoableAction", "Toggle ‘Apply sound flag to all staves’"));
         soundFlag->undoChangeProperty(Pid::APPLY_TO_ALL_STAVES, !soundFlag->applyToAllStaves());
         endCommand();
 
@@ -369,7 +371,7 @@ bool SoundFlagSettingsModel::updateStaffText()
         return false;
     }
 
-    String newText = mtrc("engraving", "Staff text");
+    muse::String newText = muse::mtrc("engraving", "Staff text");
     const SoundFlag* soundFlag = toSoundFlag(m_item);
     const SoundFlag::PresetCodes& activePresetCodes = soundFlag->soundPresets();
 
@@ -380,15 +382,15 @@ bool SoundFlagSettingsModel::updateStaffText()
             continue;
         }
 
-        if (mu::contains(activePresetCodes, preset.code)) {
+        if (muse::contains(activePresetCodes, preset.code)) {
             strs << preset.name;
         }
     }
 
     const SoundFlag::PlayingTechniqueCode& techniqueCode = soundFlag->playingTechnique();
     if (!techniqueCode.empty()) {
-        if (techniqueCode.toStdString() == mpe::ORDINARY_PLAYING_TECHNIQUE_CODE) {
-            strs << mtrc("playback", "ordinary");
+        if (techniqueCode == muse::mpe::ORDINARY_PLAYING_TECHNIQUE_CODE) {
+            strs << muse::mtrc("playback", "ordinary");
         } else {
             strs << soundFlag->playingTechnique();
         }
@@ -454,7 +456,7 @@ QStringList SoundFlagSettingsModel::selectedPresetCodes() const
     }
 
     QStringList result;
-    for (const String& presetCode : toSoundFlag(m_item)->soundPresets()) {
+    for (const muse::String& presetCode : toSoundFlag(m_item)->soundPresets()) {
         result << presetCode.toQString();
     }
 
@@ -484,7 +486,7 @@ void SoundFlagSettingsModel::setAvailableSoundPresets(const SoundPresetList& pre
 void SoundFlagSettingsModel::loadAvailablePlayingTechniques()
 {
     QStringList selectedPresetCodes = this->selectedPresetCodes();
-    std::set<String> availablePlayingTechniqueCodes;
+    std::set<muse::String> availablePlayingTechniqueCodes;
 
     for (const SoundPreset& preset : m_availablePresets) {
         if (selectedPresetCodes.empty()) {
@@ -500,8 +502,8 @@ void SoundFlagSettingsModel::loadAvailablePlayingTechniques()
             continue;
         }
 
-        for (const String& code : techniqueIt->second.split(u"|")) {
-            availablePlayingTechniqueCodes.insert(code);
+        for (const muse::String& code : techniqueIt->second.split(u"|")) {
+            availablePlayingTechniqueCodes << code;
         }
     }
 

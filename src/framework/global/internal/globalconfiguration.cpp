@@ -27,21 +27,25 @@
 #include <QCoreApplication>
 
 #include "settings.h"
-#include "muversion.h"
+
+#include "muse_framework_config.h"
+
 #include "log.h"
 
-using namespace mu;
-using namespace mu::framework;
+using namespace muse;
 
 static const Settings::Key BACKUP_KEY("global", "application/backup/subfolder");
 static const Settings::Key DEV_MODE_ENABLED_KEY("global", "application/devModeEnabled");
 static const Settings::Key METRIC_UNIT_KEY("global", "application/metricUnit");
+static const Settings::Key HIGH_RESOLUTION_TIMERS("global", "application/highResolutionTimers");
 
 static const std::string MUSESCORE_URL("https://www.musescore.org/");
+static const std::string MUSEHUB_WEB_URL("https://www.musehub.com/");
 
 void GlobalConfiguration::init()
 {
-    settings()->setDefaultValue(DEV_MODE_ENABLED_KEY, Val(MUVersion::unstable()));
+    settings()->setDefaultValue(DEV_MODE_ENABLED_KEY, Val(application()->unstable()));
+    settings()->setDefaultValue(HIGH_RESOLUTION_TIMERS, Val(false));
 }
 
 io::path_t GlobalConfiguration::appBinPath() const
@@ -65,7 +69,7 @@ io::path_t GlobalConfiguration::appDataPath() const
 QString GlobalConfiguration::resolveAppDataPath() const
 {
 #ifdef Q_OS_WIN
-    QDir dir(QCoreApplication::applicationDirPath() + QString("/../" MUSESCORE_INSTALL_NAME));
+    QDir dir(QCoreApplication::applicationDirPath() + QString("/../"));
     return dir.absolutePath() + "/";
 #elif defined(Q_OS_MAC)
     QDir dir(QCoreApplication::applicationDirPath() + QString("/../Resources"));
@@ -74,12 +78,12 @@ QString GlobalConfiguration::resolveAppDataPath() const
     return "/files/share";
 #else
     // Try relative path (needed for portable AppImage and non-standard installations)
-    QDir dir(QCoreApplication::applicationDirPath() + QString("/../share/" MUSESCORE_INSTALL_NAME));
+    QDir dir(QCoreApplication::applicationDirPath() + QString("/../share/" MUSE_APP_INSTALL_NAME));
     if (dir.exists()) {
         return dir.absolutePath() + "/";
     }
     // Otherwise fall back to default location (e.g. if binary has moved relative to share)
-    return QString(MUSESCORE_INSTALL_PREFIX "/share/" MUSESCORE_INSTALL_NAME);
+    return QString(MUSE_APP_INSTALL_PREFIX "/share/" MUSE_APP_INSTALL_NAME);
 #endif
 }
 
@@ -169,4 +173,14 @@ void GlobalConfiguration::setMetricUnit(bool metricUnit)
 std::string GlobalConfiguration::museScoreUrl() const
 {
     return MUSESCORE_URL;
+}
+
+std::string GlobalConfiguration::museHubWebUrl() const
+{
+    return MUSEHUB_WEB_URL;
+}
+
+bool GlobalConfiguration::highResolutionTimers() const
+{
+    return settings()->value(HIGH_RESOLUTION_TIMERS).toBool();
 }

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,7 +22,7 @@
 #include "noteinputbarcustomiseitem.h"
 
 using namespace mu::notation;
-using namespace mu::uicomponents;
+using namespace muse::uicomponents;
 
 NoteInputBarCustomiseItem::NoteInputBarCustomiseItem(const ItemType& type, QObject* parent)
     : Item(parent), m_type(type)
@@ -69,7 +69,7 @@ bool NoteInputBarCustomiseItem::checked() const
     return m_checked;
 }
 
-void NoteInputBarCustomiseItem::setIcon(ui::IconCode::Code icon)
+void NoteInputBarCustomiseItem::setIcon(muse::ui::IconCode::Code icon)
 {
     if (m_icon == icon) {
         return;

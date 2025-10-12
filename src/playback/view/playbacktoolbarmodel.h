@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -26,13 +26,13 @@
 
 #include "modularity/ioc.h"
 #include "iplaybackcontroller.h"
+#include "notation/inotationconfiguration.h"
+#include "context/iglobalcontext.h"
 
 namespace mu::playback {
-class PlaybackToolBarModel : public uicomponents::AbstractMenuModel
+class PlaybackToolBarModel : public muse::uicomponents::AbstractMenuModel
 {
     Q_OBJECT
-
-    INJECT(IPlaybackController, playbackController)
 
     Q_PROPERTY(bool isToolbarFloating READ isToolbarFloating WRITE setIsToolbarFloating NOTIFY isToolbarFloatingChanged)
     Q_PROPERTY(bool isPlayAllowed READ isPlayAllowed NOTIFY isPlayAllowedChanged)
@@ -48,6 +48,10 @@ class PlaybackToolBarModel : public uicomponents::AbstractMenuModel
 
     Q_PROPERTY(QVariant tempo READ tempo NOTIFY tempoChanged)
     Q_PROPERTY(qreal tempoMultiplier READ tempoMultiplier WRITE setTempoMultiplier NOTIFY tempoChanged)
+
+    muse::Inject<IPlaybackController> playbackController;
+    muse::Inject<context::IGlobalContext> globalContext;
+    muse::Inject<notation::INotationConfiguration> notationConfiguration = { this };
 
 public:
     explicit PlaybackToolBarModel(QObject* parent = nullptr);
@@ -86,21 +90,22 @@ signals:
 
 private:
     void setupConnections();
+    muse::uicomponents::MenuItem* makeInputPitchMenu();
 
     void updateActions();
-    void onActionsStateChanges(const actions::ActionCodeList& codes) override;
+    void onActionsStateChanges(const muse::actions::ActionCodeList& codes) override;
 
-    bool isAdditionalAction(const actions::ActionCode& actionCode) const;
+    bool isAdditionalAction(const muse::actions::ActionCode& actionCode) const;
 
     QTime totalPlayTime() const;
     notation::MeasureBeat measureBeat() const;
 
-    ui::UiAction playAction() const;
+    muse::ui::UiAction playAction() const;
 
-    void updatePlayPosition();
+    void updatePlayPosition(muse::audio::secs_t secs);
     void doSetPlayTime(const QTime& time);
 
-    void rewind(audio::msecs_t milliseconds);
+    void rewind(muse::audio::secs_t secs);
     void rewindToBeat(const notation::MeasureBeat& beat);
 
     bool m_isToolbarFloating = false;

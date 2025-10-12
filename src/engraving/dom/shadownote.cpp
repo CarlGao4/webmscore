@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -33,6 +33,7 @@
 #include "stafftype.h"
 
 using namespace mu;
+using namespace muse::draw;
 
 namespace mu::engraving {
 //---------------------------------------------------------
@@ -131,7 +132,7 @@ bool ShadowNote::computeUp() const
     }
 }
 
-void ShadowNote::drawArticulations(mu::draw::Painter* painter) const
+void ShadowNote::drawArticulations(Painter* painter) const
 {
     double noteheadWidth = symWidth(m_noteheadSymbol);
     double ms = spatium();
@@ -154,7 +155,7 @@ void ShadowNote::drawArticulations(mu::draw::Painter* painter) const
     }
 }
 
-void ShadowNote::drawMarcato(mu::draw::Painter* painter, const SymId& artic, RectF& boundRect) const
+void ShadowNote::drawMarcato(Painter* painter, const SymId& artic, RectF& boundRect) const
 {
     PointF coord;
     double spacing = spatium();
@@ -169,28 +170,42 @@ void ShadowNote::drawMarcato(mu::draw::Painter* painter, const SymId& artic, Rec
     drawSymbol(artic, painter, coord);
 }
 
-void ShadowNote::drawArticulation(mu::draw::Painter* painter, const SymId& artic, RectF& boundRect) const
+void ShadowNote::drawArticulation(Painter* painter, const SymId& artic, RectF& boundRect) const
 {
     PointF coord;
     double spacing = spatium();
+    SymId articSym = artic;
 
     bool up = !computeUp();
-    if (up) {
-        double topY = boundRect.y();
-        if (topY > 0) {
-            topY = 0;
-        }
-        coord.ry() = topY - symHeight(artic);
-        boundRect.setTop(topY - symHeight(artic) - spacing);
+    if (articSym == SymId::articLaissezVibrerAbove || articSym == SymId::articLaissezVibrerBelow) {
+        articSym = up ? SymId::articLaissezVibrerAbove : SymId::articLaissezVibrerBelow;
+        const int upDir = up ? -1 : 1;
+        const double noteHeight = symHeight(m_noteheadSymbol);
+
+        double center = 0.5 * symWidth(m_noteheadSymbol);
+        double visualInset = 0.1 * spacing;
+
+        coord.rx() = center + visualInset - symBbox(articSym).left();
+        coord.ry() = (noteHeight / 2 + 0.2 * spacing) * upDir;
+        boundRect.setWidth(boundRect.width() + symWidth(articSym));
     } else {
-        double bottomY = boundRect.bottomLeft().y();
-        if (bottomY < 0) {
-            bottomY = symHeight(m_noteheadSymbol);
+        if (up) {
+            double topY = boundRect.y();
+            if (topY > 0) {
+                topY = 0;
+            }
+            coord.ry() = topY - symHeight(articSym);
+            boundRect.setTop(topY - symHeight(articSym) - spacing);
+        } else {
+            double bottomY = boundRect.bottomLeft().y();
+            if (bottomY < 0) {
+                bottomY = symHeight(m_noteheadSymbol);
+            }
+            coord.ry() = bottomY + symHeight(articSym);
+            boundRect.setHeight(bottomY + symHeight(articSym) + spacing);
         }
-        coord.ry() = bottomY + symHeight(artic);
-        boundRect.setHeight(bottomY + symHeight(artic) + spacing);
     }
 
-    drawSymbol(artic, painter, coord);
+    drawSymbol(articSym, painter, coord);
 }
 }

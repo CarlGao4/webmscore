@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -35,8 +35,8 @@ HairpinSettingsModel::HairpinSettingsModel(QObject* parent, IElementRepositorySe
     : TextLineSettingsModel(parent, repository)
 {
     setModelType(InspectorModelType::TYPE_HAIRPIN);
-    setTitle(qtrc("inspector", "Hairpin"));
-    setIcon(ui::IconCode::Code::HAIRPIN);
+    setTitle(muse::qtrc("inspector", "Hairpin"));
+    setIcon(muse::ui::IconCode::Code::HAIRPIN);
 
     createProperties();
 }
@@ -56,6 +56,16 @@ PropertyItem* HairpinSettingsModel::continuousHeight() const
     return m_continuousHeight;
 }
 
+PropertyItem* HairpinSettingsModel::snapBefore() const
+{
+    return m_snapBefore;
+}
+
+PropertyItem* HairpinSettingsModel::snapAfter() const
+{
+    return m_snapAfter;
+}
+
 void HairpinSettingsModel::createProperties()
 {
     TextLineSettingsModel::createProperties();
@@ -63,6 +73,9 @@ void HairpinSettingsModel::createProperties()
     m_isNienteCircleVisible = buildPropertyItem(mu::engraving::Pid::HAIRPIN_CIRCLEDTIP);
     m_height = buildPropertyItem(mu::engraving::Pid::HAIRPIN_HEIGHT);
     m_continuousHeight = buildPropertyItem(mu::engraving::Pid::HAIRPIN_CONT_HEIGHT);
+
+    m_snapBefore = buildPropertyItem(mu::engraving::Pid::SNAP_BEFORE);
+    m_snapAfter = buildPropertyItem(mu::engraving::Pid::SNAP_AFTER);
 
     isLineVisible()->setIsVisible(false);
     allowDiagonal()->setIsVisible(true);
@@ -77,6 +90,8 @@ void HairpinSettingsModel::loadProperties()
         Pid::HAIRPIN_CIRCLEDTIP,
         Pid::HAIRPIN_HEIGHT,
         Pid::HAIRPIN_CONT_HEIGHT,
+        Pid::SNAP_BEFORE,
+        Pid::SNAP_AFTER
     };
 
     loadProperties(propertyIdSet);
@@ -89,6 +104,8 @@ void HairpinSettingsModel::resetProperties()
     m_isNienteCircleVisible->resetToDefault();
     m_height->resetToDefault();
     m_continuousHeight->resetToDefault();
+    m_snapBefore->resetToDefault();
+    m_snapAfter->resetToDefault();
 }
 
 void HairpinSettingsModel::requestElements()
@@ -101,7 +118,7 @@ void HairpinSettingsModel::requestElements()
             return false;
         }
 
-        return hairpin->hairpinType() == mu::engraving::HairpinType::CRESC_HAIRPIN || hairpin->hairpinType() == mu::engraving::HairpinType::DECRESC_HAIRPIN;
+        return hairpin->hairpinType() == mu::engraving::HairpinType::CRESC_HAIRPIN || hairpin->hairpinType() == mu::engraving::HairpinType::DIM_HAIRPIN;
     });
 }
 
@@ -113,15 +130,23 @@ void HairpinSettingsModel::onNotationChanged(const PropertyIdSet& changedPropert
 
 void HairpinSettingsModel::loadProperties(const PropertyIdSet& propertyIdSet)
 {
-    if (mu::contains(propertyIdSet, Pid::HAIRPIN_CIRCLEDTIP)) {
+    if (muse::contains(propertyIdSet, Pid::HAIRPIN_CIRCLEDTIP)) {
         loadPropertyItem(m_isNienteCircleVisible);
     }
 
-    if (mu::contains(propertyIdSet, Pid::HAIRPIN_HEIGHT)) {
+    if (muse::contains(propertyIdSet, Pid::HAIRPIN_HEIGHT)) {
         loadPropertyItem(m_height, formatDoubleFunc);
     }
 
-    if (mu::contains(propertyIdSet, Pid::HAIRPIN_CONT_HEIGHT)) {
+    if (muse::contains(propertyIdSet, Pid::HAIRPIN_CONT_HEIGHT)) {
         loadPropertyItem(m_continuousHeight, formatDoubleFunc);
+    }
+
+    if (muse::contains(propertyIdSet, Pid::SNAP_BEFORE)) {
+        loadPropertyItem(m_snapBefore);
+    }
+
+    if (muse::contains(propertyIdSet, Pid::SNAP_AFTER)) {
+        loadPropertyItem(m_snapAfter);
     }
 }

@@ -19,18 +19,26 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_DRAW_DRAWMODULE_H
-#define MU_DRAW_DRAWMODULE_H
+#ifndef MUSE_DRAW_DRAWMODULE_H
+#define MUSE_DRAW_DRAWMODULE_H
 
-#include "modularity/imodulesetup.h"
+#include <memory>
 
-namespace mu::draw {
+#include "global/modularity/imodulesetup.h"
+
+namespace muse::draw {
+class FontsEngine;
 class DrawModule : public modularity::IModuleSetup
 {
 public:
     std::string moduleName() const override;
     void registerExports() override;
+    void onInit(const IApplication::RunMode& mode) override;
+
+private:
+
+    std::shared_ptr<FontsEngine> m_fontsEngine;
 };
 }
 
-#endif // MU_DRAW_DRAWMODULE_H
+#endif // MUSE_DRAW_DRAWMODULE_H

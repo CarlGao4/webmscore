@@ -22,16 +22,18 @@
 #ifndef MU_LOGGER_H
 #define MU_LOGGER_H
 
-#include "thirdparty/kors_logger/src/logger.h"
-#include "thirdparty/kors_logger/src/logdefdest.h"
-#include "thirdparty/kors_logger/src/log_base.h"
+#include "thirdparty/kors_logger/src/logger.h" // IWYU pragma: export
+#include "thirdparty/kors_logger/src/logdefdest.h" // IWYU pragma: export
+#include "thirdparty/kors_logger/src/log_base.h" // IWYU pragma: export
 
-namespace mu::logger {
+namespace muse::logger {
 using Logger = kors::logger::Logger;
 using Type = kors::logger::Type;
 using Level = kors::logger::Level;
 using Color = kors::logger::Color;
+using LogMsg = kors::logger::LogMsg;
 using LogLayout = kors::logger::LogLayout;
+using LogDest = kors::logger::LogDest;
 using ConsoleLogDest = kors::logger::ConsoleLogDest;
 using FileLogDest = kors::logger::FileLogDest;
 }

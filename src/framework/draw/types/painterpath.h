@@ -20,21 +20,21 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_DRAW_PAINTERPATH_H
-#define MU_DRAW_PAINTERPATH_H
+#ifndef MUSE_DRAW_PAINTERPATH_H
+#define MUSE_DRAW_PAINTERPATH_H
 
 #include <cmath>
 
+#include "global/realfn.h"
+
 #include "geometry.h"
 #include "bezier.h"
-#include "drawtypes.h"
-#include "realfn.h"
 
 #ifndef NO_QT_SUPPORT
 #include <QPainterPath>
 #endif
 
-namespace mu::draw {
+namespace muse::draw {
 class PainterPath
 {
 public:
@@ -179,9 +179,27 @@ private:
 
     friend class Transform;
 };
+
+inline void dump(const PainterPath& p, std::stringstream& ss)
+{
+    ss << "bbox: " << muse::dump(p.boundingRect()) << "\n"
+       << "fillRule: " << int(p.fillRule()) << "\n"
+       << "elements: " << p.elementCount() << "\n";
+    for (size_t i = 0; i < p.elementCount(); ++i) {
+        PainterPath::Element e = p.elementAt(i);
+        ss << " type: " << int(e.type) << ", x: " << e.x << ", y: " << e.y << "\n";
+    }
+}
+
+inline std::string dump(const PainterPath& p)
+{
+    std::stringstream ss;
+    muse::draw::dump(p, ss);
+    return ss.str();
+}
 }
 #ifndef NO_QT_SUPPORT
-Q_DECLARE_METATYPE(mu::draw::PainterPath)
+Q_DECLARE_METATYPE(muse::draw::PainterPath)
 #endif
 
-#endif // MU_DRAW_PAINTERPATH_H
+#endif // MUSE_DRAW_PAINTERPATH_H

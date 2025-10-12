@@ -19,13 +19,28 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_ASYNC_PROMISE_H
-#define MU_ASYNC_PROMISE_H
+#ifndef MUSE_ASYNC_PROMISE_H
+#define MUSE_ASYNC_PROMISE_H
 
-#include "thirdparty/deto_async/async/promise.h"
-namespace mu::async {
+#include "../thirdparty/kors_async/async/promise.h"
+
+namespace muse::async {
 template<typename ... T>
-using Promise = deto::async::Promise<T...>;
+using Promise = kors::async::Promise<T...>;
+
+using PromiseType = kors::async::PromiseType;
+
+template<typename ... T>
+inline Promise<T...> make_promise(typename Promise<T...>::BodyResolveReject f, PromiseType type = PromiseType::AsyncByPromise)
+{
+    return kors::async::make_promise<T...>(f, type);
 }
 
-#endif // MU_ASYNC_PROMISE_H
+template<typename ... T>
+inline Promise<T...> make_promise(typename Promise<T...>::BodyResolve f, PromiseType type = PromiseType::AsyncByPromise)
+{
+    return kors::async::make_promise<T...>(f, type);
+}
+}
+
+#endif // MUSE_ASYNC_PROMISE_H

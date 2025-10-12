@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -33,7 +33,7 @@
 #include "thirdparty/libmei/element.h"
 #include "thirdparty/libmei/shared.h"
 
-#include "thirdparty/pugixml.hpp"
+#include "pugixml.hpp"
 
 namespace mu::engraving {
 class Articulation;
@@ -42,6 +42,7 @@ class Chord;
 class ChordRest;
 class Clef;
 class EngravingItem;
+class Fingering;
 class Lyrics;
 class Measure;
 class Note;
@@ -49,7 +50,8 @@ class Part;
 class Rest;
 class Score;
 class Staff;
-class Tremolo;
+class TremoloSingleChord;
+class Trill;
 class Tuplet;
 class VBox;
 }
@@ -73,6 +75,7 @@ enum layerElementCounter {
 
 class MeiExporter
 {
+public:
     INJECT_STATIC(mu::iex::mei::IMeiConfiguration, configuration)
 
 public:
@@ -84,13 +87,14 @@ private:
     bool writeScore();
     bool writeScoreDef();
     bool writePgHead(const engraving::VBox* vBox);
-    bool writeLines(pugi::xml_node node, const StringList& lines);
-    bool writeLinesWithSMuFL(pugi::xml_node node, const StringList& lines);
+    bool writeLines(pugi::xml_node node, const muse::StringList& lines);
+    bool writeLinesWithSMuFL(pugi::xml_node node, const muse::StringList& lines);
     bool writeScoreDefChange();
     bool writeStaffGrpStart(const engraving::Staff* staff, std::vector<int>& ends, const engraving::Part* part);
     bool writeStaffGrpEnd(const engraving::Staff* staff, std::vector<int>& ends);
     bool writeStaffDef(const engraving::Staff* staff, const engraving::Measure* measure, const engraving::Part* part, bool isPart);
     bool writeLabel(pugi::xml_node node, const engraving::Part* part);
+    bool writeInstrDef(pugi::xml_node node, const engraving::Part* part);
     bool writeEnding(const engraving::Measure* measure);
     bool writeEndingEnd(const engraving::Measure* measure);
     bool writeMeasure(const engraving::Measure* measure, int& measureN, bool& isFirst, bool& wasLastIrregular);
@@ -105,13 +109,14 @@ private:
     bool writeBeamAndTuplet(const engraving::ChordRest* chordRest, bool& closingBeam, bool& closingTuplet, bool& closingBeamInTuplet);
     bool writeBeamAndTupletEnd(bool closingBeam, bool closingTuplet, bool closingBeamInTuplet);
     bool writeBeam(const engraving::Beam* beam, const engraving::ChordRest* chordRest, bool& closing);
-    bool writeBTrem(const engraving::Tremolo* tremolo);
+    bool writeBTrem(const engraving::TremoloSingleChord* tremolo);
     bool writeClef(const engraving::Clef* clef);
     bool writeChord(const engraving::Chord* chord, const engraving::Staff* staff);
     bool writeGraceGrp(const engraving::Chord* chord, const engraving::Staff* staff, bool isAfter = false);
     bool writeNote(const engraving::Note* note, const engraving::Chord* chord, const engraving::Staff* staff, bool isChord);
+    bool writeMRpt(const engraving::MeasureRepeat* measureRepeat);
     bool writeRest(const engraving::Rest* rest, const engraving::Staff* staff);
-    bool writeSyl(const engraving::Lyrics* lyrics, const String& text, ElisionType elision);
+    bool writeSyl(const engraving::Lyrics* lyrics, const muse::String& text, ElisionType elision);
     bool writeTuplet(const engraving::Tuplet* tuplet, const engraving::EngravingItem* item, bool& closing);
     bool writeVerses(const engraving::ChordRest* chordRest);
     bool writeVerse(const engraving::Lyrics* lyrics);
@@ -128,22 +133,27 @@ private:
     bool writeFb(const engraving::FiguredBass* figuredBass, const std::string& startid);
     bool writeFermata(const engraving::Fermata* fermata, const std::string& startid);
     bool writeFermata(const engraving::Fermata* fermata, const libmei::xsdPositiveInteger_List& staffNs, double tstamp);
+    bool writeFing(const engraving::Fingering* fing, const std::string& startid);
+    bool writeGliss(const engraving::Glissando* gliss, const std::string& startid);
     bool writeHairpin(const engraving::Hairpin* hairpin, const std::string& startid);
     bool writeHarm(const engraving::Harmony* harmony, const std::string& startid);
+    bool writeHarpPedal(const engraving::HarpPedalDiagram* harpPedalDiagram, const std::string& startid);
     bool writeOctave(const engraving::Ottava* ottava, const std::string& startid);
     bool writeOrnament(const engraving::Ornament* ornament, const std::string& startid);
     bool writePedal(const engraving::Pedal* pedal, const std::string& startid);
+    bool writeRehearsalMark(const engraving::RehearsalMark* mark, const std::string& startid);
     bool writeRepeatMark(const engraving::Jump* jump, const engraving::Measure* measure);
     bool writeRepeatMark(const engraving::Marker* marker, const engraving::Measure* measure);
     bool writeSlur(const engraving::Slur* slur, const std::string& startid);
     bool writeTempo(const engraving::TempoText* tempoText, const std::string& startid);
     bool writeTie(const engraving::Tie* tie, const std::string& startid);
+    bool writeTrill(const engraving::Trill* trill, const std::string& startid);
 
     /**
      * Methods for writing specific MEI attribute classes within elements
      */
     bool writeBeamTypeAtt(const engraving::ChordRest* chordRest, libmei::AttTyped& typeAtt);
-    bool writeStaffIdenAtt(const engraving::ChordRest* chordRest, const engraving::Staff* staff, libmei::AttStaffIdent& staffIdentAtt);
+    bool writeStaffIdentAtt(const engraving::ChordRest* chordRest, const engraving::Staff* staff, libmei::AttStaffIdent& staffIdentAtt);
     bool writeStemAtt(const engraving::Chord* chord, libmei::AttStems& stemsAtt);
 
     /**
@@ -157,10 +167,11 @@ private:
     void addJumpToRepeatMarks();
     bool addFermataToMap(engraving::track_idx_t track, const engraving::Segment* segment, const engraving::Measure* measure);
     std::pair<libmei::xsdPositiveInteger_List, double> findTstampFor(const engraving::EngravingItem* item);
-    bool isNode(pugi::xml_node node, const String& name);
+    bool isNode(pugi::xml_node node, const muse::String& name);
     pugi::xml_node getLastChordRest(pugi::xml_node node);
     void addNodeToOpenControlEvents(pugi::xml_node node, const engraving::Spanner* spanner, const std::string& startid);
     void addEndidToControlEvents();
+    bool isLaissezVibrer(const engraving::SymId id);
 
     /**
      * Methods for generating @xml:ids
@@ -200,7 +211,7 @@ private:
     const engraving::Segment* m_keySig;
     /** Same for the timeSig segment */
     const engraving::Segment* m_timeSig;
-    /** A flag indicating that we have mulitple sections in the file */
+    /** A flag indicating that we have multiple sections in the file */
     bool m_hasSections;
 
     /** A list of items (first) for which we know the @startid (second)  */
@@ -228,7 +239,7 @@ private:
     std::vector<int> m_layerCounterFor;
 
     /** map of abbreviations for element within layers */
-    inline static const std::map<layerElementCounter, String> s_layerXmlIdMap = {
+    inline static const std::map<layerElementCounter, muse::String> s_layerXmlIdMap = {
         { ACCID_L, u"a" },
         { BEAM_L, u"b" },
         { GRACEGRP_L, u"g" },

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -57,8 +57,11 @@ public:
     void addMeasure(Measure const* const);
     void addMeasures(Measure const* const);
     bool containsMeasure(Measure const* const) const;
+    bool endsWithMeasure(Measure const* const) const;
+    bool startsWithMeasure(Measure const* const) const;
     bool isEmpty() const;
     int len() const;
+    int endTick() const;
     void popMeasure();
 
     Measure const* firstMeasure() const { return m_measureList.empty() ? nullptr : m_measureList.front(); }
@@ -85,7 +88,7 @@ public:
     RepeatList& operator=(const RepeatList&) = delete;
     ~RepeatList();
 
-    void update(bool expand);
+    void update(bool expand, bool updateTies = true);
     void setScoreChanged() { m_scoreChanged = true; }
     const Score* score() const { return m_score; }
 
@@ -101,7 +104,7 @@ public:
 private:
     void collectRepeatListElements();
     std::pair<std::vector<RepeatListElementList>::const_iterator, RepeatListElementList::const_iterator> findMarker(
-        String label, std::vector<RepeatListElementList>::const_iterator referenceSectionIt,
+        muse::String label, std::vector<RepeatListElementList>::const_iterator referenceSectionIt,
         RepeatListElementList::const_iterator referenceRepeatListElementIt) const;
 
     void performJump(std::vector<RepeatListElementList>::const_iterator sectionIt,

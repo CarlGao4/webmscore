@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -32,6 +32,7 @@
 
 #include "log.h"
 
+using namespace muse;
 using namespace mu::iex::imagesexport;
 using namespace mu::project;
 
@@ -44,22 +45,22 @@ void ImagesExportModule::registerExports()
 {
     m_configuration = std::make_shared<ImagesExportConfiguration>();
 
-    modularity::ioc()->registerExport<IImagesExportConfiguration>(moduleName(), m_configuration);
+    ioc()->registerExport<IImagesExportConfiguration>(moduleName(), m_configuration);
 }
 
 void ImagesExportModule::resolveImports()
 {
-    auto writers = modularity::ioc()->resolve<INotationWritersRegister>(moduleName());
+    auto writers = ioc()->resolve<INotationWritersRegister>(moduleName());
     if (writers) {
-        writers->reg({ "pdf" }, std::make_shared<PdfWriter>());
-        writers->reg({ "svg" }, std::make_shared<SvgWriter>());
-        writers->reg({ "png" }, std::make_shared<PngWriter>());
+        writers->reg({ "pdf" }, std::make_shared<PdfWriter>(iocContext()));
+        writers->reg({ "svg" }, std::make_shared<SvgWriter>(iocContext()));
+        writers->reg({ "png" }, std::make_shared<PngWriter>(iocContext()));
     }
 }
 
-void ImagesExportModule::onInit(const framework::IApplication::RunMode& mode)
+void ImagesExportModule::onInit(const IApplication::RunMode& mode)
 {
-    if (mode == framework::IApplication::RunMode::AudioPluginRegistration) {
+    if (mode == IApplication::RunMode::AudioPluginRegistration) {
         return;
     }
 

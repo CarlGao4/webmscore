@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -29,9 +29,9 @@
 
 #include "editpitch.h"
 
-#include "dom/stringdata.h"
-#include "dom/stringtunings.h"
-#include "dom/undo.h"
+#include "engraving/dom/stringdata.h"
+#include "engraving/dom/stringtunings.h"
+#include "engraving/dom/undo.h"
 
 #include "ui/view/widgetstatestore.h"
 #include "ui/view/widgetnavigationfix.h"
@@ -40,7 +40,7 @@ static const int OPEN_ACCESSIBLE_TITLE_ROLE = Qt::UserRole + 1;
 
 using namespace mu::engraving;
 using namespace mu::notation;
-using namespace mu::ui;
+using namespace muse::ui;
 
 //---------------------------------------------------------
 //   EditStringData
@@ -48,7 +48,7 @@ using namespace mu::ui;
 //---------------------------------------------------------
 
 EditStringData::EditStringData(QWidget* parent, const std::vector<instrString>& strings, int frets)
-    : QDialog(parent)
+    : QDialog(parent), muse::Injectable(muse::iocCtxForQWidget(this))
 {
     setObjectName("EditStringData");
     setupUi(this);
@@ -64,26 +64,10 @@ EditStringData::EditStringData(QWidget* parent, const std::vector<instrString>& 
 
     init();
 
-    WidgetStateStore::restoreGeometry(this);
-
     //! NOTE: It is necessary for the correct start of navigation in the dialog
     setFocus();
 
     qApp->installEventFilter(this);
-}
-
-EditStringData::EditStringData(const EditStringData& other)
-    : QDialog(other.parentWidget())
-{
-}
-
-EditStringData::~EditStringData()
-{
-}
-
-int EditStringData::metaTypeId()
-{
-    return QMetaType::type("EditStringData");
 }
 
 std::vector<instrString> EditStringData::strings() const
@@ -96,9 +80,11 @@ int EditStringData::frets() const
     return _frets;
 }
 
-//---------------------------------------------------------
-//   hideEvent
-//---------------------------------------------------------
+void EditStringData::showEvent(QShowEvent* event)
+{
+    WidgetStateStore::restoreGeometry(this);
+    QDialog::showEvent(event);
+}
 
 void EditStringData::hideEvent(QHideEvent* ev)
 {
@@ -124,7 +110,7 @@ bool EditStringData::eventFilter(QObject* obj, QEvent* event)
 QString EditStringData::openColumnAccessibleText(const QTableWidgetItem* item) const
 {
     return item->data(OPEN_ACCESSIBLE_TITLE_ROLE).toString() + ": "
-           + (item->checkState() == Qt::Checked ? qtrc("ui", "checked", "checkstate") : qtrc("ui", "unchecked", "checkstate"));
+           + (item->checkState() == Qt::Checked ? muse::qtrc("ui", "checked", "checkstate") : muse::qtrc("ui", "unchecked", "checkstate"));
 }
 
 INotationSelectionPtr EditStringData::currentNotationSelection() const
@@ -233,10 +219,10 @@ void EditStringData::init()
 {
     numOfFrets->setValue(_frets);
 
-    stringList->setHorizontalHeaderLabels({ qtrc("notation/editstringdata", "Always open"),
-                                            qtrc("notation/editstringdata", "Pitch") });
-    QString toolTip = qtrc("notation/editstringdata",
-                           "<b>Always open</b><br>On tablature staves, fret positions other than ‘0’ cannot be entered on strings marked ‘always open’. Useful for instruments with strings that are not on the fretboard, such as the theorbo.");
+    stringList->setHorizontalHeaderLabels({ muse::qtrc("notation/editstringdata", "Always open"),
+                                            muse::qtrc("notation/editstringdata", "Pitch") });
+    QString toolTip = muse::qtrc("notation/editstringdata",
+                                 "<b>Always open</b><br>On tablature staves, fret positions other than ‘0’ cannot be entered on strings marked ‘always open’. Useful for instruments with strings that are not on the fretboard, such as the theorbo.");
     stringList->horizontalHeaderItem(0)->setToolTip(toolTip);
     int numOfStrings = static_cast<int>(_strings.size());
     stringList->setRowCount(numOfStrings);
@@ -301,7 +287,7 @@ void EditStringData::initStringsData()
 
     Part* part = stringTunings->staff()->part();
 
-    auto it = mu::findLessOrEqual(part->instruments(), stringTunings->tick().ticks());
+    auto it = muse::findLessOrEqual(part->instruments(), stringTunings->tick().ticks());
     if (it == part->instruments().cend()) {
         return;
     }
@@ -349,5 +335,5 @@ void EditStringData::accept()
 
 QString EditStringData::midiCodeToStr(int midiCode)
 {
-    return QString::fromStdString(mu::pitchToString(midiCode));
+    return QString::fromStdString(muse::pitchToString(midiCode));
 }

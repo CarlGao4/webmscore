@@ -32,6 +32,20 @@ SOFTWARE.
 
 #include "logstream.h"
 
+// Based on: https://stackoverflow.com/a/45642888
+#ifdef __GNUC__
+#define KORS_ATTRIBUTE_PRINTF(format_index, vargs_index) __attribute__((__format__(__printf__, format_index, vargs_index)))
+#else
+#define KORS_ATTRIBUTE_PRINTF(format_index, vargs_index)
+#endif
+
+#if defined(_MSC_VER)
+#include <sal.h>
+#define KORS_ANNOTATION_PRINTF _In_z_ _Printf_format_string_
+#else
+#define KORS_ANNOTATION_PRINTF
+#endif
+
 #undef ERROR
 #undef WARN
 #undef INFO
@@ -134,7 +148,7 @@ public:
     virtual std::string formatTime(const Time& time) const;
     virtual std::string formatThread(const std::thread::id& thID) const;
 
-    static PatternData parcePattern(const std::string& format, const std::string_view& pattern);
+    static PatternData parsePattern(const std::string& format, const std::string_view& pattern);
     static std::vector<PatternData> patterns(const std::string& format);
 
 private:
@@ -191,8 +205,9 @@ public:
     void write(const LogMsg& logMsg);
 
     void addDest(LogDest* dest);
-    std::vector<LogDest*> dests() const;
+    void removeDest(LogDest* dest);
     void clearDests();
+    std::vector<LogDest*> dests() const;
 
 private:
     Logger();
@@ -222,7 +237,7 @@ public:
     }
 
     inline Stream& stream() { return m_stream; }
-    Stream& stream(const char* msg, ...);
+    Stream& stream(KORS_ANNOTATION_PRINTF const char* msg, ...) KORS_ATTRIBUTE_PRINTF(2, 3);
 
 private:
     LogMsg m_msg;

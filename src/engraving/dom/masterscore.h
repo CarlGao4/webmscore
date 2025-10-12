@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,8 +22,10 @@
 #ifndef MU_ENGRAVING_MASTERSCORE_H
 #define MU_ENGRAVING_MASTERSCORE_H
 
+#include <array>
+
 #include "../infrastructure/ifileinfoprovider.h"
-#include "../infrastructure/geteid.h"
+#include "../infrastructure/eidregister.h"
 
 #include "instrument.h"
 #include "score.h"
@@ -89,15 +91,15 @@ public:
 
     bool isMaster() const override { return true; }
 
-    GetEID* getEID() { return &m_getEID; }
-    const GetEID* getEID() const { return &m_getEID; }
+    EIDRegister* eidRegister() { return &m_eidRegister; }
+    const EIDRegister* eidRegister() const { return &m_eidRegister; }
 
     bool readOnly() const override { return m_readOnly; }
     void setReadOnly(bool ro) { m_readOnly = ro; }
     UndoStack* undoStack() const override { return m_undoStack; }
     TimeSigMap* sigmap() const override { return m_sigmap; }
     TempoMap* tempomap() const override { return m_tempomap; }
-    async::Channel<ScoreChangesRange> changesChannel() const override { return m_changesRangeChannel; }
+    muse::async::Channel<ScoreChanges> changesChannel() const override { return m_changesChannel; }
 
     bool playlistDirty() const override { return m_playlistDirty; }
     void setPlaylistDirty() override;
@@ -110,8 +112,9 @@ public:
 
     void updateRepeatListTempo();
     void updateRepeatList();
+
     const RepeatList& repeatList() const override;
-    const RepeatList& repeatList(bool expandRepeats) const override;
+    const RepeatList& repeatList(bool expandRepeats, bool updateTies = true) const override;
 
     std::vector<Excerpt*>& excerpts() { return m_excerpts; }
     const std::vector<Excerpt*>& excerpts() const { return m_excerpts; }
@@ -120,7 +123,7 @@ public:
 
     void setUpdateAll() override;
 
-    void setLayoutAll(staff_idx_t staff = mu::nidx, const EngravingItem* e = nullptr);
+    void setLayoutAll(staff_idx_t staff = muse::nidx, const EngravingItem* e = nullptr);
     void setLayout(const Fraction& tick, staff_idx_t staff, const EngravingItem* e = nullptr);
     void setLayout(const Fraction& tick1, const Fraction& tick2, staff_idx_t staff1, staff_idx_t staff2, const EngravingItem* e = nullptr);
 
@@ -153,11 +156,11 @@ public:
     void updateExpressive(Synthesizer* synth);
     void updateExpressive(Synthesizer* synth, bool expressive, bool force = false);
 
-    using Score::pos;
-    Fraction pos(POS pos) const { return m_pos[int(pos)]; }
-    void setPos(POS pos, Fraction tick);
+    using Score::loopBoundaryTick;
+    Fraction loopBoundaryTick(LoopBoundaryType type) const;
+    void setLoopBoundaryTick(LoopBoundaryType type, Fraction tick);
 
-    void addExcerpt(Excerpt*, size_t index = mu::nidx);
+    void addExcerpt(Excerpt*, size_t index = muse::nidx);
     void removeExcerpt(Excerpt*);
     void deleteExcerpt(Excerpt*);
 
@@ -186,7 +189,7 @@ public:
 
     String name() const override;
 
-    Ret sanityCheck();
+    muse::Ret sanityCheck();
 
     void setWidthOfSegmentCell(double val) { m_widthOfSegmentCell = val; }
     double widthOfSegmentCell() const { return m_widthOfSegmentCell; }
@@ -196,19 +199,23 @@ private:
     void reorderMidiMapping();
     void rebuildExcerptsMidiMapping();
     void removeDeletedMidiMapping();
+
     int updateMidiMapping();
+    void doUpdateMidiMapping(int& maxport, std::set<int>& occupiedMidiChannels, unsigned int& searchMidiMappingFrom, Part* part,
+                             InstrChannel* channel, bool useDrumset);
 
     friend class EngravingProject;
     friend class compat::ScoreAccess;
     friend class read114::Read114;
     friend class read400::Read400;
 
-    MasterScore(std::weak_ptr<EngravingProject> project  = std::weak_ptr<EngravingProject>());
-    MasterScore(const MStyle&, std::weak_ptr<EngravingProject> project  = std::weak_ptr<EngravingProject>());
+    MasterScore(const muse::modularity::ContextPtr& iocCtx, std::weak_ptr<EngravingProject> project = std::weak_ptr<EngravingProject>());
+    MasterScore(const muse::modularity::ContextPtr& iocCtx, const MStyle&,
+                std::weak_ptr<EngravingProject> project  = std::weak_ptr<EngravingProject>());
 
     void initParts(Excerpt*);
 
-    GetEID m_getEID;
+    EIDRegister m_eidRegister;
     UndoStack* m_undoStack = nullptr;
     TimeSigMap* m_sigmap = nullptr;
     TempoMap* m_tempomap = nullptr;
@@ -219,13 +226,13 @@ private:
     std::vector<Excerpt*> m_excerpts;
     std::vector<PartChannelSettingsLink> m_playbackSettingsLinks;
     Score* m_playbackScore = nullptr;
-    async::Channel<ScoreChangesRange> m_changesRangeChannel;
+    muse::async::Channel<ScoreChanges> m_changesChannel;
 
     bool m_readOnly = false;
 
     CmdState m_cmdState;       // modified during cmd processing
 
-    Fraction m_pos[3];                      ///< 0 - current, 1 - left loop, 2 - right loop
+    std::array<Fraction, 2> m_loopBoundaries; ///< 0 - LoopIn, 1 - LoopOut
 
     int m_midiPortCount = 0;                           // A count of ALSA midi out ports
     //    QQueue<MidiInputEvent> _midiInputQueue;           // MIDI events that have yet to be processed

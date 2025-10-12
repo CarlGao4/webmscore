@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2022 MuseScore BVBA and others
+ * Copyright (C) 2022 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -28,16 +28,18 @@
 #include "modularity/ioc.h"
 #include "ui/iuiconfiguration.h"
 #include "languages/ilanguagesservice.h"
+#include "global/iapplication.h"
 
 class QSvgRenderer;
 
 namespace mu::appshell {
-class LoadingScreenView : public QWidget
+class LoadingScreenView : public QWidget, public muse::Injectable
 {
     Q_OBJECT
 
-    INJECT(ui::IUiConfiguration, uiConfiguration)
-    INJECT(languages::ILanguagesService, languagesService)
+    Inject<muse::ui::IUiConfiguration> uiConfiguration = { this };
+    Inject<muse::languages::ILanguagesService> languagesService = { this };
+    Inject<muse::IApplication> application = { this };
 
 public:
     explicit LoadingScreenView(QWidget* parent = nullptr);

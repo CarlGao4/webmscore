@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -21,7 +21,7 @@
  */
 import QtQuick 2.15
 
-import MuseScore.UiComponents 1.0
+import Muse.UiComponents 1.0
 
 BaseSection {
     id: root
@@ -33,26 +33,50 @@ BaseSection {
 
     signal currentAudioApiIndexChangeRequested(int newIndex)
 
-    /*
-     * TODO: https://github.com/musescore/MuseScore/issues/9807
-    ComboBoxWithTitle {
-        id: apiComboBox
+    Row {
+        spacing: 8
 
-        title: qsTrc("appshell/preferences", "Audio API:")
-        columnWidth: root.columnWidth
+        ComboBoxWithTitle {
+            id: apiComboBox
 
-        currentIndex: root.currentAudioApiIndex
-        model: root.audioApiList
+            property int initialIndex: -1
 
-        navigation.name: "AudioApiBox"
-        navigation.panel: root.navigation
-        navigation.row: 1
+            title: qsTrc("appshell/preferences", "Audio API:")
+            columnWidth: root.columnWidth
 
-        onValueEdited: function(newIndex, newValue) {
-            root.currentAudioApiIndexChangeRequested(newIndex)
+            visible: root.audioApiList.length > 1
+
+            currentIndex: root.currentAudioApiIndex
+            model: root.audioApiList
+
+            navigation.name: "AudioApiBox"
+            navigation.panel: root.navigation
+            navigation.row: 1
+
+            onValueEdited: function(newIndex, newValue) {
+                root.currentAudioApiIndexChangeRequested(newIndex)
+            }
+
+            onCurrentIndexChanged: {
+                if (apiComboBox.initialIndex !== -1) {
+                    restartRequiredLabel.visible = apiComboBox.currentIndex !== apiComboBox.initialIndex
+                }
+            }
+
+            Component.onCompleted: {
+                apiComboBox.initialIndex = apiComboBox.currentIndex
+            }
+        }
+
+        StyledTextLabel {
+            id: restartRequiredLabel
+
+            anchors.verticalCenter: parent.verticalCenter
+
+            text: qsTrc("appshell/preferences", "Restart required")
+            visible: false
         }
     }
-    */
 
     CommonAudioApiConfiguration {
         columnWidth: root.columnWidth

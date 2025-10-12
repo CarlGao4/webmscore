@@ -19,33 +19,30 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_UICOMPONENTS_ABSTRACTMENUMODEL_H
-#define MU_UICOMPONENTS_ABSTRACTMENUMODEL_H
+#pragma once
 
 #include <QAbstractListModel>
 
 #include "async/asyncable.h"
-#include "ui/uitypes.h"
 #include "menuitem.h"
 
 #include "modularity/ioc.h"
 #include "ui/iuiactionsregister.h"
+#include "shortcuts/ishortcutsregister.h"
 #include "actions/iactionsdispatcher.h"
 
-namespace mu {
-class TranslatableString;
-}
-
-namespace mu::uicomponents {
-class AbstractMenuModel : public QAbstractListModel, public async::Asyncable
+namespace muse::uicomponents {
+class AbstractMenuModel : public QAbstractListModel, public muse::Injectable, public async::Asyncable
 {
     Q_OBJECT
 
-    INJECT(ui::IUiActionsRegister, uiActionsRegister)
-    INJECT(actions::IActionsDispatcher, dispatcher)
-
     Q_PROPERTY(int length READ rowCount NOTIFY itemsChanged)
     Q_PROPERTY(QVariantList items READ itemsProperty NOTIFY itemsChanged)
+
+public:
+    muse::Inject<ui::IUiActionsRegister> uiActionsRegister = { this };
+    muse::Inject<muse::actions::IActionsDispatcher> dispatcher = { this };
+    muse::Inject<shortcuts::IShortcutsRegister> shortcutsRegister = { this };
 
 public:
     explicit AbstractMenuModel(QObject* parent = nullptr);
@@ -64,7 +61,7 @@ public:
 
 signals:
     void itemsChanged();
-    void itemChanged(mu::uicomponents::MenuItem* item);
+    void itemChanged(muse::uicomponents::MenuItem* item);
 
 protected:
     enum Roles {
@@ -73,7 +70,8 @@ protected:
         UserRole
     };
 
-    virtual void onActionsStateChanges(const actions::ActionCodeList& codes);
+    virtual void subscribeOnChanges();
+    virtual void onActionsStateChanges(const muse::actions::ActionCodeList& codes);
 
     void setItem(int index, MenuItem* item);
     void setItems(const MenuItemList& items);
@@ -85,24 +83,30 @@ protected:
     MenuItem& item(int index);
 
     MenuItem& findItem(const QString& itemId);
-    MenuItem& findItem(const actions::ActionCode& actionCode);
+    MenuItem& findItem(const muse::actions::ActionCode& actionCode);
+    MenuItemList findItems(const muse::actions::ActionCode& actionCode);
     MenuItem& findMenu(const QString& menuId);
 
     MenuItem* makeMenu(const TranslatableString& title, const MenuItemList& items, const QString& menuId = "", bool enabled = true);
 
-    MenuItem* makeMenuItem(const actions::ActionCode& actionCode, const TranslatableString& title = {});
+    MenuItem* makeMenuItem(const muse::actions::ActionCode& actionCode, const TranslatableString& title = {});
     MenuItem* makeSeparator();
 
     bool isIndexValid(int index) const;
-    void dispatch(const actions::ActionCode& actionCode, const actions::ActionData& args = actions::ActionData());
+    void dispatch(const muse::actions::ActionCode& actionCode, const muse::actions::ActionData& args = muse::actions::ActionData());
+    void dispatch(const muse::actions::ActionQuery& actionQuery);
 
 private:
     MenuItem& item(MenuItemList& items, const QString& itemId);
-    MenuItem& item(MenuItemList& items, const actions::ActionCode& actionCode);
+    MenuItemList items(MenuItemList& items, const muse::actions::ActionCode& actionCode);
     MenuItem& menu(MenuItemList& items, const QString& menuId);
+
+    void updateState(MenuItemList& items, const muse::actions::ActionCodeList& codes, std::map<muse::actions::ActionCode,
+                                                                                               muse::ui::UiActionState>& states);
+
+    void updateShortcutsAll();
+    void updateShortcuts(MenuItem* item);
 
     MenuItemList m_items;
 };
 }
-
-#endif // MU_UICOMPONENTS_ABSTRACTMENUMODEL_H

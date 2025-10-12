@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2025 MuseScore BVBA and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -24,57 +24,66 @@
 //TODO: remove with global clearing of Q_OS_*** defines
 #include <QtGlobal>
 
+#include "global/settings.h"
+
+#include "audio/common/soundfonttypes.h"
+
 #include "log.h"
-#include "settings.h"
 
-#include "soundfonttypes.h"
-
-using namespace mu;
-using namespace mu::framework;
-using namespace mu::audio;
-using namespace mu::audio::synth;
+using namespace muse;
+using namespace muse::audio;
+using namespace muse::audio::synth;
 
 static const audioch_t AUDIO_CHANNELS = 2;
 
-#if 0
 //TODO: add other setting: audio device etc
 static const Settings::Key AUDIO_API_KEY("audio", "io/audioApi");
 static const Settings::Key AUDIO_OUTPUT_DEVICE_ID_KEY("audio", "io/outputDevice");
 static const Settings::Key AUDIO_BUFFER_SIZE_KEY("audio", "io/bufferSize");
 static const Settings::Key AUDIO_SAMPLE_RATE_KEY("audio", "io/sampleRate");
+static const Settings::Key AUDIO_MEASURE_INPUT_LAG("audio", "io/measureInputLag");
+static const Settings::Key AUDIO_DESIRED_THREAD_NUMBER_KEY("audio", "io/audioThreads");
+
+static const Settings::Key ONLINE_SOUNDS_PROCESS_IN_BACKGROUND("audio", "io/onlineSounds/processInBackground");
 
 static const Settings::Key USER_SOUNDFONTS_PATHS("midi", "application/paths/mySoundfonts");
-#endif
 
 static const AudioResourceId DEFAULT_SOUND_FONT_NAME = "MS Basic";
 static const AudioResourceAttributes DEFAULT_AUDIO_RESOURCE_ATTRIBUTES = {
-    { PLAYBACK_SETUP_DATA_ATTRIBUTE, mpe::GENERIC_SETUP_DATA_STRING },
+    { PLAYBACK_SETUP_DATA_ATTRIBUTE, muse::mpe::GENERIC_SETUP_DATA_STRING },
     { SOUNDFONT_NAME_ATTRIBUTE, String::fromStdString(DEFAULT_SOUND_FONT_NAME) } };
 
 static const AudioResourceMeta DEFAULT_AUDIO_RESOURCE_META
-    = { DEFAULT_SOUND_FONT_NAME, AudioResourceType::FluidSoundfont, "Fluid", DEFAULT_AUDIO_RESOURCE_ATTRIBUTES, false /*hasNativeEditor*/ };
+    = { DEFAULT_SOUND_FONT_NAME, "Fluid", DEFAULT_AUDIO_RESOURCE_ATTRIBUTES, AudioResourceType::FluidSoundfont, false /*hasNativeEditor*/ };
 
 void AudioConfiguration::init()
 {
     int defaultBufferSize = 0;
-#ifdef Q_OS_WASM
+#if defined(Q_OS_WASM)
     defaultBufferSize = 8192;
 #else
     defaultBufferSize = 1024;
 #endif
-#if 0
     settings()->setDefaultValue(AUDIO_BUFFER_SIZE_KEY, Val(defaultBufferSize));
     settings()->valueChanged(AUDIO_BUFFER_SIZE_KEY).onReceive(nullptr, [this](const Val&) {
         m_driverBufferSizeChanged.notify();
+        updateSamplesToPreallocate();
     });
 
-    settings()->setDefaultValue(AUDIO_API_KEY, Val("Core Audio"));
+#if defined(Q_OS_LINUX) || defined(Q_OS_FREEBSD)
+    settings()->setDefaultValue(AUDIO_API_KEY, Val("PipeWire"));
+#endif
+    settings()->valueChanged(AUDIO_API_KEY).onReceive(nullptr, [this](const Val&) {
+        m_currentAudioApiChanged.notify();
+    });
 
+    settings()->setDefaultValue(AUDIO_OUTPUT_DEVICE_ID_KEY, Val(DEFAULT_DEVICE_ID));
     settings()->valueChanged(AUDIO_OUTPUT_DEVICE_ID_KEY).onReceive(nullptr, [this](const Val&) {
         m_audioOutputDeviceIdChanged.notify();
     });
 
     settings()->setDefaultValue(AUDIO_SAMPLE_RATE_KEY, Val(44100));
+    settings()->setCanBeManuallyEdited(AUDIO_SAMPLE_RATE_KEY, false, Val(44100), Val(192000));
     settings()->valueChanged(AUDIO_SAMPLE_RATE_KEY).onReceive(nullptr, [this](const Val&) {
         m_driverSampleRateChanged.notify();
     });
@@ -87,44 +96,42 @@ void AudioConfiguration::init()
     for (const auto& path : userSoundFontDirectories()) {
         fileSystem()->makePath(path);
     }
-#endif
-}
 
-std::vector<std::string> AudioConfiguration::availableAudioApiList() const
-{
-    std::vector<std::string> names {
-        "Core Audio",
-        "ALSA Audio",
-        "PulseAudio",
-        "JACK Audio Server"
-    };
+    settings()->setDefaultValue(AUDIO_MEASURE_INPUT_LAG, Val(false));
 
-    return names;
+    settings()->setDefaultValue(AUDIO_DESIRED_THREAD_NUMBER_KEY, Val(0));
+
+    settings()->setDefaultValue(ONLINE_SOUNDS_PROCESS_IN_BACKGROUND, Val(true));
+    settings()->valueChanged(ONLINE_SOUNDS_PROCESS_IN_BACKGROUND).onReceive(nullptr, [this](const Val& val) {
+        m_autoProcessOnlineSoundsInBackgroundChanged.send(val.toBool());
+    });
+
+    updateSamplesToPreallocate();
 }
 
 std::string AudioConfiguration::currentAudioApi() const
 {
-    // return settings()->value(AUDIO_API_KEY).toString();
-    return std::string();
+    return settings()->value(AUDIO_API_KEY).toString();
 }
 
 void AudioConfiguration::setCurrentAudioApi(const std::string& name)
 {
-    NOT_IMPLEMENTED;
-    // settings()->setSharedValue(AUDIO_API_KEY, Val(name));
+    settings()->setSharedValue(AUDIO_API_KEY, Val(name));
+}
+
+async::Notification AudioConfiguration::currentAudioApiChanged() const
+{
+    return m_currentAudioApiChanged;
 }
 
 std::string AudioConfiguration::audioOutputDeviceId() const
 {
-    NOT_IMPLEMENTED;
-    return std::string();
-    // return settings()->value(AUDIO_OUTPUT_DEVICE_ID_KEY).toString();
+    return settings()->value(AUDIO_OUTPUT_DEVICE_ID_KEY).toString();
 }
 
 void AudioConfiguration::setAudioOutputDeviceId(const std::string& deviceId)
 {
-    NOT_IMPLEMENTED;
-    // settings()->setSharedValue(AUDIO_OUTPUT_DEVICE_ID_KEY, Val(deviceId));
+    settings()->setSharedValue(AUDIO_OUTPUT_DEVICE_ID_KEY, Val(deviceId));
 }
 
 async::Notification AudioConfiguration::audioOutputDeviceIdChanged() const
@@ -139,14 +146,12 @@ audioch_t AudioConfiguration::audioChannelsCount() const
 
 unsigned int AudioConfiguration::driverBufferSize() const
 {
-    return 8192;
-    // return settings()->value(AUDIO_BUFFER_SIZE_KEY).toInt();
+    return settings()->value(AUDIO_BUFFER_SIZE_KEY).toInt();
 }
 
 void AudioConfiguration::setDriverBufferSize(unsigned int size)
 {
-    NOT_IMPLEMENTED;
-    // settings()->setSharedValue(AUDIO_BUFFER_SIZE_KEY, Val(static_cast<int>(size)));
+    settings()->setSharedValue(AUDIO_BUFFER_SIZE_KEY, Val(static_cast<int>(size)));
 }
 
 async::Notification AudioConfiguration::driverBufferSizeChanged() const
@@ -154,21 +159,46 @@ async::Notification AudioConfiguration::driverBufferSizeChanged() const
     return m_driverBufferSizeChanged;
 }
 
-samples_t AudioConfiguration::renderStep() const
+msecs_t AudioConfiguration::audioWorkerInterval(const samples_t samples, const sample_rate_t sampleRate) const
 {
-    return 512;
+    msecs_t interval = float(samples) / 4.f / float(sampleRate) * 1000.f;
+    interval = std::max(interval, msecs_t(1));
+
+    // Found experementaly on a slow laptop (2 core) running on battery power
+    interval = std::min(interval, msecs_t(10));
+
+    return interval;
+}
+
+samples_t AudioConfiguration::minSamplesToReserve(RenderMode mode) const
+{
+    // Idle: render as little as possible for lower latency
+    if (mode == RenderMode::IdleMode) {
+        return 128;
+    }
+
+    // Active: render more for better quality (rendering is usually much heavier in this scenario)
+    return 1024;
+}
+
+samples_t AudioConfiguration::samplesToPreallocate() const
+{
+    return m_samplesToPreallocate;
+}
+
+async::Channel<samples_t> AudioConfiguration::samplesToPreallocateChanged() const
+{
+    return m_samplesToPreallocateChanged;
 }
 
 unsigned int AudioConfiguration::sampleRate() const
 {
-    return 44100;
-    // return settings()->value(AUDIO_SAMPLE_RATE_KEY).toInt();
+    return settings()->value(AUDIO_SAMPLE_RATE_KEY).toInt();
 }
 
 void AudioConfiguration::setSampleRate(unsigned int sampleRate)
 {
-    NOT_IMPLEMENTED;
-    // settings()->setSharedValue(AUDIO_SAMPLE_RATE_KEY, Val(static_cast<int>(sampleRate)));
+    settings()->setSharedValue(AUDIO_SAMPLE_RATE_KEY, Val(static_cast<int>(sampleRate)));
 }
 
 async::Notification AudioConfiguration::sampleRateChanged() const
@@ -176,10 +206,15 @@ async::Notification AudioConfiguration::sampleRateChanged() const
     return m_driverSampleRateChanged;
 }
 
+size_t AudioConfiguration::desiredAudioThreadNumber() const
+{
+    return settings()->value(AUDIO_DESIRED_THREAD_NUMBER_KEY).toInt();
+}
+
 size_t AudioConfiguration::minTrackCountForMultithreading() const
 {
     // Start mutlithreading-processing only when there are more or equal number of tracks
-    return 3;
+    return 2;
 }
 
 AudioInputParams AudioConfiguration::defaultAudioInputParams() const
@@ -192,24 +227,21 @@ AudioInputParams AudioConfiguration::defaultAudioInputParams() const
 
 SoundFontPaths AudioConfiguration::soundFontDirectories() const
 {
-    // SoundFontPaths paths = userSoundFontDirectories();
-    // paths.push_back(globalConfiguration()->appDataPath());
+    SoundFontPaths paths = userSoundFontDirectories();
+    paths.push_back(globalConfiguration()->appDataPath());
 
-    // return paths;
-    return io::pathsFromString("/"); // HACK: load soundfonts from the root directory
+    return paths;
 }
 
 io::paths_t AudioConfiguration::userSoundFontDirectories() const
 {
-    // std::string pathsStr = settings()->value(USER_SOUNDFONTS_PATHS).toString();
-    // return io::pathsFromString(pathsStr);
-    return SoundFontPaths();
+    std::string pathsStr = settings()->value(USER_SOUNDFONTS_PATHS).toString();
+    return io::pathsFromString(pathsStr);
 }
 
 void AudioConfiguration::setUserSoundFontDirectories(const io::paths_t& paths)
 {
-    NOT_IMPLEMENTED;
-    // settings()->setSharedValue(USER_SOUNDFONTS_PATHS, Val(io::pathsToString(paths)));
+    settings()->setSharedValue(USER_SOUNDFONTS_PATHS, Val(io::pathsToString(paths)));
 }
 
 async::Channel<io::paths_t> AudioConfiguration::soundFontDirectoriesChanged() const
@@ -217,9 +249,34 @@ async::Channel<io::paths_t> AudioConfiguration::soundFontDirectoriesChanged() co
     return m_soundFontDirsChanged;
 }
 
-io::path_t AudioConfiguration::knownAudioPluginsFilePath() const
+bool AudioConfiguration::autoProcessOnlineSoundsInBackground() const
 {
-    NOT_IMPLEMENTED;
-    return {}; // HACK: return empty path for now
-    // return globalConfiguration()->userAppDataPath() + "/known_audio_plugins.json";
+    return settings()->value(ONLINE_SOUNDS_PROCESS_IN_BACKGROUND).toBool();
+}
+
+void AudioConfiguration::setAutoProcessOnlineSoundsInBackground(bool value)
+{
+    settings()->setSharedValue(ONLINE_SOUNDS_PROCESS_IN_BACKGROUND, Val(value));
+}
+
+async::Channel<bool> AudioConfiguration::autoProcessOnlineSoundsInBackgroundChanged() const
+{
+    return m_autoProcessOnlineSoundsInBackgroundChanged;
+}
+
+bool AudioConfiguration::shouldMeasureInputLag() const
+{
+    return settings()->value(AUDIO_MEASURE_INPUT_LAG).toBool();
+}
+
+void AudioConfiguration::updateSamplesToPreallocate()
+{
+    samples_t minToReserve = minSamplesToReserve(RenderMode::RealTimeMode);
+    samples_t driverBufSize = driverBufferSize();
+    samples_t newValue = std::max(minToReserve, driverBufSize);
+
+    if (m_samplesToPreallocate != newValue) {
+        m_samplesToPreallocate = newValue;
+        m_samplesToPreallocateChanged.send(newValue);
+    }
 }

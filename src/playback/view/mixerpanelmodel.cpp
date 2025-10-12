@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -27,8 +27,9 @@
 #include "log.h"
 #include "translation.h"
 
+using namespace muse;
 using namespace mu::playback;
-using namespace mu::audio;
+using namespace muse::audio;
 using namespace mu::engraving;
 using namespace mu::notation;
 using namespace mu::project;
@@ -98,7 +99,7 @@ int MixerPanelModel::rowCount(const QModelIndex&) const
 
 QHash<int, QByteArray> MixerPanelModel::roleNames() const
 {
-    static QHash<int, QByteArray> roles = {
+    static const QHash<int, QByteArray> roles = {
         { ChannelItemRole, "channelItem" }
     };
 
@@ -211,7 +212,7 @@ void MixerPanelModel::addItem(MixerChannelItem* item, int index)
     emit rowCountChanged();
 }
 
-void MixerPanelModel::removeItem(const audio::TrackId trackId)
+void MixerPanelModel::removeItem(const TrackId trackId)
 {
     TRACEFUNC;
 
@@ -236,25 +237,8 @@ void MixerPanelModel::updateItemsPanelsOrder()
 {
     TRACEFUNC;
 
-    ui::NavigationPanel* previousPanel = nullptr;
-    for (MixerChannelItem* item : m_mixerChannelList) {
-        disconnect(item->panel(), &ui::NavigationPanel::orderChanged, this, nullptr);
-    }
-
     for (int i = 0; i < m_mixerChannelList.size(); i++) {
-        m_mixerChannelList[i]->setPanelOrder(i);
-
-        if (previousPanel) {
-            disconnect(previousPanel, &ui::NavigationPanel::orderChanged, this, nullptr);
-
-            connect(previousPanel, &ui::NavigationPanel::orderChanged, this, [this, i](int order){
-                if (i < m_mixerChannelList.count()) {
-                    m_mixerChannelList[i]->setPanelOrder(order + 1);
-                }
-            });
-        }
-
-        previousPanel = m_mixerChannelList[i]->panel();
+        m_mixerChannelList[i]->setPanelOrder(m_navigationOrderStart + i);
     }
 }
 
@@ -269,29 +253,18 @@ void MixerPanelModel::clear()
 
 void MixerPanelModel::setupConnections()
 {
-    audioSettings()->trackSoloMuteStateChanged().onReceive(
-        this, [this](const engraving::InstrumentTrackId& changedInstrumentTrackId,
-                     project::IProjectAudioSettings::SoloMuteState newSoloMuteState) {
-        const IPlaybackController::InstrumentTrackIdMap& instrumentTrackIdMap = controller()->instrumentTrackIdMap();
-        TrackId trackId = mu::value(instrumentTrackIdMap, changedInstrumentTrackId);
-
-        if (MixerChannelItem* item = findChannelItem(trackId)) {
-            item->loadSoloMuteState(std::move(newSoloMuteState));
-        }
-    });
-
     audioSettings()->auxSoloMuteStateChanged().onReceive(
         this, [this](const aux_channel_idx_t index,
-                     project::IProjectAudioSettings::SoloMuteState newSoloMuteState) {
+                     notation::INotationSoloMuteState::SoloMuteState newSoloMuteState) {
         const IPlaybackController::AuxTrackIdMap& auxTrackIdMap = controller()->auxTrackIdMap();
-        TrackId trackId = mu::value(auxTrackIdMap, index);
+        TrackId trackId = muse::value(auxTrackIdMap, index);
 
         if (MixerChannelItem* item = findChannelItem(trackId)) {
             item->loadSoloMuteState(std::move(newSoloMuteState));
         }
     });
 
-    playback()->tracks()->inputParamsChanged().onReceive(
+    playback()->inputParamsChanged().onReceive(
         this, [this](const TrackSequenceId sequenceId, const TrackId trackId, AudioInputParams params) {
         if (m_currentTrackSequenceId != sequenceId) {
             return;
@@ -302,7 +275,7 @@ void MixerPanelModel::setupConnections()
         }
     });
 
-    playback()->audioOutput()->outputParamsChanged().onReceive(
+    playback()->outputParamsChanged().onReceive(
         this, [this](const TrackSequenceId sequenceId, const TrackId trackId, AudioOutputParams params) {
         if (m_currentTrackSequenceId != sequenceId) {
             return;
@@ -313,8 +286,8 @@ void MixerPanelModel::setupConnections()
         }
     });
 
-    playback()->audioOutput()->masterOutputParamsChanged().onReceive(this,
-                                                                     [this](AudioOutputParams params) {
+    playback()->masterOutputParamsChanged().onReceive(this,
+                                                      [this](AudioOutputParams params) {
         if (m_masterChannelItem) {
             loadOutputParams(m_masterChannelItem, std::move(params));
         }
@@ -333,7 +306,7 @@ void MixerPanelModel::setupConnections()
 
     configuration()->isAuxChannelVisibleChanged().onReceive(this, [this](aux_channel_idx_t index, bool visible) {
         const auto& auxMap = controller()->auxTrackIdMap();
-        TrackId trackId = mu::value(auxMap, index);
+        TrackId trackId = muse::value(auxMap, index);
         if (visible) {
             int visibleAuxesOnRight = 0;
 
@@ -410,7 +383,7 @@ int MixerPanelModel::resolveInsertIndex(const engraving::InstrumentTrackId& newI
     return INVALID_INDEX;
 }
 
-int MixerPanelModel::indexOf(const audio::TrackId trackId) const
+int MixerPanelModel::indexOf(const TrackId trackId) const
 {
     for (int i = 0; i < m_mixerChannelList.size(); ++i) {
         if (trackId == m_mixerChannelList[i]->trackId()) {
@@ -421,19 +394,24 @@ int MixerPanelModel::indexOf(const audio::TrackId trackId) const
     return INVALID_INDEX;
 }
 
-MixerChannelItem* MixerPanelModel::buildInstrumentChannelItem(const audio::TrackId trackId,
+MixerChannelItem* MixerPanelModel::buildInstrumentChannelItem(const TrackId trackId,
                                                               const engraving::InstrumentTrackId& instrumentTrackId,
                                                               bool isPrimary)
 {
     MixerChannelItem::Type type = isPrimary ? MixerChannelItem::Type::PrimaryInstrument
                                   : MixerChannelItem::Type::SecondaryInstrument;
 
+    const InstrumentTrackId& metronomeTrackId = notationPlayback()->metronomeTrackId();
+    if (instrumentTrackId == metronomeTrackId) {
+        type = MixerChannelItem::Type::Metronome;
+    }
+
     MixerChannelItem* item = new MixerChannelItem(this, type, false /*outputOnly*/, trackId);
     item->setInstrumentTrackId(instrumentTrackId);
     item->setPanelSection(m_navigationSection);
-    item->loadSoloMuteState(audioSettings()->trackSoloMuteState(instrumentTrackId));
+    item->loadSoloMuteState(controller()->trackSoloMuteState(instrumentTrackId));
 
-    playback()->tracks()->inputParams(m_currentTrackSequenceId, trackId)
+    playback()->inputParams(m_currentTrackSequenceId, trackId)
     .onResolve(this, [this, trackId](AudioInputParams inParams) {
         if (MixerChannelItem* item = findChannelItem(trackId)) {
             item->loadInputParams(std::move(inParams));
@@ -444,18 +422,18 @@ MixerChannelItem* MixerPanelModel::buildInstrumentChannelItem(const audio::Track
                << ", " << text;
     });
 
-    playback()->tracks()->trackName(m_currentTrackSequenceId, trackId)
-    .onResolve(this, [this, trackId](const TrackName& trackName) {
-        if (MixerChannelItem* item = findChannelItem(trackId)) {
-            item->setTitle(QString::fromStdString(trackName));
+    playback()->trackName(m_currentTrackSequenceId, trackId)
+    .onResolve(this, [this, trackId](const RetVal<TrackName>& trackName) {
+        if (trackName.ret) {
+            if (MixerChannelItem* item = findChannelItem(trackId)) {
+                item->setTitle(QString::fromStdString(trackName.val));
+            }
+        } else {
+            LOGE() << "unable to get track name, error: " << trackName.ret.toString();
         }
-    })
-    .onReject(this, [](int errCode, std::string text) {
-        LOGE() << "unable to get track name, error code: " << errCode
-               << ", " << text;
     });
 
-    playback()->audioOutput()->outputParams(m_currentTrackSequenceId, trackId)
+    playback()->outputParams(m_currentTrackSequenceId, trackId)
     .onResolve(this, [this, trackId](AudioOutputParams outParams) {
         if (MixerChannelItem* item = findChannelItem(trackId)) {
             loadOutputParams(item, std::move(outParams));
@@ -466,7 +444,7 @@ MixerChannelItem* MixerPanelModel::buildInstrumentChannelItem(const audio::Track
                << ", " << text;
     });
 
-    playback()->audioOutput()->signalChanges(m_currentTrackSequenceId, trackId)
+    playback()->signalChanges(m_currentTrackSequenceId, trackId)
     .onResolve(this, [this, trackId](AudioSignalChanges signalChanges) {
         if (MixerChannelItem* item = findChannelItem(trackId)) {
             item->subscribeOnAudioSignalChanges(std::move(signalChanges));
@@ -478,11 +456,11 @@ MixerChannelItem* MixerPanelModel::buildInstrumentChannelItem(const audio::Track
     });
 
     connect(item, &MixerChannelItem::inputParamsChanged, this, [this, trackId](const AudioInputParams& params) {
-        playback()->tracks()->setInputParams(m_currentTrackSequenceId, trackId, params);
+        playback()->setInputParams(m_currentTrackSequenceId, trackId, params);
     });
 
     connect(item, &MixerChannelItem::outputParamsChanged, this, [this, trackId](const AudioOutputParams& params) {
-        playback()->audioOutput()->setOutputParams(m_currentTrackSequenceId, trackId, params);
+        playback()->setOutputParams(m_currentTrackSequenceId, trackId, params);
     });
 
     connect(item, &MixerChannelItem::auxSendItemListChanged, this, [this, item]() {
@@ -493,8 +471,8 @@ MixerChannelItem* MixerPanelModel::buildInstrumentChannelItem(const audio::Track
     });
 
     connect(item, &MixerChannelItem::soloMuteStateChanged, this,
-            [this, instrumentTrackId](const project::IProjectAudioSettings::SoloMuteState& state) {
-        audioSettings()->setTrackSoloMuteState(instrumentTrackId, state);
+            [this, instrumentTrackId](const notation::INotationSoloMuteState::SoloMuteState& state) {
+        controller()->setTrackSoloMuteState(instrumentTrackId, state);
     });
 
     return item;
@@ -506,18 +484,18 @@ MixerChannelItem* MixerPanelModel::buildAuxChannelItem(aux_channel_idx_t index, 
     item->setPanelSection(m_navigationSection);
     item->loadSoloMuteState(audioSettings()->auxSoloMuteState(index));
 
-    playback()->tracks()->trackName(m_currentTrackSequenceId, trackId)
-    .onResolve(this, [this, trackId](const TrackName& trackName) {
-        if (MixerChannelItem* item = findChannelItem(trackId)) {
-            item->setTitle(QString::fromStdString(trackName));
+    playback()->trackName(m_currentTrackSequenceId, trackId)
+    .onResolve(this, [this, trackId](const RetVal<TrackName>& trackName) {
+        if (trackName.ret) {
+            if (MixerChannelItem* item = findChannelItem(trackId)) {
+                item->setTitle(QString::fromStdString(trackName.val));
+            }
+        } else {
+            LOGE() << "unable to get track name, error: " << trackName.ret.toString();
         }
-    })
-    .onReject(this, [](int errCode, std::string text) {
-        LOGE() << "unable to get track name, error code: " << errCode
-               << ", " << text;
     });
 
-    playback()->audioOutput()->outputParams(m_currentTrackSequenceId, trackId)
+    playback()->outputParams(m_currentTrackSequenceId, trackId)
     .onResolve(this, [this, trackId](AudioOutputParams outParams) {
         if (MixerChannelItem* item = findChannelItem(trackId)) {
             loadOutputParams(item, std::move(outParams));
@@ -528,7 +506,7 @@ MixerChannelItem* MixerPanelModel::buildAuxChannelItem(aux_channel_idx_t index, 
                << ", " << text;
     });
 
-    playback()->audioOutput()->signalChanges(m_currentTrackSequenceId, trackId)
+    playback()->signalChanges(m_currentTrackSequenceId, trackId)
     .onResolve(this, [this, trackId](AudioSignalChanges signalChanges) {
         if (MixerChannelItem* item = findChannelItem(trackId)) {
             item->subscribeOnAudioSignalChanges(std::move(signalChanges));
@@ -540,11 +518,11 @@ MixerChannelItem* MixerPanelModel::buildAuxChannelItem(aux_channel_idx_t index, 
     });
 
     connect(item, &MixerChannelItem::outputParamsChanged, this, [this, trackId](const AudioOutputParams& params) {
-        playback()->audioOutput()->setOutputParams(m_currentTrackSequenceId, trackId, params);
+        playback()->setOutputParams(m_currentTrackSequenceId, trackId, params);
     });
 
     connect(item, &MixerChannelItem::soloMuteStateChanged, this,
-            [this, index](const project::IProjectAudioSettings::SoloMuteState& state) {
+            [this, index](const notation::INotationSoloMuteState::SoloMuteState& state) {
         audioSettings()->setAuxSoloMuteState(index, state);
     });
 
@@ -555,9 +533,9 @@ MixerChannelItem* MixerPanelModel::buildMasterChannelItem()
 {
     MixerChannelItem* item = new MixerChannelItem(this, MixerChannelItem::Type::Master, true /*outputOnly*/);
     item->setPanelSection(m_navigationSection);
-    item->setTitle(qtrc("playback", "Master"));
+    item->setTitle(muse::qtrc("playback", "Master"));
 
-    playback()->audioOutput()->masterOutputParams()
+    playback()->masterOutputParams()
     .onResolve(this, [this, item](AudioOutputParams outParams) {
         if (m_masterChannelItem && item == m_masterChannelItem) {
             loadOutputParams(item, std::move(outParams));
@@ -568,7 +546,7 @@ MixerChannelItem* MixerPanelModel::buildMasterChannelItem()
                << ", " << text;
     });
 
-    playback()->audioOutput()->masterSignalChanges()
+    playback()->masterSignalChanges()
     .onResolve(this, [this, item](AudioSignalChanges signalChanges) {
         if (m_masterChannelItem && item == m_masterChannelItem) {
             item->subscribeOnAudioSignalChanges(std::move(signalChanges));
@@ -580,7 +558,7 @@ MixerChannelItem* MixerPanelModel::buildMasterChannelItem()
     });
 
     connect(item, &MixerChannelItem::outputParamsChanged, this, [this](const AudioOutputParams& params) {
-        playback()->audioOutput()->setMasterOutputParams(params);
+        playback()->setMasterOutputParams(params);
     });
 
     return item;
@@ -591,7 +569,7 @@ int MixerPanelModel::masterChannelIndex() const
     return m_mixerChannelList.size() - 1;
 }
 
-MixerChannelItem* MixerPanelModel::findChannelItem(const audio::TrackId& trackId) const
+MixerChannelItem* MixerPanelModel::findChannelItem(const TrackId& trackId) const
 {
     for (MixerChannelItem* item : m_mixerChannelList) {
         if (item->trackId() == trackId) {
@@ -651,12 +629,12 @@ INotationPartsPtr MixerPanelModel::masterNotationParts() const
     return currentProject() ? currentProject()->masterNotation()->parts() : nullptr;
 }
 
-mu::ui::NavigationSection* MixerPanelModel::navigationSection() const
+muse::ui::NavigationSection* MixerPanelModel::navigationSection() const
 {
     return m_navigationSection;
 }
 
-void MixerPanelModel::setNavigationSection(ui::NavigationSection* navigationSection)
+void MixerPanelModel::setNavigationSection(muse::ui::NavigationSection* navigationSection)
 {
     if (m_navigationSection == navigationSection) {
         return;
@@ -664,4 +642,21 @@ void MixerPanelModel::setNavigationSection(ui::NavigationSection* navigationSect
 
     m_navigationSection = navigationSection;
     emit navigationSectionChanged();
+}
+
+int MixerPanelModel::navigationOrderStart() const
+{
+    return m_navigationOrderStart;
+}
+
+void MixerPanelModel::setNavigationOrderStart(int navigationOrderStart)
+{
+    if (m_navigationOrderStart == navigationOrderStart) {
+        return;
+    }
+
+    m_navigationOrderStart = navigationOrderStart;
+    emit navigationOrderStartChanged();
+
+    updateItemsPanelsOrder();
 }

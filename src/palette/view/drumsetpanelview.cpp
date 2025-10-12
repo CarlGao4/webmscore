@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -26,7 +26,7 @@
 using namespace mu::notation;
 
 namespace mu::palette {
-class DrumsetPaletteAdapter : public uicomponents::IDisplayableWidget
+class DrumsetPaletteAdapter : public muse::uicomponents::IDisplayableWidget
 {
 public:
     DrumsetPaletteAdapter()
@@ -49,7 +49,7 @@ public:
         m_drumsetPaletteWidget->updateDrumset();
     }
 
-    async::Channel<QString> pitchNameChanged() const
+    muse::async::Channel<QString> pitchNameChanged() const
     {
         return m_drumsetPaletteWidget->pitchNameChanged();
     }
@@ -86,9 +86,9 @@ QString DrumsetPanelView::pitchName() const
     return m_pitchName;
 }
 
-void DrumsetPanelView::editDrumset()
+void DrumsetPanelView::customizeKit()
 {
-    dispatcher()->dispatch("edit-drumset");
+    dispatcher()->dispatch("customize-kit");
 }
 
 void DrumsetPanelView::componentComplete()
@@ -153,7 +153,7 @@ void DrumsetPanelView::updateColors()
     }
 
     options.useElementColors = true;
-    options.colorsInverionsEnabled = true;
+    options.colorsInversionEnabled = true;
 
     widget->setPaintOptions(options);
 

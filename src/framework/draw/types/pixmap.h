@@ -19,10 +19,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_DRAW_PIXMAP_H
-#define MU_DRAW_PIXMAP_H
+#ifndef MUSE_DRAW_PIXMAP_H
+#define MUSE_DRAW_PIXMAP_H
 
-#include "types/bytearray.h"
+#include "global/types/bytearray.h"
+
 #include "geometry.h"
 
 #ifndef NO_QT_SUPPORT
@@ -31,7 +32,7 @@
 #include <QBuffer>
 #endif
 
-namespace mu::draw {
+namespace muse::draw {
 class Pixmap
 {
 public:
@@ -39,6 +40,8 @@ public:
     Pixmap() = default;
     Pixmap(Size size)
         : m_size(size) {}
+    Pixmap(const ByteArray& data, Size size)
+        : m_size(size) { setData(data); }
     Pixmap(int w, int h)
         : m_size(Size(w, h)) {}
 
@@ -127,7 +130,7 @@ private:
 }
 
 #ifndef NO_QT_SUPPORT
-Q_DECLARE_METATYPE(mu::draw::Pixmap)
+Q_DECLARE_METATYPE(muse::draw::Pixmap)
 #endif
 
-#endif // MU_DRAW_PIXMAP_H
+#endif // MUSE_DRAW_PIXMAP_H

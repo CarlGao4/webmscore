@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,7 +22,7 @@
 #include "notationpaintview.h"
 
 using namespace mu;
-using namespace mu::draw;
+using namespace muse::draw;
 using namespace mu::notation;
 
 NotationPaintView::NotationPaintView(QQuickItem* parent)
@@ -52,6 +52,14 @@ void NotationPaintView::onUnloadNotation(INotationPtr notation)
     AbstractNotationPaintView::onUnloadNotation(notation);
 
     notation->viewState()->matrixChanged().resetOnReceive(this);
+}
+
+void NotationPaintView::initZoomAndPosition()
+{
+    if (notation() && !notation()->viewState()->isMatrixInited()) {
+        inputController()->initZoom();
+        inputController()->initCanvasPos();
+    }
 }
 
 void NotationPaintView::onMatrixChanged(const Transform& oldMatrix, const Transform& newMatrix, bool overrideZoomType)

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -112,7 +112,7 @@ void Rest::hack_toRestType()
 //      replaced by special symbols with ledger lines
 //---------------------------------------------------------
 
-void Rest::setOffset(const mu::PointF& o)
+void Rest::setOffset(const PointF& o)
 {
     double _spatium = spatium();
     int line = lrint(o.y() / _spatium);
@@ -139,7 +139,7 @@ void Rest::setOffset(const mu::PointF& o)
 //   drag
 //---------------------------------------------------------
 
-mu::RectF Rest::drag(EditData& ed)
+RectF Rest::drag(EditData& ed)
 {
     // don't allow drag for Measure Rests, because they can't be easily laid out in correct position while dragging
     if (measure() && durationType().type() == DurationType::V_MEASURE) {
@@ -147,11 +147,11 @@ mu::RectF Rest::drag(EditData& ed)
     }
 
     PointF s(ed.delta);
-    RectF r(abbox());
+    RectF r(pageBoundingRect());
 
     // Limit horizontal drag range
     static const double xDragRange = spatium() * 5;
-    if (fabs(s.x()) > xDragRange) {
+    if (std::fabs(s.x()) > xDragRange) {
         s.rx() = xDragRange * (s.x() < 0 ? -1.0 : 1.0);
     }
     setOffset(PointF(s.x(), s.y()));
@@ -159,7 +159,7 @@ mu::RectF Rest::drag(EditData& ed)
     renderer()->layoutItem(this);
 
     score()->rebuildBspTree();
-    return abbox().united(r);
+    return pageBoundingRect().united(r);
 }
 
 //---------------------------------------------------------
@@ -219,11 +219,12 @@ bool Rest::acceptDrop(EditData& data) const
     // prevent 'hanging' slurs, avoid crash on tie
     static const std::set<ElementType> ignoredTypes {
         ElementType::SLUR,
+        ElementType::HAMMER_ON_PULL_OFF,
         ElementType::TIE,
         ElementType::GLISSANDO
     };
 
-    return e->isSpanner() && !mu::contains(ignoredTypes, type);
+    return e->isSpanner() && !muse::contains(ignoredTypes, type);
 }
 
 //---------------------------------------------------------
@@ -325,11 +326,6 @@ SymId Rest::getSymbol(DurationType type, int line, int lines) const
     }
 }
 
-void Rest::updateSymbol(int line, int lines, LayoutData* ldata) const
-{
-    ldata->sym = getSymbol(durationType().type(), line, lines);
-}
-
 double Rest::symWidthNoLedgerLines(LayoutData* ldata) const
 {
     if (ldata->sym == SymId::restHalfLegerLine) {
@@ -408,147 +404,6 @@ int Rest::getDotline(DurationType durationType)
     return dl;
 }
 
-//---------------------------------------------------------
-//   computeLineOffset
-//---------------------------------------------------------
-
-int Rest::computeVoiceOffset(int lines, LayoutData* ldata) const
-{
-    UNUSED(lines);
-    ldata->mergedRests.clear();
-    Segment* s = segment();
-    bool offsetVoices = s && measure() && (voice() > 0 || measure()->hasVoices(staffIdx(), tick(), actualTicks()));
-    if (offsetVoices && voice() == 0) {
-        // do not offset voice 1 rest if there exists a matching invisible rest in voice 2;
-        EngravingItem* e = s->element(track() + 1);
-        if (e && e->isRest() && !e->visible() && !toRest(e)->isGap()) {
-            Rest* r = toRest(e);
-            if (r->globalTicks() == globalTicks()) {
-                offsetVoices = false;
-            }
-        }
-    }
-
-    if (offsetVoices && voice() < 2) {
-        // in slash notation voices 1 and 2 are not offset outside the staff
-        // if the staff contains slash notation then only offset rests in voices 3 and 4
-        track_idx_t baseTrack = staffIdx() * VOICES;
-        for (voice_idx_t v = 0; v < VOICES; ++v) {
-            EngravingItem* e = s->element(baseTrack + v);
-            if (e && e->isChord() && toChord(e)->slash()) {
-                offsetVoices = false;
-                break;
-            }
-        }
-    }
-
-    if (offsetVoices && staff()->mergeMatchingRests()) {
-        // automatically merge matching rests if nothing in any other voice
-        // this is not always the right thing to do do, but is useful in choral music
-        // and can be enabled via a staff property
-        bool matchFound = false;
-        track_idx_t baseTrack = staffIdx() * VOICES;
-        for (voice_idx_t v = 0; v < VOICES; ++v) {
-            if (v == voice()) {
-                continue;
-            }
-            EngravingItem* e = s->element(baseTrack + v);
-            // try to find match in any other voice
-            if (e) {
-                if (e->type() == ElementType::REST) {
-                    Rest* r = toRest(e);
-                    if (r->globalTicks() == globalTicks()) {
-                        matchFound = true;
-                        ldata->mergedRests.push_back(r);
-                        continue;
-                    }
-                }
-                // no match found; no sense looking for anything else
-                matchFound = false;
-                break;
-            }
-        }
-        if (matchFound) {
-            offsetVoices = false;
-        }
-    }
-
-    if (!offsetVoices) {
-        return 0;
-    }
-
-    bool up = voice() == 0 || voice() == 2;
-    int upSign = up ? -1 : 1;
-    int voiceLineOffset = style().styleB(Sid::multiVoiceRestTwoSpaceOffset) ? 2 : 1;
-
-    return voiceLineOffset * upSign;
-}
-
-int Rest::computeWholeRestOffset(int voiceOffset, int lines) const
-{
-    if (!isWholeRest()) {
-        return 0;
-    }
-    int lineMove = 0;
-    bool moveToLineAbove = (lines > 5)
-                           || ((lines > 1 || voiceOffset == -1 || voiceOffset == 2) && !(voiceOffset == -2 || voiceOffset == 1));
-    if (moveToLineAbove) {
-        lineMove = -1;
-    }
-
-    if (!isFullMeasureRest()) {
-        return lineMove;
-    }
-
-    track_idx_t startTrack = staffIdx() * VOICES;
-    track_idx_t endTrack = startTrack + VOICES;
-    track_idx_t thisTrack = track();
-    bool hasNotesAbove = false;
-    bool hasNotesBelow = false;
-    double topY = 10000.0;
-    double bottomY = -10000.0;
-    for (Segment& segment : measure()->segments()) {
-        for (track_idx_t track = startTrack; track < endTrack; ++track) {
-            EngravingItem* item = segment.elementAt(track);
-            if (!item || !item->isChord()) {
-                continue;
-            }
-            Chord* chord = toChord(item);
-            Shape chordShape = chord->shape().translate(chord->pos());
-            chordShape.removeInvisibles();
-            if (chordShape.empty()) {
-                continue;
-            }
-            if (track < thisTrack) {
-                hasNotesAbove = true;
-                bottomY = std::max(bottomY, chordShape.bottom());
-            } else if (track > thisTrack) {
-                hasNotesBelow = true;
-                topY = std::min(topY, chordShape.top());
-            }
-        }
-    }
-
-    if (hasNotesAbove && hasNotesBelow) {
-        return lineMove; // Don't do anything
-    }
-
-    double lineDistance = staff()->lineDistance(tick()) * spatium();
-    int centerLine = floor(double(lines) / 2);
-
-    if (hasNotesAbove) {
-        int bottomLine = floor(bottomY / lineDistance);
-        lineMove = std::max(lineMove, bottomLine - centerLine);
-    }
-
-    if (hasNotesBelow) {
-        int topLine = floor(topY / lineDistance);
-        lineMove = std::min(lineMove, topLine - centerLine);
-    }
-
-    return lineMove;
-}
-
 bool Rest::isWholeRest() const
 {
     TDuration durType = durationType();
@@ -556,10 +411,11 @@ bool Rest::isWholeRest() const
            || (durType == DurationType::V_MEASURE && measure() && measure()->ticks() < Fraction(2, 1));
 }
 
-int Rest::computeNaturalLine(int lines) const
+bool Rest::isBreveRest() const
 {
-    int line = (lines % 2) ? floor(double(lines) / 2) : ceil(double(lines) / 2);
-    return line;
+    TDuration durType = durationType();
+    return durType == DurationType::V_BREVE
+           || (durType == DurationType::V_MEASURE && measure() && measure()->ticks() >= Fraction(2, 1));
 }
 
 //---------------------------------------------------------
@@ -636,66 +492,6 @@ double Rest::intrinsicMag() const
 }
 
 //---------------------------------------------------------
-//   upLine
-//---------------------------------------------------------
-
-int Rest::upLine() const
-{
-    double _spatium = spatium();
-    return lrint((pos().y() + ldata()->bbox().top() + _spatium) * 2 / _spatium);
-}
-
-//---------------------------------------------------------
-//   downLine
-//---------------------------------------------------------
-
-int Rest::downLine() const
-{
-    double _spatium = spatium();
-    return lrint((pos().y() + ldata()->bbox().top() + _spatium) * 2 / _spatium);
-}
-
-//---------------------------------------------------------
-//   stemPos
-//    point to connect stem
-//---------------------------------------------------------
-
-PointF Rest::stemPos() const
-{
-    return pagePos();
-}
-
-//---------------------------------------------------------
-//   stemPosBeam
-//    return stem position of note on beam side
-//    return canvas coordinates
-//---------------------------------------------------------
-
-PointF Rest::stemPosBeam() const
-{
-    PointF p(pagePos());
-    if (m_up) {
-        p.ry() += ldata()->bbox().top() + spatium() * 1.5;
-    } else {
-        p.ry() += ldata()->bbox().bottom() - spatium() * 1.5;
-    }
-    return p;
-}
-
-//---------------------------------------------------------
-//   stemPosX
-//---------------------------------------------------------
-
-double Rest::stemPosX() const
-{
-    if (m_up) {
-        return ldata()->bbox().right();
-    } else {
-        return ldata()->bbox().left();
-    }
-}
-
-//---------------------------------------------------------
 //   rightEdge
 //---------------------------------------------------------
 
@@ -744,8 +540,8 @@ void Rest::setAccent(bool flag)
 
 String Rest::accessibleInfo() const
 {
-    String voice = mtrc("engraving", "Voice: %1").arg(track() % VOICES + 1);
-    return mtrc("engraving", "%1; Duration: %2; %3").arg(EngravingItem::accessibleInfo(), durationUserName(), voice);
+    String voice = muse::mtrc("engraving", "Voice: %1").arg(track() % VOICES + 1);
+    return muse::mtrc("engraving", "%1; Duration: %2; %3").arg(EngravingItem::accessibleInfo(), durationUserName(), voice);
 }
 
 //---------------------------------------------------------
@@ -756,12 +552,12 @@ String Rest::screenReaderInfo() const
 {
     Measure* m = measure();
     bool voices = m ? m->hasVoices(staffIdx()) : false;
-    String voice = voices ? (u"; " + mtrc("engraving", "Voice: %1").arg(track() % VOICES + 1)) : u"";
+    String voice = voices ? (u"; " + muse::mtrc("engraving", "Voice: %1").arg(track() % VOICES + 1)) : u"";
     String crossStaff;
     if (staffMove() < 0) {
-        crossStaff = u"; " + mtrc("engraving", "Cross-staff above");
+        crossStaff = u"; " + muse::mtrc("engraving", "Cross-staff above");
     } else if (staffMove() > 0) {
-        crossStaff = u"; " + mtrc("engraving", "Cross-staff below");
+        crossStaff = u"; " + muse::mtrc("engraving", "Cross-staff below");
     }
     return String(u"%1 %2%3%4").arg(EngravingItem::accessibleInfo(), durationUserName(), crossStaff, voice);
 }
@@ -844,6 +640,8 @@ PropertyValue Rest::propertyDefault(Pid propertyId) const
     switch (propertyId) {
     case Pid::GAP:
         return false;
+    case Pid::ALIGN_WITH_OTHER_RESTS:
+        return true;
     default:
         return ChordRest::propertyDefault(propertyId);
     }
@@ -868,6 +666,8 @@ PropertyValue Rest::getProperty(Pid propertyId) const
     switch (propertyId) {
     case Pid::GAP:
         return m_gap;
+    case Pid::ALIGN_WITH_OTHER_RESTS:
+        return alignWithOtherRests();
     default:
         return ChordRest::getProperty(propertyId);
     }
@@ -882,27 +682,23 @@ bool Rest::setProperty(Pid propertyId, const PropertyValue& v)
     switch (propertyId) {
     case Pid::GAP:
         m_gap = v.toBool();
-        triggerLayout();
         break;
     case Pid::VISIBLE:
         setVisible(v.toBool());
-        triggerLayout();
         break;
     case Pid::OFFSET:
-        score()->addRefresh(canvasBoundingRect());
         setOffset(v.value<PointF>());
-
-        renderer()->layoutItem(this);
-
-        score()->addRefresh(canvasBoundingRect());
         if (measure() && durationType().type() == DurationType::V_MEASURE) {
             measure()->triggerLayout();
         }
-        triggerLayout();
+        break;
+    case Pid::ALIGN_WITH_OTHER_RESTS:
+        setAlignWithOtherRests(v.toBool());
         break;
     default:
         return ChordRest::setProperty(propertyId, v);
     }
+    triggerLayout();
     return true;
 }
 

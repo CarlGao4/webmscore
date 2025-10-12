@@ -19,18 +19,34 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_GLOBAL_XMLDOM_H
-#define MU_GLOBAL_XMLDOM_H
+#ifndef MUSE_GLOBAL_XMLDOM_H
+#define MUSE_GLOBAL_XMLDOM_H
 
 #include <memory>
 
 #include "types/bytearray.h"
 #include "types/string.h"
 
-namespace mu {
-struct XmlDomData;
+namespace muse {
+struct XmlDomImplData;
+// avoid external dependency on a particular xml library
+// Opaque, backend-agnostic handle storage (two machine words)
+using xml_handle_slot = std::uintptr_t;
+
+struct xml_handle {
+    xml_handle_slot slot0 = 0;
+    xml_handle_slot slot1 = 0;
+    explicit operator bool() const noexcept {
+        return !(slot0 == 0 && slot1 == 0);
+    }
+};
+static_assert(std::is_trivially_copyable_v<xml_handle>,
+              "Xml handle struct must be trivially copyable");
+using xml_node_handle = xml_handle;
+using xml_attr_handle = xml_handle;
 
 class XmlDomElement;
+class XmlDomAttribute;
 class XmlDomNode
 {
 public:
@@ -44,20 +60,21 @@ public:
     XmlDomNode firstChild() const;
     XmlDomElement firstChildElement(const char* name) const;
     XmlDomNode nextSibling() const;
+    XmlDomNode previousSibling() const;
+    XmlDomNode parent() const;
 
-    bool hasAttribute(const char* name) const;
-    String attribute(const char* name) const;
-
+    XmlDomElement nextSiblingElement(const char* name = nullptr) const;
+    XmlDomElement previousSiblingElement(const char* name = nullptr) const;
     XmlDomElement toElement() const;
 
 protected:
     friend class XmlDomDocument;
     friend class XmlDomElement;
 
-    XmlDomNode(const std::shared_ptr<XmlDomData>& xml, uintptr_t node);
+    XmlDomNode(const std::shared_ptr<XmlDomImplData>& xml, xml_node_handle node);
 
-    std::shared_ptr<XmlDomData> m_xml = nullptr;
-    uintptr_t m_node = 0;
+    std::shared_ptr<XmlDomImplData> m_xml = nullptr;
+    xml_node_handle m_node{};
 };
 
 class XmlDomElement : public XmlDomNode
@@ -66,12 +83,35 @@ public:
 
     String text() const;
 
+    XmlDomAttribute firstAttribute() const;
+    XmlDomAttribute attribute(const char* name) const;
+
 private:
 
     friend class XmlDomDocument;
     friend class XmlDomNode;
 
-    XmlDomElement(const std::shared_ptr<XmlDomData>& data, uintptr_t node);
+    XmlDomElement(const std::shared_ptr<XmlDomImplData>& data, xml_node_handle node);
+};
+
+class XmlDomAttribute
+{
+public:
+
+    bool isNull() const;
+    String attributeName() const;
+
+    String value() const;
+
+    XmlDomAttribute nextAttribute() const;
+
+private:
+    friend class XmlDomElement;
+
+    explicit XmlDomAttribute(const std::shared_ptr<XmlDomImplData>& data, xml_attr_handle attribute);
+
+    std::shared_ptr<XmlDomImplData> m_xml = nullptr;
+    xml_attr_handle m_attribute{};
 };
 
 class XmlDomDocument
@@ -87,8 +127,8 @@ public:
     String errorString() const;
 
 private:
-    std::shared_ptr<XmlDomData> m_xml = nullptr;
+    std::shared_ptr<XmlDomImplData> m_xml = nullptr;
 };
 }
 
-#endif // MU_GLOBAL_XMLDOM_H
+#endif // MUSE_GLOBAL_XMLDOM_H

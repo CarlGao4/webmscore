@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2025 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -24,14 +24,13 @@
 
 #include "audio/audiotypes.h"
 
-#include "translation.h"
 #include "log.h"
 
 using namespace mu::appshell;
-using namespace mu::audio;
+using namespace muse::audio;
 
 CommonAudioApiConfigurationModel::CommonAudioApiConfigurationModel(QObject* parent)
-    : QObject(parent)
+    : QObject(parent), muse::Injectable(muse::iocCtxForQmlObject(this))
 {
 }
 
@@ -43,7 +42,13 @@ void CommonAudioApiConfigurationModel::load()
 
     audioDriver()->outputDeviceChanged().onNotify(this, [this]() {
         emit currentDeviceIdChanged();
+        emit sampleRateChanged();
+        emit bufferSizeListChanged();
         emit bufferSizeChanged();
+    });
+
+    audioDriver()->outputDeviceSampleRateChanged().onNotify(this, [this]() {
+        emit sampleRateChanged();
     });
 
     audioDriver()->outputDeviceBufferSizeChanged().onNotify(this, [this]() {
@@ -91,12 +96,37 @@ QList<unsigned int> CommonAudioApiConfigurationModel::bufferSizeList() const
         result << bufferSize;
     }
 
-    std::sort(result.begin(), result.end());
-
     return result;
 }
 
 void CommonAudioApiConfigurationModel::bufferSizeSelected(const QString& bufferSizeStr)
 {
     audioConfiguration()->setDriverBufferSize(bufferSizeStr.toInt());
+}
+
+unsigned int CommonAudioApiConfigurationModel::sampleRate() const
+{
+    return audioDriver()->outputDeviceSampleRate();
+}
+
+QList<unsigned int> CommonAudioApiConfigurationModel::sampleRateList() const
+{
+    QList<unsigned int> result;
+    std::vector<unsigned int> sampleRates = audioDriver()->availableOutputDeviceSampleRates();
+
+    for (unsigned int sampleRate : sampleRates) {
+        result << sampleRate;
+    }
+
+    return result;
+}
+
+void CommonAudioApiConfigurationModel::sampleRateSelected(const QString& sampleRateStr)
+{
+    audioConfiguration()->setSampleRate(sampleRateStr.toInt());
+}
+
+muse::audio::IAudioDriverPtr CommonAudioApiConfigurationModel::audioDriver() const
+{
+    return audioDriverController()->audioDriver();
 }

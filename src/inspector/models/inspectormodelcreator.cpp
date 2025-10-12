@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -30,8 +30,7 @@
 #include "notation/fermatas/fermatasettingsmodel.h"
 #include "notation/tempos/temposettingsmodel.h"
 #include "notation/lines/glissandosettingsmodel.h"
-#include "notation/barlines/barlinesettingsproxymodel.h"
-#include "notation/staffs/staffsettingsmodel.h"
+#include "notation/barlines/barlinesettingsmodel.h"
 #include "notation/sectionbreaks/sectionbreaksettingsmodel.h"
 #include "notation/markers/markersettingsmodel.h"
 #include "notation/jumps/jumpsettingsmodel.h"
@@ -50,10 +49,14 @@
 #include "notation/lines/vibratosettingsmodel.h"
 #include "notation/lines/slurandtiesettingsmodel.h"
 #include "notation/lines/gradualtempochangesettingsmodel.h"
+#include "notation/lines/notelinesettingsmodel.h"
 #include "notation/stafftype/stafftypesettingsmodel.h"
 #include "notation/frames/textframesettingsmodel.h"
 #include "notation/frames/verticalframesettingsmodel.h"
 #include "notation/frames/horizontalframesettingsmodel.h"
+#include "notation/frames/fretframesettingsproxymodel.h"
+#include "notation/frames/fretframe/fretframechordssettingsmodel.h"
+#include "notation/frames/fretframe/fretframesettingsmodel.h"
 #include "notation/articulations/articulationsettingsmodel.h"
 #include "notation/ornaments/ornamentsettingsmodel.h"
 #include "notation/ambituses/ambitussettingsmodel.h"
@@ -70,10 +73,13 @@
 #include "notation/instrumentname/instrumentnamesettingsmodel.h"
 #include "notation/lyrics/lyricssettingsmodel.h"
 #include "notation/rests/beams/restbeamsettingsmodel.h"
+#include "notation/rests/restsettingsmodel.h"
 #include "notation/rests/restsettingsproxymodel.h"
 #include "notation/dynamics/dynamicsettingsmodel.h"
 #include "notation/expressions/expressionsettingsmodel.h"
 #include "notation/stringtunings/stringtuningssettingsmodel.h"
+#include "notation/symbols/symbolsettingsmodel.h"
+#include "notation/playcounttext/playcounttextsettingsmodel.h"
 
 using namespace mu::inspector;
 
@@ -102,9 +108,9 @@ AbstractInspectorModel* InspectorModelCreator::newInspectorModel(InspectorModelT
     case InspectorModelType::TYPE_GLISSANDO:
         return new GlissandoSettingsModel(parent, repository);
     case InspectorModelType::TYPE_BARLINE:
-        return new BarlineSettingsProxyModel(parent, repository);
-    case InspectorModelType::TYPE_STAFF:
-        return new StaffSettingsModel(parent, repository);
+        return new BarlineSettingsModel(parent, repository);
+    case InspectorModelType::TYPE_PLAY_COUNT_TEXT:
+        return new PlayCountTextSettingsModel(parent, repository);
     case InspectorModelType::TYPE_MARKER:
         return new MarkerSettingsModel(parent, repository);
     case InspectorModelType::TYPE_SECTIONBREAK:
@@ -139,6 +145,8 @@ AbstractInspectorModel* InspectorModelCreator::newInspectorModel(InspectorModelT
         return new LetRingSettingsModel(parent, repository);
     case InspectorModelType::TYPE_TEXT_LINE:
         return new TextLineSettingsModel(parent, repository);
+    case mu::inspector::InspectorModelType::TYPE_NOTELINE:
+        return new NoteLineSettingsModel(parent, repository);
     case InspectorModelType::TYPE_GRADUAL_TEMPO_CHANGE:
         return new GradualTempoChangeSettingsModel(parent, repository);
     case InspectorModelType::TYPE_VIBRATO:
@@ -147,6 +155,12 @@ AbstractInspectorModel* InspectorModelCreator::newInspectorModel(InspectorModelT
         return new SlurAndTieSettingsModel(parent, repository, SlurAndTieSettingsModel::Slur);
     case InspectorModelType::TYPE_TIE:
         return new SlurAndTieSettingsModel(parent, repository, SlurAndTieSettingsModel::Tie);
+    case InspectorModelType::TYPE_LAISSEZ_VIB:
+        return new SlurAndTieSettingsModel(parent, repository, SlurAndTieSettingsModel::LaissezVib);
+    case InspectorModelType::TYPE_PARTIAL_TIE:
+        return new SlurAndTieSettingsModel(parent, repository, SlurAndTieSettingsModel::PartialTie);
+    case InspectorModelType::TYPE_HAMMER_ON_PULL_OFF:
+        return new SlurAndTieSettingsModel(parent, repository, SlurAndTieSettingsModel::HammerOnPullOff);
     case InspectorModelType::TYPE_STAFF_TYPE_CHANGES:
         return new StaffTypeSettingsModel(parent, repository);
     case InspectorModelType::TYPE_TEXT_FRAME:
@@ -155,8 +169,16 @@ AbstractInspectorModel* InspectorModelCreator::newInspectorModel(InspectorModelT
         return new VerticalFrameSettingsModel(parent, repository);
     case InspectorModelType::TYPE_HORIZONTAL_FRAME:
         return new HorizontalFrameSettingsModel(parent, repository);
+    case InspectorModelType::TYPE_FRET_FRAME:
+        return new FretFrameSettingsProxyModel(parent, repository);
+    case InspectorModelType::TYPE_FRET_FRAME_CHORDS:
+        return new FretFrameChordsSettingsModel(parent, repository);
+    case InspectorModelType::TYPE_FRET_FRAME_SETTINGS:
+        return new FretFrameSettingsModel(parent, repository);
     case InspectorModelType::TYPE_ARTICULATION:
         return new ArticulationSettingsModel(parent, repository);
+    case InspectorModelType::TYPE_TAPPING:
+        return new ArticulationSettingsModel(parent, repository, InspectorModelType::TYPE_TAPPING);
     case InspectorModelType::TYPE_ORNAMENT:
         return new OrnamentSettingsModel(parent, repository);
     case InspectorModelType::TYPE_AMBITUS:
@@ -189,12 +211,16 @@ AbstractInspectorModel* InspectorModelCreator::newInspectorModel(InspectorModelT
         return new RestSettingsProxyModel(parent, repository);
     case InspectorModelType::TYPE_REST_BEAM:
         return new RestBeamSettingsModel(parent, repository);
+    case InspectorModelType::TYPE_REST_REST:
+        return new RestSettingsModel(parent, repository);
     case InspectorModelType::TYPE_DYNAMIC:
         return new DynamicsSettingsModel(parent, repository);
     case InspectorModelType::TYPE_EXPRESSION:
         return new ExpressionSettingsModel(parent, repository);
     case InspectorModelType::TYPE_STRING_TUNINGS:
         return new StringTuningsSettingsModel(parent, repository);
+    case InspectorModelType::TYPE_SYMBOL:
+        return new SymbolSettingsModel(parent, repository);
     case InspectorModelType::TYPE_BREATH:
     case InspectorModelType::TYPE_ARPEGGIO:
     case InspectorModelType::TYPE_UNDEFINED:

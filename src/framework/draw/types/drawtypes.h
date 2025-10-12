@@ -19,13 +19,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_DRAW_DRAWTYPES_H
-#define MU_DRAW_DRAWTYPES_H
+#ifndef MUSE_DRAW_DRAWTYPES_H
+#define MUSE_DRAW_DRAWTYPES_H
 
-#include "geometry.h"
-#include "types/flags.h"
+#include "global/types/flags.h"
 
-namespace mu::draw {
+namespace muse::draw {
 enum class CompositionMode {
     SourceOver,
     HardLight
@@ -132,4 +131,4 @@ enum TextFlag {
 };
 }
 
-#endif // MU_DRAW_DRAWTYPES_H
+#endif // MUSE_DRAW_DRAWTYPES_H

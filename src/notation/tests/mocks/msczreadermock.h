@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -30,8 +30,8 @@ namespace mu::notation {
 class MsczReaderMock : public project::IMscMetaReader
 {
 public:
-    MOCK_METHOD(RetVal<project::ProjectMeta>, readMeta, (const io::path_t& filePath), (const, override));
-    MOCK_METHOD(RetVal<project::CloudProjectInfo>, readCloudProjectInfo, (const io::path_t& filePath), (const, override));
+    MOCK_METHOD(muse::RetVal<project::ProjectMeta>, readMeta, (const muse::io::path_t& filePath), (const, override));
+    MOCK_METHOD(muse::RetVal<project::CloudProjectInfo>, readCloudProjectInfo, (const muse::io::path_t& filePath), (const, override));
 };
 }
 

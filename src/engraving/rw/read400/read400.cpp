@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -33,7 +33,6 @@
 #include "dom/tuplet.h"
 #include "dom/chord.h"
 #include "dom/beam.h"
-#include "dom/tremolo.h"
 #include "dom/lyrics.h"
 #include "dom/note.h"
 #include "dom/measurerepeat.h"
@@ -46,6 +45,9 @@
 #include "dom/dynamic.h"
 #include "dom/hairpin.h"
 #include "dom/figuredbass.h"
+#include "dom/tremolotwochord.h"
+
+#include "engravingerrors.h"
 
 #include "staffrw.h"
 #include "tread.h"
@@ -55,9 +57,16 @@
 using namespace mu::engraving;
 using namespace mu::engraving::read400;
 
-Err Read400::readScore(Score* score, XmlReader& e, rw::ReadInOutData* data)
+muse::Ret Read400::readScore(Score* score, XmlReader& e, rw::ReadInOutData* data)
 {
     ReadContext ctx(score);
+    if (data) {
+        if (data->overriddenSpatium.has_value()) {
+            ctx.setSpatium(data->overriddenSpatium.value());
+        }
+
+        ctx.setPropertiesToSkip(data->propertiesToSkip);
+    }
 
     if (!score->isMaster() && data) {
         ctx.initLinks(data->links);
@@ -79,10 +88,10 @@ Err Read400::readScore(Score* score, XmlReader& e, rw::ReadInOutData* data)
             e.skipCurrentElement();
         } else if (tag == "Score") {
             if (!readScore400(score, e, ctx)) {
-                if (e.error() == XmlStreamReader::CustomError) {
-                    return Err::FileCriticallyCorrupted;
+                if (e.error() == muse::XmlStreamReader::CustomError) {
+                    return make_ret(Err::FileCriticallyCorrupted, e.errorString());
                 }
-                return Err::FileBadFormat;
+                return make_ret(Err::FileBadFormat, e.errorString());
             }
         } else if (tag == "museScore") {
             // pass
@@ -103,14 +112,14 @@ Err Read400::readScore(Score* score, XmlReader& e, rw::ReadInOutData* data)
         data->settingsCompat = ctx.settingCompat();
     }
 
-    return Err::NoError;
+    return muse::make_ok();
 }
 
 bool Read400::readScore400(Score* score, XmlReader& e, ReadContext& ctx)
 {
     std::vector<int> sysStaves;
     while (e.readNextStartElement()) {
-        ctx.setTrack(mu::nidx);
+        ctx.setTrack(muse::nidx);
         const AsciiStringView tag(e.name());
         if (tag == "Staff") {
             StaffRead::readStaff(score, e, ctx);
@@ -240,11 +249,11 @@ bool Read400::readScore400(Score* score, XmlReader& e, ReadContext& ctx)
         }
     }
     ctx.reconnectBrokenConnectors();
-    if (e.error() != XmlStreamReader::NoError) {
-        if (e.error() == XmlStreamReader::CustomError) {
+    if (e.error() != muse::XmlStreamReader::NoError) {
+        if (e.error() == muse::XmlStreamReader::CustomError) {
             LOGE() << e.errorString();
         } else {
-            LOGE() << String(u"XML read error at line %1, column %2: %3").arg(e.lineNumber(), e.columnNumber())
+            LOGE() << String(u"XML read error at byte offset %1: %2").arg(e.byteOffset())
                 .arg(String::fromAscii(e.name().ascii()));
         }
         return false;
@@ -276,8 +285,6 @@ bool Read400::readScore400(Score* score, XmlReader& e, ReadContext& ctx)
     for (int idx : sysStaves) {
         score->addSystemObjectStaff(score->staff(idx));
     }
-
-//      createPlayEvents();
 
     return true;
 }
@@ -472,16 +479,15 @@ bool Read400::pasteStaff(XmlReader& e, Segment* dst, staff_idx_t dstStaff, Fract
                             // disallow tie across barline within two-note tremolo
                             // tremolos can potentially still straddle the barline if no tie is required
                             // but these will be removed later
-                            Tremolo* t = chord->tremolo();
-                            if (t && t->twoNotes()) {
+                            TremoloTwoChord* t = chord->tremoloTwoChord();
+                            if (t && chord == t->chord2()) {
                                 if (doScale) {
                                     Fraction d = t->durationType().ticks();
                                     t->setDurationType(d * scale);
                                 }
-                                Measure* m = score->tick2measure(tick);
-                                Fraction ticks = cr->actualTicks();
-                                Fraction rticks = m->endTick() - tick;
-                                if (rticks < ticks || (rticks != ticks && rticks < ticks * 2)) {
+                                Fraction tremoloEndTick = tick + chord->actualTicks();
+                                Fraction measureEndTick = score->tick2measure(tick)->endTick();
+                                if (tremoloEndTick > measureEndTick) {
                                     MScore::setError(MsError::DEST_TREMOLO);
                                     return false;
                                 }
@@ -499,7 +505,7 @@ bool Read400::pasteStaff(XmlReader& e, Segment* dst, staff_idx_t dstStaff, Fract
                             if (cr->isChord()) {
                                 Chord* c = toChord(cr);
                                 for (Note* note: c->notes()) {
-                                    Tie* tie = note->tieFor();
+                                    Tie* tie = note->tieForNonPartial();
                                     if (tie) {
                                         note->setTieFor(0);
                                         delete tie;
@@ -521,7 +527,7 @@ bool Read400::pasteStaff(XmlReader& e, Segment* dst, staff_idx_t dstStaff, Fract
                                     }
                                     if (crt && crt->isChord()) {
                                         Chord* chrt = toChord(crt);
-                                        Tremolo* tr = chrt->tremolo();
+                                        TremoloTwoChord* tr = chrt->tremoloTwoChord();
                                         if (tr) {
                                             tr->setChords(chrt, toChord(cr));
                                             chrt->remove(tr);
@@ -557,9 +563,7 @@ bool Read400::pasteStaff(XmlReader& e, Segment* dst, staff_idx_t dstStaff, Fract
                     Interval interval = staffDest->transpose(tick);
                     if (!ctx.style().styleB(Sid::concertPitch) && !interval.isZero()) {
                         interval.flip();
-                        int rootTpc = transposeTpc(harmony->rootTpc(), interval, true);
-                        int baseTpc = transposeTpc(harmony->baseTpc(), interval, true);
-                        score->undoTransposeHarmony(harmony, rootTpc, baseTpc);
+                        score->undoTransposeHarmony(harmony, interval);
                     }
 
                     // remove pre-existing chords on this track
@@ -706,17 +710,15 @@ bool Read400::pasteStaff(XmlReader& e, Segment* dst, staff_idx_t dstStaff, Fract
         }
 
         if (score->cmdState().layoutRange()) {
-            score->cmdState().reset();
             score->setLayout(dstTick, dstTick + tickLen, dstStaff, endStaff, dst);
         }
 
-        //check and add truly invisible rests instead of gaps
         //TODO: look if this could be done different
         Measure* dstM = score->tick2measure(dstTick);
         Measure* endM = score->tick2measure(dstTick + tickLen);
         for (staff_idx_t i = dstStaff; i < endStaff; i++) {
             for (Measure* m = dstM; m && m != endM->nextMeasure(); m = m->nextMeasure()) {
-                m->checkMeasure(i, false);
+                m->checkMeasure(i);
             }
         }
         score->m_selection.setRangeTicks(dstTick, dstTick + tickLen, dstStaff, endStaff);
@@ -827,9 +829,7 @@ void Read400::pasteSymbols(XmlReader& e, ChordRest* dst)
                         Interval interval = staffDest->transpose(destTick);
                         if (!ctx.style().styleB(Sid::concertPitch) && !interval.isZero()) {
                             interval.flip();
-                            int rootTpc = transposeTpc(el->rootTpc(), interval, true);
-                            int baseTpc = transposeTpc(el->baseTpc(), interval, true);
-                            score->undoTransposeHarmony(el, rootTpc, baseTpc);
+                            score->undoTransposeHarmony(el, interval);
                         }
                         el->setParent(harmSegm);
                         score->undoAddElement(el);
@@ -1024,6 +1024,11 @@ void Read400::pasteSymbols(XmlReader& e, ChordRest* dst)
         }                                 // outer while readNextstartElement()
     }                                     // inner while readNextstartElement()
 }                                         // pasteSymbolList()
+
+void Read400::readTremoloCompat(compat::TremoloCompat*, XmlReader&)
+{
+    UNREACHABLE;
+}
 
 void Read400::doReadItem(EngravingItem* item, XmlReader& xml)
 {

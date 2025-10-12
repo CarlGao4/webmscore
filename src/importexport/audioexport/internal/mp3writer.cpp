@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -24,14 +24,16 @@
 
 #include "log.h"
 
+using namespace muse;
+using namespace muse::audio;
 using namespace mu::iex::audioexport;
-using namespace mu::framework;
 
-mu::Ret Mp3Writer::write(notation::INotationPtr notation, QIODevice& destinationDevice, const Options&)
+Ret Mp3Writer::write(notation::INotationPtr notation, io::IODevice& destinationDevice, const Options&)
 {
-    const audio::SoundTrackFormat format {
-        audio::SoundTrackType::MP3,
-        static_cast<audio::sample_rate_t>(configuration()->exportSampleRate()),
+    const SoundTrackFormat format {
+        SoundTrackType::MP3,
+        static_cast<sample_rate_t>(configuration()->exportSampleRate()),
+        configuration()->exportBufferSize(),
         2 /* audioChannelsNumber */,
         configuration()->exportMp3Bitrate()
     };

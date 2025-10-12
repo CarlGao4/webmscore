@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -33,7 +33,7 @@ using namespace mu;
 using namespace mu::engraving;
 
 namespace mu::engraving {
-XmlWriter::XmlWriter(mu::io::IODevice* device)
+XmlWriter::XmlWriter(muse::io::IODevice* device)
     : XmlStreamWriter(device)
 {
 }
@@ -204,8 +204,15 @@ void XmlWriter::tagProperty(const AsciiStringView& name, P_TYPE type, const Prop
     case P_TYPE::GLISS_STYLE: {
         element(name, TConv::toXml(data.value<GlissandoStyle>()));
     } break;
+    case P_TYPE::GLISS_TYPE: {
+        element(name, TConv::toXml(data.value<GlissandoType>()));
+    } break;
     case P_TYPE::ALIGN: {
         element(name, TConv::toXml(data.value<Align>()));
+    }
+    break;
+    case P_TYPE::ALIGN_H: {
+        element(name, TConv::toXml(data.value<AlignH>()));
     }
     break;
     case P_TYPE::PLACEMENT_V: {
@@ -258,9 +265,6 @@ void XmlWriter::tagProperty(const AsciiStringView& name, P_TYPE type, const Prop
     case P_TYPE::DYNAMIC_TYPE: {
         element(name, TConv::toXml(data.value<DynamicType>()));
     } break;
-    case P_TYPE::DYNAMIC_RANGE: {
-        element(name, TConv::toXml(data.value<DynamicRange>()));
-    } break;
     case P_TYPE::DYNAMIC_SPEED: {
         element(name, TConv::toXml(data.value<DynamicSpeed>()));
     } break;
@@ -294,6 +298,27 @@ void XmlWriter::tagProperty(const AsciiStringView& name, P_TYPE type, const Prop
     case P_TYPE::TIE_PLACEMENT: {
         element(name, TConv::toXml(data.value<TiePlacement>()));
     } break;
+    case P_TYPE::VOICE_ASSIGNMENT: {
+        element(name, TConv::toXml(data.value<VoiceAssignment>()));
+    } break;
+    case P_TYPE::AUTO_ON_OFF: {
+        element(name, TConv::toXml(data.value<AutoOnOff>()));
+    } break;
+    case P_TYPE::AUTO_CUSTOM_HIDE: {
+        element(name, TConv::toXml(data.value<AutoCustomHide>()));
+    } break;
+    case P_TYPE::INT_VEC: {
+        element(name, TConv::toXml(data.value<std::vector<int> >()));
+    } break;
+    case P_TYPE::PARTIAL_SPANNER_DIRECTION: {
+        element(name, TConv::toXml(data.value<PartialSpannerDirection>()));
+    } break;
+    case P_TYPE::PARENTHESES_MODE: {
+        element(name, TConv::toXml(data.value<ParenthesesMode>()));
+    } break;
+    case P_TYPE::MARKER_TYPE: {
+        element(name, TConv::toXml(data.value<MarkerType>()));
+    } break;
     default: {
         UNREACHABLE; //! TODO
     }
@@ -301,7 +326,7 @@ void XmlWriter::tagProperty(const AsciiStringView& name, P_TYPE type, const Prop
     }
 }
 
-void XmlWriter::tagPoint(const AsciiStringView& name, const mu::PointF& p)
+void XmlWriter::tagPoint(const AsciiStringView& name, const PointF& p)
 {
     tag(name, { { "x", p.x() }, { "y", p.y() } });
 }
@@ -334,6 +359,6 @@ void XmlWriter::comment(const String& text)
 
 String XmlWriter::xmlString(const String& s)
 {
-    return XmlStreamWriter::escapeString(s);
+    return s.toXmlEscaped();
 }
 }

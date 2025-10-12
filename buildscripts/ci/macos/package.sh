@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
-# MuseScore-CLA-applies
+# MuseScore-Studio-CLA-applies
 #
-# MuseScore
+# MuseScore Studio
 # Music Composition & Notation
 #
-# Copyright (C) 2021 MuseScore BVBA and others
+# Copyright (C) 2021 MuseScore Limited
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 3 as
@@ -40,20 +40,12 @@ if [ -z "$SIGN_CERTIFICATE_PASSWORD" ]; then echo "warning: not set SIGN_CERTIFI
 echo "SIGN_CERTIFICATE_ENCRYPT_SECRET: $SIGN_CERTIFICATE_ENCRYPT_SECRET"
 echo "SIGN_CERTIFICATE_PASSWORD: $SIGN_CERTIFICATE_PASSWORD"
 
-mkdir -p applebuild/mscore.app/Contents/Resources/Frameworks
-wget -c --no-check-certificate -nv -O musescore_dependencies_macos.zip  http://utils.musescore.org.s3.amazonaws.com/musescore_dependencies_macos.zip
-unzip musescore_dependencies_macos.zip -d applebuild/mscore.app/Contents/Resources/Frameworks
-
-# install Sparkle
-mkdir -p applebuild/mscore.app/Contents/Frameworks
-cp -Rf ~/Library/Frameworks/Sparkle.framework applebuild/mscore.app/Contents/Frameworks
-
 # Setup keychain for code sign
-if [ "$SIGN_CERTIFICATE_ENCRYPT_SECRET" != "''" ]; then 
+if [ "$SIGN_CERTIFICATE_ENCRYPT_SECRET" != "''" ]; then
 
-    7z x -y ./build/ci/macos/resources/mac_musescore.p12.enc -o./build/ci/macos/resources/ -p${SIGN_CERTIFICATE_ENCRYPT_SECRET}
+    7z x -y ./buildscripts/ci/macos/resources/mac_musescore.p12.enc -o./buildscripts/ci/macos/resources/ -p${SIGN_CERTIFICATE_ENCRYPT_SECRET}
 
-    export CERTIFICATE_P12=./build/ci/macos/resources/mac_musescore.p12
+    export CERTIFICATE_P12=./buildscripts/ci/macos/resources/mac_musescore.p12
     export KEYCHAIN=build.keychain
     security create-keychain -p ci $KEYCHAIN
     security default-keychain -s $KEYCHAIN
@@ -76,40 +68,36 @@ VERSION_PATCH="$(cut -d'.' -f3 <<<"$BUILD_VERSION")"
 
 APP_LONGER_NAME="MuseScore $VERSION_MAJOR"
 PACKAGE_VERSION="$BUILD_VERSION"
-if [ "$BUILD_MODE" == "devel_build" ]; then
-  APP_LONGER_NAME="MuseScore $BUILD_VERSION Devel"
-  PACKAGE_VERSION="${VERSION_MAJOR}.${VERSION_MINOR}b-${BUILD_REVISION}"
+if [ "$BUILD_MODE" == "devel" ]; then
+    APP_LONGER_NAME="MuseScore $BUILD_VERSION Devel"
+    PACKAGE_VERSION="${VERSION_MAJOR}.${VERSION_MINOR}b-${BUILD_REVISION}"
 fi
-if [ "$BUILD_MODE" == "nightly_build" ]; then
-  APP_LONGER_NAME="MuseScore $BUILD_VERSION Nightly";
-  PACKAGE_VERSION="${VERSION_MAJOR}.${VERSION_MINOR}b-${BUILD_REVISION}"
+if [ "$BUILD_MODE" == "nightly" ]; then
+    APP_LONGER_NAME="MuseScore $BUILD_VERSION Nightly"
+    PACKAGE_VERSION="${VERSION_MAJOR}.${VERSION_MINOR}b-${BUILD_REVISION}"
 fi
-if [ "$BUILD_MODE" == "testing_build" ]; then
-  APP_LONGER_NAME="MuseScore $BUILD_VERSION Testing";
-  PACKAGE_VERSION="${VERSION_MAJOR}.${VERSION_MINOR}b-${BUILD_REVISION}"
+if [ "$BUILD_MODE" == "testing" ]; then
+    APP_LONGER_NAME="MuseScore $BUILD_VERSION Testing"
+    PACKAGE_VERSION="${VERSION_MAJOR}.${VERSION_MINOR}b-${BUILD_REVISION}"
 fi
-if [ "$BUILD_MODE" == "stable_build" ]; then
-  APP_LONGER_NAME="MuseScore $VERSION_MAJOR";
-  PACKAGE_VERSION="${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}"
+if [ "$BUILD_MODE" == "stable" ]; then
+    APP_LONGER_NAME="MuseScore $VERSION_MAJOR"
+    PACKAGE_VERSION="${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}"
 fi
 
-build/package_mac --longer_name "$APP_LONGER_NAME" --version "$PACKAGE_VERSION"
+buildscripts/packaging/macOS/package.sh --longer_name "$APP_LONGER_NAME" --version "$PACKAGE_VERSION"
 
 DMGFILE="$(ls applebuild/*.dmg)"
 echo "DMGFILE: $DMGFILE"
 
-if [ "$BUILD_MODE" == "nightly_build" ]; then
-
-  BUILD_NUMBER=$(cat $ARTIFACTS_DIR/env/build_number.env)
-  BUILD_BRANCH=$(cat $ARTIFACTS_DIR/env/build_branch.env)
-  ARTIFACT_NAME=MuseScore-Studio-Nightly-${BUILD_NUMBER}-${BUILD_BRANCH}-${BUILD_REVISION}.dmg
-
+if [ "$BUILD_MODE" == "nightly" ]; then
+    BUILD_NUMBER=$(cat $ARTIFACTS_DIR/env/build_number.env)
+    BUILD_BRANCH=$(cat $ARTIFACTS_DIR/env/build_branch.env)
+    ARTIFACT_NAME=MuseScore-Studio-Nightly-${BUILD_NUMBER}-${BUILD_BRANCH}-${BUILD_REVISION}.dmg
 else
-
-  ARTIFACT_NAME=MuseScore-Studio-${BUILD_VERSION}.dmg  
-
+    ARTIFACT_NAME=MuseScore-Studio-${BUILD_VERSION}.dmg
 fi
 
 mv $DMGFILE $ARTIFACTS_DIR/$ARTIFACT_NAME
 
-bash ./build/ci/tools/make_artifact_name_env.sh $ARTIFACT_NAME
+bash ./buildscripts/ci/tools/make_artifact_name_env.sh $ARTIFACT_NAME

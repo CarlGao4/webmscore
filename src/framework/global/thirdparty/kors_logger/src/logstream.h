@@ -26,9 +26,11 @@ SOFTWARE.
 
 #include <sstream>
 #include <thread>
+#include <vector>
 
 #ifdef KORS_LOGGER_QT_SUPPORT
 #include <QDebug>
+#include <QVariant>
 #endif
 
 //! NOTE Example add operator for custom types
@@ -88,7 +90,7 @@ public:
     {
         m_ss << '[';
         for (size_t i = 0; i < t.size(); ++i) {
-            m_ss << t.at(i);
+            *this << t.at(i);
             if (i < t.size() - 1) {
                 m_ss << ',';
             }
@@ -100,7 +102,7 @@ public:
 #ifdef KORS_LOGGER_QT_SUPPORT
     inline Stream& operator<<(QChar t) { qt_to_ss(t); return *this; }
     inline Stream& operator<<(const QString& t) { qt_to_ss(t); return *this; }
-    inline Stream& operator<<(const QStringRef& t) { qt_to_ss(t); return *this; }
+    inline Stream& operator<<(QStringView t) { qt_to_ss(t); return *this; }
     inline Stream& operator<<(QLatin1String t) { qt_to_ss(t); return *this; }
     inline Stream& operator<<(const QByteArray& t) { qt_to_ss(t); return *this; }
     inline Stream& operator<<(const QVariant& t) { qt_to_ss(t); return *this; }

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -21,15 +21,14 @@
  */
 import QtQuick 2.15
 
-import MuseScore.Ui 1.0
-import MuseScore.UiComponents 1.0
+import Muse.Ui 1.0
+import Muse.UiComponents 1.0
 import MuseScore.AppShell 1.0
-import MuseScore.Dock 1.0
+import Muse.Dock 1.0
 
 import MuseScore.NotationScene 1.0
 import MuseScore.Playback 1.0
 
-import "../dockwindow"
 import "../NotationPage"
 
 DockPage {
@@ -38,7 +37,7 @@ DockPage {
     objectName: "Publish"
     uri: "musescore://publish"
 
-    property var topToolKeyNavSec
+    required property NavigationSection topToolbarKeyNavSec
 
     property NavigationSection publishToolBarKeyNavSec: NavigationSection {
         id: keynavSec
@@ -63,15 +62,11 @@ DockPage {
             alignment: DockToolBarAlignment.Center
             contentBottomPadding: 2
 
-            NotationToolBar {
-                navigationPanel.section: root.topToolKeyNavSec
-                navigationPanel.order: 2
+            navigationSection: root.topToolbarKeyNavSec
 
-                onActiveFocusRequested: {
-                    if (navigationPanel.active) {
-                        notationToolBar.forceActiveFocus()
-                    }
-                }
+            NotationToolBar {
+                navigationPanel.section: notationToolBar.navigationSection
+                navigationPanel.order: 2
             }
         },
 
@@ -85,9 +80,11 @@ DockPage {
             alignment: DockToolBarAlignment.Right
             contentBottomPadding: 2
 
+            navigationSection: root.topToolbarKeyNavSec
+
             PlaybackToolBar {
-                navigationPanel.section: root.topToolKeyNavSec
-                navigationPanel.order: 3
+                navigationPanelSection: playbackToolBar.navigationSection
+                navigationPanelOrder: 3
 
                 floating: playbackToolBar.floating
             }
@@ -107,8 +104,10 @@ DockPage {
             alignment: DockToolBarAlignment.Right
             contentBottomPadding: 2
 
+            navigationSection: root.topToolbarKeyNavSec
+
             UndoRedoToolBar {
-                navigationPanel.section: root.topToolKeyNavSec
+                navigationPanel.section: undoRedoToolBar.navigationSection
                 navigationPanel.order: 4
             }
         }
@@ -116,13 +115,18 @@ DockPage {
 
     toolBars: [
         DockToolBar {
+            id: publishToolBar
+
             objectName: "publishToolBar"
+            title: qsTrc("appshell", "Publish toolbar")
 
             floatable: false
 
+            navigationSection: root.publishToolBarKeyNavSec
+
             PublishToolBar {
-                navigation.section: root.publishToolBarKeyNavSec
-                navigation.order: 1
+                navigationPanel.section: publishToolBar.navigationSection
+                navigationPanel.order: 1
             }
         }
     ]
@@ -135,6 +139,10 @@ DockPage {
     statusBar: DockStatusBar {
         objectName: "publishStatusBar"
 
-        NotationStatusBar {}
+        navigationSection: content.navigationSection
+
+        NotationStatusBar {
+            id: content
+        }
     }
 }

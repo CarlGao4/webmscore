@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -23,21 +23,25 @@
 #define MU_IMPORTEXPORT_VIDEOWRITER_H
 
 #include "modularity/ioc.h"
-#include "project/iprojectwriter.h"
 #include "../ivideoexportconfiguration.h"
+#include "iapplication.h"
+
+#include "project/iprojectwriter.h"
 
 namespace mu::iex::videoexport {
 class VideoWriter : public project::IProjectWriter
 {
-    INJECT(IVideoExportConfiguration, configuration)
+    muse::Inject<IVideoExportConfiguration> configuration;
+    muse::Inject<muse::IApplication> application;
+
 public:
     VideoWriter() = default;
 
     std::vector<UnitType> supportedUnitTypes() const override;
     bool supportsUnitType(UnitType unitType) const override;
 
-    Ret write(project::INotationProjectPtr project, QIODevice& device, const Options& options = Options()) override;
-    Ret write(project::INotationProjectPtr project, const io::path_t& filePath, const Options& options = Options()) override;
+    muse::Ret write(project::INotationProjectPtr project, QIODevice& device, const Options& options = Options()) override;
+    muse::Ret write(project::INotationProjectPtr project, const muse::io::path_t& filePath, const Options& options = Options()) override;
 
 private:
 
@@ -51,7 +55,7 @@ private:
         float trailingSec = 3.;
     };
 
-    Ret generatePagedOriginalVideo(project::INotationProjectPtr project, const io::path_t& filePath, const Config& config);
+    muse::Ret generatePagedOriginalVideo(project::INotationProjectPtr project, const muse::io::path_t& filePath, const Config& config);
 };
 }
 

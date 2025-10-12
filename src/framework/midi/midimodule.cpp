@@ -32,7 +32,7 @@
 
 #include "log.h"
 
-using namespace mu::midi;
+using namespace muse::midi;
 
 #if defined(Q_OS_LINUX) || defined(Q_OS_FREEBSD)
 #include "internal/platform/lin/alsamidioutport.h"
@@ -71,21 +71,21 @@ void MidiModule::registerExports()
     m_midiInPort = std::make_shared<DummyMidiInPort>();
     #endif
 
-    modularity::ioc()->registerExport<IMidiConfiguration>(moduleName(), m_configuration);
-    modularity::ioc()->registerExport<IMidiOutPort>(moduleName(), m_midiOutPort);
-    modularity::ioc()->registerExport<IMidiInPort>(moduleName(), m_midiInPort);
+    ioc()->registerExport<IMidiConfiguration>(moduleName(), m_configuration);
+    ioc()->registerExport<IMidiOutPort>(moduleName(), m_midiOutPort);
+    ioc()->registerExport<IMidiInPort>(moduleName(), m_midiInPort);
 }
 
 void MidiModule::registerUiTypes()
 {
-    qmlRegisterType<MidiPortDevModel>("MuseScore.Midi", 1, 0, "MidiPortDevModel");
+    qmlRegisterType<MidiPortDevModel>("Muse.Midi", 1, 0, "MidiPortDevModel");
 }
 
-void MidiModule::onInit(const framework::IApplication::RunMode& mode)
+void MidiModule::onInit(const IApplication::RunMode& mode)
 {
     m_configuration->init();
 
-    if (mode == framework::IApplication::RunMode::GuiApp) {
+    if (mode == IApplication::RunMode::GuiApp) {
         m_midiOutPort->init();
         m_midiInPort->init();
     }

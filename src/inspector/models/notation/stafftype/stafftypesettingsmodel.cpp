@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -31,8 +31,8 @@ StaffTypeSettingsModel::StaffTypeSettingsModel(QObject* parent, IElementReposito
     : AbstractInspectorModel(parent, repository)
 {
     setModelType(InspectorModelType::TYPE_STAFF_TYPE_CHANGES);
-    setTitle(qtrc("inspector", "Staff type changes"));
-    setIcon(ui::IconCode::Code::STAFF_TYPE_CHANGE);
+    setTitle(muse::qtrc("inspector", "Staff type changes"));
+    setIcon(muse::ui::IconCode::Code::STAFF_TYPE_CHANGE);
     createProperties();
 }
 
@@ -69,7 +69,7 @@ void StaffTypeSettingsModel::loadProperties()
     loadPropertyItem(m_isSmall);
     loadPropertyItem(m_verticalOffset, formatDoubleFunc);
     loadPropertyItem(m_scale, [](const QVariant& elementPropertyValue) -> QVariant {
-        return DataFormatter::roundDouble(elementPropertyValue.toDouble()) * 100;
+        return muse::DataFormatter::roundDouble(elementPropertyValue.toDouble()) * 100;
     });
 
     loadPropertyItem(m_lineCount);

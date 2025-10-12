@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -30,11 +30,17 @@ class ArticulationSettingsModel : public AbstractInspectorModel
     Q_OBJECT
 
     Q_PROPERTY(PropertyItem * placement READ placement CONSTANT)
+    Q_PROPERTY(bool isPlacementAvailable READ isPlacementAvailable NOTIFY isPlacementAvailableChanged FINAL)
 
 public:
-    explicit ArticulationSettingsModel(QObject* parent, IElementRepositoryService* repository);
+    explicit ArticulationSettingsModel(QObject* parent, IElementRepositoryService* repository,
+                                       InspectorModelType type = InspectorModelType::TYPE_ARTICULATION);
 
     PropertyItem* placement() const;
+    bool isPlacementAvailable() const;
+
+signals:
+    void isPlacementAvailableChanged(bool available);
 
 private:
     void createProperties() override;
@@ -42,8 +48,11 @@ private:
     void loadProperties() override;
     void resetProperties() override;
 
+    void updateIsPlacementAvailable();
+
     PropertyItem* m_direction = nullptr;
     PropertyItem* m_placement = nullptr;
+    bool m_isPlacementAvailable = true;
 };
 }
 

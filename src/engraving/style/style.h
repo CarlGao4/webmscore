@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -26,12 +26,11 @@
 #include <array>
 #include <cassert>
 
-#include "io/iodevice.h"
-
-#include "types/dimension.h"
-
-#include "types/propertyvalue.h"
+#include "global/io/iodevice.h"
 #include "draw/types/geometry.h"
+
+#include "../types/dimension.h"
+#include "../types/propertyvalue.h"
 
 #include "styledef.h"
 
@@ -69,15 +68,16 @@ public:
 
     double spatium() const { return styleD(Sid::spatium); }
     void setSpatium(double v) { set(Sid::spatium, v); }
+    double defaultSpatium() const;
 
     bool isDefault(Sid idx) const;
     void setDefaultStyleVersion(const int defaultsVersion);
     int defaultStyleVersion() const;
 
-    bool read(mu::io::IODevice* device, bool ign = false);
-    bool write(mu::io::IODevice* device);
+    bool read(muse::io::IODevice* device, bool ign = false);
+    bool write(muse::io::IODevice* device);
     void save(XmlWriter& xml, bool optimize);
-    static bool isValid(mu::io::IODevice* device);
+    static bool isValid(muse::io::IODevice* device);
 
     void precomputeValues();
 

@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: GPL-3.0-only
-# MuseScore-CLA-applies
+# MuseScore-Studio-CLA-applies
 #
-# MuseScore
+# MuseScore Studio
 # Music Composition & Notation
 #
-# Copyright (C) 2023 MuseScore BVBA and others
+# Copyright (C) 2023 MuseScore Limited
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 3 as
@@ -29,7 +29,7 @@ include(GetPlatformInfo)
 
 if (OS_IS_WASM)
 
-    set(CC_IS_EMSCRIPTEN 1)
+    set(CC_IS_EMCC 1)
 
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
 

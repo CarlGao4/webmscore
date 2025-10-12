@@ -20,13 +20,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_ACCESSIBILITY_IACCESSIBILITYCONTROLLER_H
-#define MU_ACCESSIBILITY_IACCESSIBILITYCONTROLLER_H
+#ifndef MUSE_ACCESSIBILITY_IACCESSIBILITYCONTROLLER_H
+#define MUSE_ACCESSIBILITY_IACCESSIBILITYCONTROLLER_H
 
 #include "modularity/imoduleinterface.h"
 #include "iaccessible.h"
 
-namespace mu::accessibility {
+namespace muse::accessibility {
 class IAccessibilityController : MODULE_EXPORT_INTERFACE
 {
     INTERFACE_ID(IAccessibilityController)
@@ -35,6 +35,9 @@ public:
 
     virtual void reg(IAccessible* item) = 0;
     virtual void unreg(IAccessible* item) = 0;
+
+    virtual void announce(const QString& announcement) = 0;
+    virtual QString announcement() const = 0;
 
     virtual const IAccessible* accessibleRoot() const = 0;
 
@@ -47,4 +50,4 @@ public:
 };
 }
 
-#endif // MU_ACCESSIBILITY_IACCESSIBILITYCONTROLLER_H
+#endif // MUSE_ACCESSIBILITY_IACCESSIBILITYCONTROLLER_H

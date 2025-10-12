@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -25,6 +25,8 @@ import Qt.labs.platform 1.1 as PLATFORM
 import MuseScore.AppShell 1.0
 
 Item {
+    id: root
+
     readonly property bool available: menuModel.isGlobalMenuAvailable()
 
     PLATFORM.MenuBar {
@@ -80,14 +82,21 @@ Item {
         menu.title = menuInfo.title
         menu.enabled = menuInfo.enabled
         menu.subitems = menuInfo.subitems
+
+        menuInfo.subitemsChanged.connect(function(subitems, menuId) {
+            if (menu.id === menuId) {
+                menu.subitems = subitems
+                menu.load()
+            }
+        })
     }
 
     function makeMenuItem(parentMenu, itemInfo) {
-            var menuItem = menuItemComponent.createObject(parentMenu)
+        var menuItem = menuItemComponent.createObject(parentMenu)
 
-            setUpMenuItem(menuItem, itemInfo)
+        setUpMenuItem(menuItem, itemInfo)
 
-            return menuItem
+        return menuItem
     }
 
     function setUpMenuItem(menuItem, itemInfo) {
@@ -112,14 +121,18 @@ Item {
 
                 for (var i in subitems) {
                     var item = subitems[i]
+                    if (!Boolean(item)) {
+                        continue
+                    }
+
                     var isMenu = Boolean(item.subitems) && item.subitems.length > 0
 
                     if (isMenu) {
-                        let menu = makeMenu(item)
+                        let menu = root.makeMenu(item)
                         addMenu(menu)
                         menu.load()
                     } else {
-                        let menuItem = makeMenuItem(this, item)
+                        let menuItem = root.makeMenuItem(this, item)
                         addItem(menuItem)
                     }
                 }
@@ -131,9 +144,9 @@ Item {
                     let isMenu = Boolean(item.subitems) && item.subitems.length > 0
 
                     if (isMenu) {
-                        setUpMenu(items[i].subMenu, item)
+                        root.setUpMenu(items[i].subMenu, item)
                     } else {
-                        setUpMenuItem(items[i], item)
+                        root.setUpMenuItem(items[i], item)
                     }
                 }
             }

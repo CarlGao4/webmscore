@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -21,8 +21,8 @@
  */
 import QtQuick 2.15
 
-import MuseScore.Ui 1.0
-import MuseScore.UiComponents 1.0
+import Muse.Ui 1.0
+import Muse.UiComponents 1.0
 import MuseScore.Preferences 1.0
 
 import "internal"
@@ -51,7 +51,7 @@ PreferencesPage {
 
             languages: preferencesModel.languages
             currentLanguageCode: preferencesModel.currentLanguageCode
-            isNeedRestart: preferencesModel.isNeedRestart
+            restartRequired: preferencesModel.restartRequired
 
             navigation.section: root.navigationSection
             navigation.order: root.navigationOrderStart + 1
@@ -68,19 +68,19 @@ PreferencesPage {
         SeparatorLine { }
 
         ProgramStartSection {
-            startupModes: preferencesModel.startupModes
-            scorePathFilter: preferencesModel.scorePathFilter()
+            model: preferencesModel
 
             navigation.section: root.navigationSection
             navigation.order: root.navigationOrderStart + 2
+        }
 
-            onCurrentStartupModesChanged: function(index) {
-                preferencesModel.setCurrentStartupMode(index)
-            }
+        SeparatorLine { }
 
-            onStartupScorePathChanged: function(path) {
-                preferencesModel.setStartupScorePath(path)
-            }
+        WelcomeDialogSection {
+            model: preferencesModel
+
+            navigation.section: root.navigationSection
+            navigation.order: root.navigationOrderStart + 3
         }
 
         /*

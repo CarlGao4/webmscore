@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -32,8 +32,8 @@ SpacerSettingsModel::SpacerSettingsModel(QObject* parent, IElementRepositoryServ
     : AbstractInspectorModel(parent, repository)
 {
     setModelType(InspectorModelType::TYPE_SPACER);
-    setTitle(qtrc("inspector", "Spacer"));
-    setIcon(ui::IconCode::Code::SPACER);
+    setTitle(muse::qtrc("inspector", "Spacer"));
+    setIcon(muse::ui::IconCode::Code::SPACER);
     createProperties();
 }
 
@@ -59,7 +59,7 @@ void SpacerSettingsModel::resetProperties()
 
 void SpacerSettingsModel::onNotationChanged(const PropertyIdSet& changedPropertyIdSet, const StyleIdSet&)
 {
-    if (mu::contains(changedPropertyIdSet, Pid::SPACE)) {
+    if (muse::contains(changedPropertyIdSet, Pid::SPACE)) {
         loadPropertyItem(m_spacerHeight, formatDoubleFunc);
     }
 }

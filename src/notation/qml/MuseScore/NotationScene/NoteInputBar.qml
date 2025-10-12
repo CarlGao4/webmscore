@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,8 +22,8 @@
 import QtQuick 2.15
 
 import MuseScore.NotationScene 1.0
-import MuseScore.UiComponents 1.0
-import MuseScore.Ui 1.0
+import Muse.UiComponents 1.0
+import Muse.Ui 1.0
 
 import "internal"
 
@@ -109,8 +109,8 @@ Item {
         itemDelegate: FlatButton {
             id: btn
 
-            property var item: Boolean(itemModel) ? itemModel.itemRole : null
-            property var hasMenu: Boolean(item) && item.subitems.length !== 0
+            readonly property QtObject item: Boolean(itemModel) ? itemModel.itemRole : null
+            readonly property bool hasMenu: Boolean(item) && item.subitems.length !== 0
 
             width: gridView.cellWidth
             height: gridView.cellWidth
@@ -132,16 +132,12 @@ Item {
             navigation.order: Boolean(itemModel) ? itemModel.order : 0
             isClickOnKeyNavTriggered: false
             navigation.onTriggered: {
-                if (menuLoader.isMenuOpened || hasMenu) {
+                if (btn.hasMenu) {
                     toggleMenuOpened()
                 } else {
                     handleMenuItem()
                 }
             }
-
-            mouseArea.acceptedButtons: hasMenu && itemModel.isMenuSecondary
-                                       ? Qt.LeftButton | Qt.RightButton
-                                       : Qt.LeftButton
 
             function toggleMenuOpened() {
                 menuLoader.toggleOpened(item.subitems)
@@ -151,60 +147,21 @@ Item {
                 Qt.callLater(noteInputModel.handleMenuItem, item.id)
             }
 
-            onClicked: function(mouse) {
-                if (menuLoader.isMenuOpened // If already menu open, close it
-                        || (hasMenu // Or if can open menu
-                            && (!itemModel.isMenuSecondary // And _should_ open menu
-                                || mouse.button === Qt.RightButton))) {
+            onClicked: {
+                if (btn.hasMenu) {
                     toggleMenuOpened()
-                    return
-                }
-
-                if (mouse.button === Qt.LeftButton) {
+                } else {
                     handleMenuItem()
                 }
             }
 
-            Connections {
-                target: btn.mouseArea
-
-                // Make sure we only connect to `pressAndHold` if necessary
-                // See https://github.com/musescore/MuseScore/issues/16012
-                enabled: btn.hasMenu && !menuLoader.isMenuOpened
-
-                function onPressAndHold() {
-                    if (menuLoader.isMenuOpened || !btn.hasMenu) {
-                        return
-                    }
-
-                    btn.toggleMenuOpened()
-                }
-            }
-
-            Canvas {
-                visible: Boolean(itemModel) && itemModel.isMenuSecondary
-
-                property color fillColor: ui.theme.fontPrimaryColor
-                onFillColorChanged: {
-                    requestPaint()
+            mouseArea.onPressAndHold: function(event) {
+                if (menuLoader.isMenuOpened || !btn.hasMenu) {
+                    event.accepted = false // do not suppress the click event
+                    return
                 }
 
-                width: 4
-                height: 4
-
-                anchors.margins: 2
-                anchors.right: parent.right
-                anchors.bottom: parent.bottom
-
-                onPaint: {
-                    const ctx = getContext("2d");
-                    ctx.fillStyle = fillColor;
-                    ctx.moveTo(width, 0);
-                    ctx.lineTo(width, height);
-                    ctx.lineTo(0, height);
-                    ctx.closePath();
-                    ctx.fill();
-                }
+                btn.toggleMenuOpened()
             }
 
             StyledMenuLoader {

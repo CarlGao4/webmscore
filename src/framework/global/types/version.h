@@ -19,30 +19,36 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_FRAMEWORK_VERSION_H
-#define MU_FRAMEWORK_VERSION_H
+#ifndef MUSE_GLOBAL_VERSION_H
+#define MUSE_GLOBAL_VERSION_H
+
+#include <string>
 
 #include "types/string.h"
 
-namespace mu::framework {
+namespace muse {
 class Version
 {
 public:
+    Version() = default;
     Version(int major, int minor = 0, int patch = 0, const String& suffix = String(), int suffixVersion = 0);
     Version(const String& versionStr);
     Version(const std::string& versionStr);
 
-    int majorVersion() const;
-    int minorVersion() const;
-    int patchVersion() const;
+    int major() const;
+    int minor() const;
+    int patch() const;
 
     String suffix() const;
     int suffixVersion() const;
     void setSuffix(const String& suffix);
 
+    bool isNull() const;
+
     bool preRelease() const;
 
-    String toString();
+    String toString() const;
+    std::string toStdString() const;
 
     bool operator <(const Version& other) const;
     bool operator ==(const Version& other) const;
@@ -57,4 +63,4 @@ private:
 };
 }
 
-#endif // MU_FRAMEWORK_VERSION_H
+#endif // MUSE_GLOBAL_VERSION_H

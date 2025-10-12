@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -33,9 +33,10 @@
 
 #include "log.h"
 
+using namespace muse;
+using namespace muse::modularity;
 using namespace mu::iex::audioexport;
 using namespace mu::project;
-using namespace mu::modularity;
 
 std::string AudioExportModule::moduleName() const
 {
@@ -53,16 +54,16 @@ void AudioExportModule::resolveImports()
 {
     auto writers = ioc()->resolve<INotationWritersRegister>(moduleName());
     if (writers) {
-        writers->reg({ "wav" }, std::make_shared<WaveWriter>());
-        writers->reg({ "mp3" }, std::make_shared<Mp3Writer>());
-        writers->reg({ "ogg" }, std::make_shared<OggWriter>());
-        writers->reg({ "flac" }, std::make_shared<FlacWriter>());
+        writers->reg({ "wav" }, std::make_shared<WaveWriter>(iocContext()));
+        writers->reg({ "mp3" }, std::make_shared<Mp3Writer>(iocContext()));
+        writers->reg({ "ogg" }, std::make_shared<OggWriter>(iocContext()));
+        writers->reg({ "flac" }, std::make_shared<FlacWriter>(iocContext()));
     }
 }
 
-void AudioExportModule::onInit(const framework::IApplication::RunMode& mode)
+void AudioExportModule::onInit(const IApplication::RunMode& mode)
 {
-    if (mode == framework::IApplication::RunMode::AudioPluginRegistration) {
+    if (mode == IApplication::RunMode::AudioPluginRegistration) {
         return;
     }
 

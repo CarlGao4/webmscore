@@ -20,14 +20,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_UI_WIDGETVIEW_H
-#define MU_UI_WIDGETVIEW_H
+#ifndef MUSE_UI_WIDGETVIEW_H
+#define MUSE_UI_WIDGETVIEW_H
 
 #include "quickpaintedview.h"
 
 class QWidget;
 
-namespace mu::uicomponents {
+namespace muse::uicomponents {
 class IDisplayableWidget
 {
 public:
@@ -52,7 +52,6 @@ protected:
 
     void setWidget(std::shared_ptr<IDisplayableWidget> widget);
 
-private:
     void paint(QPainter* painter) override;
     bool event(QEvent* event) override;
     bool handleHoverEvent(QHoverEvent* event);
@@ -60,8 +59,10 @@ private:
     QWidget* qWidget() const;
     void updateSizeConstraints();
 
+private:
+
     std::shared_ptr<IDisplayableWidget> m_widget = nullptr;
 };
 }
 
-#endif // MU_UI_WIDGETVIEW_H
+#endif // MUSE_UI_WIDGETVIEW_H

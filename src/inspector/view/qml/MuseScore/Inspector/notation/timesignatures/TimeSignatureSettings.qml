@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -21,8 +21,8 @@
  */
 import QtQuick 2.15
 
-import MuseScore.Ui 1.0
-import MuseScore.UiComponents 1.0
+import Muse.Ui 1.0
+import Muse.UiComponents 1.0
 import MuseScore.Inspector 1.0
 
 import "../../common"
@@ -86,11 +86,11 @@ Column {
                 isIndeterminate: root.model ? root.model.horizontalScale.isUndefined : false
                 currentValue: root.model ? root.model.horizontalScale.value : 0
 
-                measureUnitsSymbol: "%"
-                step: 1
-                decimals: 0
-                maxValue: 1000
-                minValue: 1
+                measureUnitsSymbol: "x"
+                step: 0.25
+                decimals: 2
+                maxValue: 100
+                minValue: 1.0
 
                 navigation.name: "HorizontalScale"
                 navigation.panel: root.navigationPanel
@@ -113,11 +113,11 @@ Column {
                 isIndeterminate: root.model ? root.model.verticalScale.isUndefined : false
                 currentValue: root.model ? root.model.verticalScale.value : 0
 
-                measureUnitsSymbol: "%"
-                step: 1
-                decimals: 0
-                maxValue: 1000
-                minValue: 1
+                measureUnitsSymbol: "x"
+                step: 0.25
+                decimals: 2
+                maxValue: 100
+                minValue: 1.0
 
                 navigation.name: "VerticalScale"
                 navigation.panel: root.navigationPanel
@@ -132,7 +132,7 @@ Column {
     }
 
     PropertyCheckBox {
-        text: qsTrc("inspector", "Show courtesy time signature on previous system")
+        text: qsTrc("inspector", "Show courtesy time signature")
         propertyItem: root.model ? root.model.shouldShowCourtesy : null
 
         navigation.name: "ShowCourtesyCheckBox"
@@ -154,5 +154,7 @@ Column {
                 root.model.showTimeSignatureProperties()
             }
         }
+
+        enabled: root.model ? !root.model.isGenerated : false
     }
 }

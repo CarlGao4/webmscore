@@ -20,8 +20,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_MPE_ARTICULATIONSPROFILEEDITORMODEL_H
-#define MU_MPE_ARTICULATIONSPROFILEEDITORMODEL_H
+#ifndef MUSE_MPE_ARTICULATIONSPROFILEEDITORMODEL_H
+#define MUSE_MPE_ARTICULATIONSPROFILEEDITORMODEL_H
 
 #include <QObject>
 #include <QList>
@@ -33,13 +33,10 @@
 #include "iarticulationprofilesrepository.h"
 #include "articulationpatternitem.h"
 
-namespace mu::mpe {
-class ArticulationsProfileEditorModel : public QObject
+namespace muse::mpe {
+class ArticulationsProfileEditorModel : public QObject, public Injectable
 {
     Q_OBJECT
-
-    INJECT(framework::IInteractive, interactive)
-    INJECT(IArticulationProfilesRepository, profilesRepository)
 
     Q_PROPERTY(QString currentPath READ currentPath WRITE setCurrentPath NOTIFY currentPathChanged)
     Q_PROPERTY(ArticulationPatternItem * selectedItem READ selectedItem WRITE setSelectedItem NOTIFY selectedItemChanged)
@@ -51,6 +48,9 @@ class ArticulationsProfileEditorModel : public QObject
     Q_PROPERTY(QList<ArticulationPatternItem*> singleNoteItems READ singleNoteItems CONSTANT)
     Q_PROPERTY(QList<ArticulationPatternItem*> multiNoteItems READ multiNoteItems CONSTANT)
 
+    Inject<IInteractive> interactive = { this };
+    Inject<IArticulationProfilesRepository> profilesRepository = { this };
+
 public:
     enum RoleNames {
         PatternsScopeItem = Qt::UserRole + 1
@@ -58,6 +58,7 @@ public:
 
     explicit ArticulationsProfileEditorModel(QObject* parent = nullptr);
 
+    Q_INVOKABLE void init();
     Q_INVOKABLE void requestToOpenProfile();
     Q_INVOKABLE bool requestToCreateProfile();
     Q_INVOKABLE void requestToSaveProfile();
@@ -111,4 +112,4 @@ private:
 };
 }
 
-#endif // MU_MPE_ARTICULATIONSPROFILEEDITORMODEL_H
+#endif // MUSE_MPE_ARTICULATIONSPROFILEEDITORMODEL_H

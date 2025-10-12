@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,19 +22,21 @@
 
 #include "appearancepreferencesmodel.h"
 
+#include "translation.h"
+
 #include "ui/internal/themeconverter.h"
 
 #include "log.h"
-#include "translation.h"
 
 using namespace mu::appshell;
 using namespace mu::notation;
-using namespace mu::ui;
+using namespace muse;
+using namespace muse::ui;
 
 static constexpr int INVALID_INDEX = -1;
 
 AppearancePreferencesModel::AppearancePreferencesModel(QObject* parent)
-    : QObject(parent)
+    : QObject(parent), muse::Injectable(muse::iocCtxForQmlObject(this))
 {
 }
 
@@ -162,8 +164,8 @@ QStringList AppearancePreferencesModel::allFonts() const
 
 QStringList AppearancePreferencesModel::wallpaperPathFilter() const
 {
-    return { qtrc("appshell/preferences", "Images") + " (*.jpg *.jpeg *.png *.bmp *.tif *.tiff)",
-             qtrc("appshell/preferences", "All") + " (*)" };
+    return { muse::qtrc("appshell/preferences", "Images") + " (*.jpg *.jpeg *.png *.bmp *.tif *.tiff)",
+             muse::qtrc("appshell/preferences", "All") + " (*)" };
 }
 
 QString AppearancePreferencesModel::wallpapersDir() const

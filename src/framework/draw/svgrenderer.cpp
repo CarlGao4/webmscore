@@ -30,7 +30,7 @@
 
 #include "log.h"
 
-using namespace mu::draw;
+using namespace muse::draw;
 
 //! NOTE Perhaps in the future we need to add something like ISvgRenderer
 
@@ -51,7 +51,7 @@ SvgRenderer::~SvgRenderer()
 #endif
 }
 
-mu::SizeF SvgRenderer::defaultSize() const
+muse::SizeF SvgRenderer::defaultSize() const
 {
 #ifndef DRAW_NO_QSVGRENDER
     return SizeF::fromQSizeF(m_qSvgRenderer->defaultSize());

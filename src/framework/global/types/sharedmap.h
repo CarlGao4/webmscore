@@ -20,18 +20,24 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_FRAMEWORK_SHAREDMAP_H
-#define MU_FRAMEWORK_SHAREDMAP_H
+#ifndef MUSE_GLOBAL_SHAREDMAP_H
+#define MUSE_GLOBAL_SHAREDMAP_H
 
 #include <memory>
 #include <map>
 
-namespace mu {
+namespace muse {
 template<typename KeyType, typename ValType>
 class SharedMap
 {
 public:
-    using PairType = std::pair<KeyType, ValType>;
+
+    // like std
+    using key_type = KeyType;
+    using mapped_type = ValType;
+    using value_type = std::pair<KeyType, ValType>;
+
+    using PairType = value_type;
     using Data = std::map<KeyType, ValType>;
     using DataPtr = std::shared_ptr<Data>;
     typedef typename Data::iterator iterator;
@@ -242,4 +248,4 @@ protected:
 };
 }
 
-#endif // MU_FRAMEWORK_SHAREDMAP_H
+#endif // MUSE_GLOBAL_SHAREDMAP_H

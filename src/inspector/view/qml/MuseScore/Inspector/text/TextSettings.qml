@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -21,8 +21,8 @@
  */
 import QtQuick 2.15
 
-import MuseScore.Ui 1.0
-import MuseScore.UiComponents 1.0
+import Muse.Ui 1.0
+import Muse.UiComponents 1.0
 import MuseScore.Inspector 1.0
 
 import "../common"
@@ -43,6 +43,26 @@ Column {
         matchStaffSize.navigation.requestActive()
     }
 
+    SpinBoxPropertyView {
+        id: symbolSize
+
+        anchors.left: parent.left
+
+        navigationName: "Symbol size"
+        navigationPanel: root.navigationPanel
+        navigationRowStart: root.navigationRowStart + 1
+
+        titleText: qsTrc("inspector", "Symbol size")
+        measureUnitsSymbol: "pt"
+        propertyItem: root.model ? root.model.symbolSize : null
+        visible: root.model ? root.model.isSymbolSizeAvailable : false
+
+        decimals: 0
+        step: 1
+        minValue: 0
+        maxValue: 1000
+    }
+
     Item {
         height: childrenRect.height
         width: parent.width
@@ -54,11 +74,11 @@ Column {
             anchors.rightMargin: 8
             anchors.verticalCenter: subscriptOptionsButtonList.verticalCenter
 
-            navigation.name: "Match staff size"
+            navigation.name: "Scale with staff size"
             navigation.panel: root.navigationPanel
-            navigation.row: root.navigationRowStart + 1
+            navigation.row: symbolSize.navigationRowEnd + 1
 
-            text: qsTrc("inspector", "Match staff size")
+            text: qsTrc("inspector", "Scale with staff size")
             propertyItem: root.model ? root.model.isSizeSpatiumDependent : null
         }
 
@@ -70,6 +90,8 @@ Column {
 
             anchors.right: parent.right
             height: 30
+
+            visible: root.model ? root.model.isScriptSizeAvailable : false
 
             model: [
                 { iconRole: IconCode.TEXT_SUBSCRIPT, typeRole: TextTypes.TEXT_SUBSCRIPT_BOTTOM, titleRole: qsTrc("inspector", "Subscript") },
@@ -115,13 +137,18 @@ Column {
         frameCornerRadius: root.model ? root.model.frameCornerRadius : null
     }
 
-    SeparatorLine { anchors.margins: -12 }
+    SeparatorLine {
+        visible: root.model ? root.model.isLineSpacingAvailable : false
+        anchors.margins: -12
+    }
 
     SpinBoxPropertyView {
         id: textLineSpacingSection
         anchors.left: parent.left
         anchors.right: parent.horizontalCenter
         anchors.rightMargin: 2
+
+        visible: root.model ? root.model.isLineSpacingAvailable : false
 
         navigationName: "Line Spacing"
         navigationPanel: root.navigationPanel
@@ -163,6 +190,7 @@ Column {
         propertyItem: root.model ? root.model.textPlacement : null
 
         visible: root.model ? !root.model.isDynamicSpecificSettings : false
+        enabled: root.model ? !root.model.isSystemObjectBelowBottomStaff : false
         height: visible ? implicitHeight : 0
 
         navigationPanel: root.navigationPanel

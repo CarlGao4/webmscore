@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -57,7 +57,7 @@ static void inStaff(void* staffCheckData, EngravingItem* e)
 {
     StaffCheckData* checkData = static_cast<StaffCheckData*>(staffCheckData);
     if (e->staffIdx() == checkData->staffIdx) {
-        LOGE() << e->typeName() << " is in staff " << checkData->staffIdx;
+        LOGD() << e->typeName() << " is in staff " << checkData->staffIdx;
         checkData->staffHasElements = true;
     }
 }
@@ -67,7 +67,7 @@ static bool staffHasElements(Score* score, staff_idx_t staffIdx)
     for (auto i = score->spannerMap().cbegin(); i != score->spannerMap().cend(); ++i) {
         Spanner* s = i->second;
         if (s->staffIdx() == staffIdx) {
-            LOGE() << s->typeName() << " is in staff " << staffIdx;
+            LOGD() << s->typeName() << " is in staff " << staffIdx;
             return true;
         }
     }
@@ -94,7 +94,7 @@ TEST_F(Engraving_RemoveTests, removeStaff)
     EXPECT_TRUE(score);
 
     // Remove the second staff and see what happens
-    score->startCmd();
+    score->startCmd(TranslatableString::untranslatable("Engraving remove tests"));
     score->cmdRemoveStaff(1);
     score->endCmd(false, /*layoutAllParts = */ true);
 

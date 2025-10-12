@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -63,11 +63,14 @@ public:
 
     String accessibleInfo() const override;
 
+    int subtype() const override { return m_numMeasures; }
+    muse::TranslatableString subtypeUserName() const override;
+
     bool placeMultiple() const override { return numMeasures() == 1; }     // prevent overlapping additions with range selection
 
-    mu::RectF numberRect() const override;
+    RectF numberRect() const override;
 
-    mu::PointF numberPosition(const mu::RectF& numberBbox) const;
+    PointF numberPosition(const RectF& numberBbox) const;
 
     struct LayoutData : public Rest::LayoutData {
         SymId symId = SymId::noSym;
@@ -78,6 +81,9 @@ public:
         void setNumberSym(int n) { numberSym = timeSigSymIdsFromString(String::number(n)); }
         void setNumberSym(const String& s) { numberSym = timeSigSymIdsFromString(s); }
         void clearNumberSym() { numberSym.clear(); }
+
+        LineF extenderLineLeft = LineF();
+        LineF extenderLineRight = LineF();
     };
     DECLARE_LAYOUTDATA_METHODS(MeasureRepeat)
 

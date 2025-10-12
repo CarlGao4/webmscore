@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2023 MuseScore BVBA and others
+ * Copyright (C) 2023 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -36,9 +36,15 @@
 
 #include "view/braillemodel.h"
 
+using namespace muse;
 using namespace mu::engraving;
 using namespace mu::notation;
 using namespace mu::project;
+
+static void braille_init_qrc()
+{
+    Q_INIT_RESOURCE(braille);
+}
 
 namespace mu::braille {
 std::string BrailleModule::moduleName() const
@@ -48,21 +54,26 @@ std::string BrailleModule::moduleName() const
 
 void BrailleModule::resolveImports()
 {
-    auto writers = modularity::ioc()->resolve<INotationWritersRegister>(moduleName());
+    auto writers = ioc()->resolve<INotationWritersRegister>(moduleName());
     if (writers) {
         writers->reg({ "brf" }, std::make_shared<BrailleWriter>());
     }
+}
+
+void BrailleModule::registerResources()
+{
+    braille_init_qrc();
 }
 
 void BrailleModule::registerExports()
 {
     m_brailleConfiguration = std::make_shared<BrailleConfiguration>();
     m_brailleConverter = std::make_shared<BrailleConverter>();
-    m_notationBraille = std::make_shared<NotationBraille>();
+    m_notationBraille = std::make_shared<NotationBraille>(iocContext());
 
-    modularity::ioc()->registerExport<IBrailleConfiguration>(moduleName(), m_brailleConfiguration);
-    modularity::ioc()->registerExport<IBrailleConverter>(moduleName(), m_brailleConverter);
-    modularity::ioc()->registerExport<INotationBraille>(moduleName(), m_notationBraille);
+    ioc()->registerExport<IBrailleConfiguration>(moduleName(), m_brailleConfiguration);
+    ioc()->registerExport<IBrailleConverter>(moduleName(), m_brailleConverter);
+    ioc()->registerExport<INotationBraille>(moduleName(), m_notationBraille);
 }
 
 void BrailleModule::registerUiTypes()
@@ -71,12 +82,12 @@ void BrailleModule::registerUiTypes()
 
     qmlRegisterType<BrailleModel>("MuseScore.Braille", 1, 0, "BrailleModel");
 
-    modularity::ioc()->resolve<ui::IUiEngine>(moduleName())->addSourceImportPath(braille_QML_IMPORT);
+    ioc()->resolve<muse::ui::IUiEngine>(moduleName())->addSourceImportPath(braille_QML_IMPORT);
 }
 
-void BrailleModule::onInit(const framework::IApplication::RunMode& mode)
+void BrailleModule::onInit(const IApplication::RunMode& mode)
 {
-    if (framework::IApplication::RunMode::GuiApp != mode) {
+    if (IApplication::RunMode::GuiApp != mode) {
         return;
     }
 

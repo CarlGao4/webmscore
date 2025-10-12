@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -32,11 +32,11 @@
 #include "playback/playbacktypes.h"
 
 namespace mu::playback {
-class MixerPanelContextMenuModel : public uicomponents::AbstractMenuModel, public actions::Actionable
+class MixerPanelContextMenuModel : public muse::uicomponents::AbstractMenuModel, public muse::actions::Actionable
 {
     Q_OBJECT
 
-    INJECT(actions::IActionsDispatcher, dispatcher)
+    INJECT(muse::actions::IActionsDispatcher, dispatcher)
     INJECT(playback::IPlaybackConfiguration, configuration)
 
     Q_PROPERTY(bool labelsSectionVisible READ labelsSectionVisible NOTIFY labelsSectionVisibleChanged)
@@ -78,13 +78,15 @@ signals:
 private:
     bool isSectionVisible(MixerSectionType sectionType) const;
 
-    uicomponents::MenuItem* buildSectionVisibleItem(MixerSectionType sectionType);
-    uicomponents::MenuItem* buildAuxSendVisibleItem(audio::aux_channel_idx_t index);
-    uicomponents::MenuItem* buildAuxChannelVisibleItem(audio::aux_channel_idx_t index);
+    muse::uicomponents::MenuItem* buildSectionVisibleItem(MixerSectionType sectionType);
+    muse::uicomponents::MenuItem* buildAuxSendVisibleItem(muse::audio::aux_channel_idx_t index);
+    muse::uicomponents::MenuItem* buildAuxChannelVisibleItem(muse::audio::aux_channel_idx_t index);
 
-    void toggleMixerSection(const actions::ActionData& args);
-    void toggleAuxSend(const actions::ActionData& args);
-    void toggleAuxChannel(const actions::ActionData& args);
+    void toggleMixerSection(const muse::actions::ActionData& args);
+    void toggleAuxSend(const muse::actions::ActionData& args);
+    void toggleAuxChannel(const muse::actions::ActionData& args);
+
+    void emitMixerSectionVisibilityChanged(MixerSectionType sectionType);
 
     void setViewMenuItemChecked(const QString& itemId, bool checked);
 };

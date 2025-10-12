@@ -21,11 +21,13 @@
  */
 #include <gtest/gtest.h>
 
+#include <cstdint>
 #include <cstring>
+#include <vector>
 
 #include "types/bytearray.h"
 
-using namespace mu;
+using namespace muse;
 
 class Global_Types_ByteArrayTests : public ::testing::Test
 {

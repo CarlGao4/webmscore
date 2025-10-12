@@ -19,27 +19,27 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_MUSESAMPLER_MUSESAMLERUIACTIONS_H
-#define MU_MUSESAMPLER_MUSESAMLERUIACTIONS_H
+#ifndef MUSE_MUSESAMPLER_MUSESAMLERUIACTIONS_H
+#define MUSE_MUSESAMPLER_MUSESAMLERUIACTIONS_H
 
 #include "ui/iuiactionsmodule.h"
 
-namespace mu::musesampler {
-class MuseSamplerUiActions : public ui::IUiActionsModule
+namespace muse::musesampler {
+class MuseSamplerUiActions : public muse::ui::IUiActionsModule
 {
 public:
     MuseSamplerUiActions() = default;
 
-    const ui::UiActionList& actionsList() const override;
-    bool actionEnabled(const ui::UiAction& act) const override;
-    async::Channel<actions::ActionCodeList> actionEnabledChanged() const override;
+    const muse::ui::UiActionList& actionsList() const override;
+    bool actionEnabled(const muse::ui::UiAction& act) const override;
+    async::Channel<muse::actions::ActionCodeList> actionEnabledChanged() const override;
 
-    bool actionChecked(const ui::UiAction& act) const override;
-    async::Channel<actions::ActionCodeList> actionCheckedChanged() const override;
+    bool actionChecked(const muse::ui::UiAction& act) const override;
+    async::Channel<muse::actions::ActionCodeList> actionCheckedChanged() const override;
 
 private:
-    static const ui::UiActionList m_actions;
+    static const muse::ui::UiActionList m_actions;
 };
 }
 
-#endif // MU_MUSESAMPLER_MUSESAMLERUIACTIONS_H
+#endif // MUSE_MUSESAMPLER_MUSESAMLERUIACTIONS_H

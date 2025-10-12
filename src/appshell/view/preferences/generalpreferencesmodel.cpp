@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -27,11 +27,11 @@
 #include "translation.h"
 
 using namespace mu::appshell;
-using namespace mu::framework;
-using namespace mu::languages;
+using namespace muse;
+using namespace muse::languages;
 
 GeneralPreferencesModel::GeneralPreferencesModel(QObject* parent)
-    : QObject(parent)
+    : QObject(parent), muse::Injectable(muse::iocCtxForQmlObject(this))
 {
 }
 
@@ -41,9 +41,21 @@ void GeneralPreferencesModel::load()
         emit currentLanguageCodeChanged(languageCode);
     });
 
-    setIsNeedRestart(languagesService()->needRestartToApplyLanguageChange());
-    languagesService()->needRestartToApplyLanguageChangeChanged().onReceive(this, [this](bool need) {
-        setIsNeedRestart(need);
+    setRestartRequired(languagesService()->restartRequiredToApplyLanguage());
+    languagesService()->restartRequiredToApplyLanguageChanged().onReceive(this, [this](bool required) {
+        setRestartRequired(required);
+    });
+
+    configuration()->startupModeTypeChanged().onNotify(this, [this]() {
+        emit currentStartupModeChanged();
+    });
+
+    configuration()->startupScorePathChanged().onNotify(this, [this]() {
+        emit startupScorePathChanged();
+    });
+
+    configuration()->welcomeDialogShowOnStartupChanged().onNotify(this, [this]() {
+        emit showWelcomeDialogChanged();
     });
 }
 
@@ -53,13 +65,13 @@ void GeneralPreferencesModel::checkUpdateForCurrentLanguage()
 
     m_languageUpdateProgress = languagesService()->update(languageCode);
 
-    m_languageUpdateProgress.progressChanged.onReceive(this, [this](int64_t current, int64_t total, const std::string& status) {
+    m_languageUpdateProgress.progressChanged().onReceive(this, [this](int64_t current, int64_t total, const std::string& status) {
         emit receivingUpdateForCurrentLanguage(current, total, QString::fromStdString(status));
     });
 
-    m_languageUpdateProgress.finished.onReceive(this, [this, languageCode](const ProgressResult& res) {
+    m_languageUpdateProgress.finished().onReceive(this, [this, languageCode](const ProgressResult& res) {
         if (res.ret.code() == static_cast<int>(Err::AlreadyUpToDate)) {
-            QString msg = mu::qtrc("appshell/preferences", "Your version of %1 is up to date.")
+            QString msg = muse::qtrc("appshell/preferences", "Your version of %1 is up to date.")
                           .arg(languagesService()->language(languageCode).name);
             interactive()->info(msg.toStdString(), std::string());
         }
@@ -92,7 +104,7 @@ QVariantList GeneralPreferencesModel::languages() const
 
     QVariantMap systemLanguageObj;
     systemLanguageObj["code"] = SYSTEM_LANGUAGE_CODE;
-    systemLanguageObj["name"] = mu::qtrc("appshell/preferences", "System default");
+    systemLanguageObj["name"] = muse::qtrc("appshell/preferences", "System default");
     result.prepend(systemLanguageObj);
 
     return result;
@@ -131,7 +143,6 @@ void GeneralPreferencesModel::setCurrentLanguageCode(const QString& currentLangu
     }
 
     languagesConfiguration()->setCurrentLanguageCode(currentLanguageCode);
-    emit currentLanguageCodeChanged(currentLanguageCode);
 }
 
 void GeneralPreferencesModel::setCurrentKeyboardLayout(const QString& keyboardLayout)
@@ -156,94 +167,94 @@ void GeneralPreferencesModel::setOscPort(int oscPort)
     emit oscPortChanged(oscPort);
 }
 
-bool GeneralPreferencesModel::isNeedRestart() const
+bool GeneralPreferencesModel::restartRequired() const
 {
-    return m_isNeedRestart;
+    return m_restartRequired;
 }
 
-void GeneralPreferencesModel::setIsNeedRestart(bool newIsNeedRestart)
+void GeneralPreferencesModel::setRestartRequired(bool restartRequired)
 {
-    if (m_isNeedRestart == newIsNeedRestart) {
+    if (m_restartRequired == restartRequired) {
         return;
     }
-    m_isNeedRestart = newIsNeedRestart;
-    emit isNeedRestartChanged();
+    m_restartRequired = restartRequired;
+    emit restartRequiredChanged();
 }
 
 QVariantList GeneralPreferencesModel::startupModes() const
 {
-    QVariantList result;
-
-    for (const StartMode& mode: allStartupModes()) {
-        QVariantMap obj;
-        obj["title"] = mode.title;
-        obj["checked"] = mode.checked;
-        obj["canSelectScorePath"] = mode.canSelectScorePath;
-        obj["scorePath"] = mode.scorePath;
-
-        result << obj;
-    }
+    const QVariantList result {
+        QVariantMap {
+            { "title", muse::qtrc("appshell/preferences", "Start empty") },
+            { "value", static_cast<int>(StartupModeType::StartEmpty) },
+        },
+        QVariantMap {
+            { "title", muse::qtrc("appshell/preferences", "Continue last session") },
+            { "value", static_cast<int>(StartupModeType::ContinueLastSession) },
+        },
+        QVariantMap {
+            { "title", muse::qtrc("appshell/preferences", "Start with new score") },
+            { "value", static_cast<int>(StartupModeType::StartWithNewScore) },
+        },
+        QVariantMap {
+            { "title", muse::qtrc("appshell/preferences", "Start with score:") },
+            { "value", static_cast<int>(StartupModeType::StartWithScore) },
+            { "isStartWithScore", true },
+        },
+    };
 
     return result;
 }
 
-GeneralPreferencesModel::StartModeList GeneralPreferencesModel::allStartupModes() const
+int GeneralPreferencesModel::currentStartupMode() const
 {
-    static const QMap<StartupModeType, QString> modeTitles {
-        { StartupModeType::StartEmpty,  qtrc("appshell/preferences", "Start empty") },
-        { StartupModeType::ContinueLastSession, qtrc("appshell/preferences", "Continue last session") },
-        { StartupModeType::StartWithNewScore, qtrc("appshell/preferences", "Start with new score") },
-        { StartupModeType::StartWithScore, qtrc("appshell/preferences", "Start with score:") }
-    };
-
-    StartModeList modes;
-
-    for (StartupModeType type : modeTitles.keys()) {
-        bool canSelectScorePath = (type == StartupModeType::StartWithScore);
-
-        StartMode mode;
-        mode.type = type;
-        mode.title = modeTitles[type];
-        mode.checked = configuration()->startupModeType() == type;
-        mode.scorePath = canSelectScorePath ? configuration()->startupScorePath().toQString() : QString();
-        mode.canSelectScorePath = canSelectScorePath;
-
-        modes << mode;
-    }
-
-    return modes;
-}
-
-QStringList GeneralPreferencesModel::scorePathFilter() const
-{
-    return { qtrc("appshell/preferences", "MuseScore file") + " (*.mscz)",
-             qtrc("appshell/preferences", "All") + " (*)" };
+    return static_cast<int>(configuration()->startupModeType());
 }
 
 void GeneralPreferencesModel::setCurrentStartupMode(int modeIndex)
 {
-    StartModeList modes = allStartupModes();
-
-    if (modeIndex < 0 || modeIndex >= modes.size()) {
+    if (modeIndex < 0 || modeIndex >= 4) {
         return;
     }
 
-    StartupModeType selectedType = modes[modeIndex].type;
+    StartupModeType selectedType = static_cast<StartupModeType>(modeIndex);
     if (selectedType == configuration()->startupModeType()) {
         return;
     }
 
     configuration()->setStartupModeType(selectedType);
-    emit startupModesChanged();
+}
+
+QString GeneralPreferencesModel::startupScorePath() const
+{
+    return configuration()->startupScorePath().toQString();
 }
 
 void GeneralPreferencesModel::setStartupScorePath(const QString& scorePath)
 {
-    if (scorePath.isEmpty() || scorePath == configuration()->startupScorePath().toQString()) {
+    if (scorePath.isEmpty() || scorePath == startupScorePath()) {
         return;
     }
 
     configuration()->setStartupScorePath(scorePath);
+}
 
-    emit startupModesChanged();
+QStringList GeneralPreferencesModel::scorePathFilter() const
+{
+    return { muse::qtrc("appshell/preferences", "MuseScore file") + " (*.mscz)",
+             muse::qtrc("appshell/preferences", "All") + " (*)" };
+}
+
+bool GeneralPreferencesModel::showWelcomeDialog() const
+{
+    return configuration()->welcomeDialogShowOnStartup();
+}
+
+void GeneralPreferencesModel::setShowWelcomeDialog(bool show)
+{
+    if (configuration()->welcomeDialogShowOnStartup() == show) {
+        return;
+    }
+
+    configuration()->setWelcomeDialogShowOnStartup(show);
 }

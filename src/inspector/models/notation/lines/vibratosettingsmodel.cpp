@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -31,8 +31,8 @@ VibratoSettingsModel::VibratoSettingsModel(QObject* parent, IElementRepositorySe
     : AbstractInspectorModel(parent, repository, mu::engraving::ElementType::VIBRATO)
 {
     setModelType(InspectorModelType::TYPE_VIBRATO);
-    setTitle(qtrc("inspector", "Vibrato"));
-    setIcon(ui::IconCode::Code::VIBRATO);
+    setTitle(muse::qtrc("inspector", "Vibrato"));
+    setIcon(muse::ui::IconCode::Code::VIBRATO);
 
     createProperties();
 }
@@ -50,10 +50,10 @@ PropertyItem* VibratoSettingsModel::placement() const
 QVariantList VibratoSettingsModel::possibleLineTypes() const
 {
     QMap<mu::engraving::VibratoType, QString> types {
-        { mu::engraving::VibratoType::GUITAR_VIBRATO, mu::qtrc("inspector", "Vibrato") },
-        { mu::engraving::VibratoType::GUITAR_VIBRATO_WIDE, mu::qtrc("inspector", "Vibrato wide") },
-        { mu::engraving::VibratoType::VIBRATO_SAWTOOTH, mu::qtrc("inspector", "Vibrato sawtooth") },
-        { mu::engraving::VibratoType::VIBRATO_SAWTOOTH_WIDE, mu::qtrc("inspector", "Vibrato sawtooth wide") }
+        { mu::engraving::VibratoType::GUITAR_VIBRATO, muse::qtrc("inspector", "Vibrato") },
+        { mu::engraving::VibratoType::GUITAR_VIBRATO_WIDE, muse::qtrc("inspector", "Vibrato wide") },
+        { mu::engraving::VibratoType::VIBRATO_SAWTOOTH, muse::qtrc("inspector", "Vibrato sawtooth") },
+        { mu::engraving::VibratoType::VIBRATO_SAWTOOTH_WIDE, muse::qtrc("inspector", "Vibrato sawtooth wide") }
     };
 
     QVariantList result;

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -31,50 +31,50 @@
 
 #include "log.h"
 
+using namespace muse;
 using namespace mu;
 using namespace mu::engraving;
 
-std::shared_ptr<EngravingProject> EngravingProject::create()
+std::shared_ptr<EngravingProject> EngravingProject::create(const modularity::ContextPtr& iocCtx)
 {
-    if (engravingElementsProvider()) {
-        engravingElementsProvider()->clearStatistic();
+    std::shared_ptr<EngravingProject> p = std::shared_ptr<EngravingProject>(new EngravingProject(iocCtx));
+    if (p->engravingElementsProvider()) {
+        p->engravingElementsProvider()->clearStatistic();
     }
-
-    std::shared_ptr<EngravingProject> p = std::shared_ptr<EngravingProject>(new EngravingProject());
     p->init(DefaultStyle::defaultStyle());
     return p;
 }
 
-std::shared_ptr<EngravingProject> EngravingProject::create(const MStyle& style)
+std::shared_ptr<EngravingProject> EngravingProject::create(const MStyle& style, const modularity::ContextPtr& iocCtx)
 {
-    if (engravingElementsProvider()) {
-        engravingElementsProvider()->clearStatistic();
+    std::shared_ptr<EngravingProject> p = std::shared_ptr<EngravingProject>(new EngravingProject(iocCtx));
+    if (p->engravingElementsProvider()) {
+        p->engravingElementsProvider()->clearStatistic();
     }
-
-    std::shared_ptr<EngravingProject> p = std::shared_ptr<EngravingProject>(new EngravingProject());
     p->init(style);
     return p;
 }
 
-EngravingProject::EngravingProject()
+EngravingProject::EngravingProject(const modularity::ContextPtr& iocCtx)
+    : muse::Injectable(iocCtx)
 {
-    ObjectAllocator::used();
+    muse::ObjectAllocator::used();
 }
 
 EngravingProject::~EngravingProject()
 {
     delete m_masterScore;
 
-    ObjectAllocator::unused();
+    muse::ObjectAllocator::unused();
 
-    AllocatorsRegister::instance()->printStatistic("=== Destroy engraving project ===");
+    // muse::AllocatorsRegister::instance()->printStatistic("=== Destroy engraving project ===");
     //! NOTE At the moment, the allocator is working as leak detector. No need to do cleanup, at the moment it can lead to crashes
     // AllocatorsRegister::instance()->cleanupAll("engraving");
 }
 
 void EngravingProject::init(const MStyle& style)
 {
-    m_masterScore = new MasterScore(style, weak_from_this());
+    m_masterScore = new MasterScore(iocContext(), style, weak_from_this());
 }
 
 IFileInfoProviderPtr EngravingProject::fileInfoProvider() const
@@ -113,6 +113,7 @@ Ret EngravingProject::doSetupMasterScore(bool forceMode)
 
     m_masterScore->createPaddingTable();
     m_masterScore->connectTies();
+    m_masterScore->undoRemoveStaleTieJumpPoints(false);
 
     for (Part* p : m_masterScore->parts()) {
         p->updateHarmonyChannels(false);
@@ -122,8 +123,8 @@ Ret EngravingProject::doSetupMasterScore(bool forceMode)
 
     for (Score* s : m_masterScore->scoreList()) {
         s->setPlaylistDirty();
-        s->addLayoutFlags(LayoutFlag::FIX_PITCH_VELO);
         s->setLayoutAll();
+        s->createPaddingTable();
     }
 
     m_masterScore->updateChannel();
@@ -132,7 +133,7 @@ Ret EngravingProject::doSetupMasterScore(bool forceMode)
     Ret ret = checkCorrupted();
     m_isCorruptedUponLoading = !ret;
 
-    return forceMode ? make_ok() : ret;
+    return forceMode ? muse::make_ok() : ret;
 }
 
 MasterScore* EngravingProject::masterScore() const
@@ -149,12 +150,12 @@ Ret EngravingProject::loadMscz(const MscReader& msc, SettingsCompat& settingsCom
     return loader.loadMscz(m_masterScore, msc, settingsCompat, ignoreVersionError);
 }
 
-bool EngravingProject::writeMscz(MscWriter& writer, bool onlySelection, bool createThumbnail)
+bool EngravingProject::writeMscz(MscWriter& writer, bool createThumbnail, const write::WriteRange* range)
 {
     TRACEFUNC;
 
-    MscSaver saver;
-    return saver.writeMscz(m_masterScore, writer, onlySelection, createThumbnail);
+    MscSaver saver(iocContext());
+    return saver.writeMscz(m_masterScore, writer, createThumbnail, range);
 }
 
 bool EngravingProject::isCorruptedUponLoading() const

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -39,11 +39,15 @@ public:
     void requestElements() override;
     void loadProperties() override;
     void resetProperties() override;
+    void onNotationChanged(const mu::engraving::PropertyIdSet& changedPropertyIdSet,
+                           const mu::engraving::StyleIdSet& changedStyleIdSet) override;
 
     PropertyItem* style() const;
     PropertyItem* direction() const;
 
 private:
+    void loadProperties(const mu::engraving::PropertyIdSet& allowedPropertyIdSet);
+
     PropertyItem* m_style = nullptr;
     PropertyItem* m_direction = nullptr;
 };

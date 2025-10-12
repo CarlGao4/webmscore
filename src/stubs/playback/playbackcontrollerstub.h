@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -29,58 +29,70 @@ class PlaybackControllerStub : public IPlaybackController
 {
 public:
     bool isPlayAllowed() const override;
-    async::Notification isPlayAllowedChanged() const override;
+    muse::async::Notification isPlayAllowedChanged() const override;
 
     bool isPlaying() const override;
-    async::Notification isPlayingChanged() const override;
+    muse::async::Notification isPlayingChanged() const override;
 
-    void seek(const midi::tick_t tick) override;
-    void seek(const audio::msecs_t msecs) override;
     void reset() override;
 
-    async::Notification playbackPositionChanged() const override;
-    async::Channel<uint32_t> midiTickPlayed() const override;
-    float playbackPositionInSeconds() const override;
+    muse::async::Channel<muse::audio::secs_t, muse::midi::tick_t> currentPlaybackPositionChanged() const override;
 
-    audio::TrackSequenceId currentTrackSequenceId() const override;
-    async::Notification currentTrackSequenceIdChanged() const override;
+    muse::audio::TrackSequenceId currentTrackSequenceId() const override;
+    muse::async::Notification currentTrackSequenceIdChanged() const override;
 
     const InstrumentTrackIdMap& instrumentTrackIdMap() const override;
     const AuxTrackIdMap& auxTrackIdMap() const override;
 
-    async::Channel<audio::TrackId> trackAdded() const override;
-    async::Channel<audio::TrackId> trackRemoved() const override;
+    muse::async::Channel<muse::audio::TrackId> trackAdded() const override;
+    muse::async::Channel<muse::audio::TrackId> trackRemoved() const override;
 
-    std::string auxChannelName(audio::aux_channel_idx_t index) const override;
-    async::Channel<audio::aux_channel_idx_t, std::string> auxChannelNameChanged() const override;
+    std::string auxChannelName(muse::audio::aux_channel_idx_t index) const override;
+    muse::async::Channel<muse::audio::aux_channel_idx_t, std::string> auxChannelNameChanged() const override;
 
-    async::Promise<audio::SoundPresetList> availableSoundPresets(const engraving::InstrumentTrackId& instrumentTrackId) const override;
+    muse::async::Promise<muse::audio::SoundPresetList> availableSoundPresets(
+        const engraving::InstrumentTrackId& instrumentTrackId) const override;
 
-    void playElements(const std::vector<const notation::EngravingItem*>& elements) override;
+    notation::INotationSoloMuteState::SoloMuteState trackSoloMuteState(const engraving::InstrumentTrackId& trackId) const override;
+    void setTrackSoloMuteState(const engraving::InstrumentTrackId& trackId,
+                               const notation::INotationSoloMuteState::SoloMuteState& state) override;
+
+    void playElements(const std::vector<const notation::EngravingItem*>& elements,
+                      const PlayParams& params = PlayParams(), bool isMidi = false) override;
+    void playNotes(const notation::NoteValList& notes, notation::staff_idx_t staffIdx, const notation::Segment* segment,
+                   const PlayParams& params = PlayParams()) override;
     void playMetronome(int tick) override;
-    void seekElement(const notation::EngravingItem* element) override;
 
-    bool actionChecked(const actions::ActionCode& actionCode) const override;
-    async::Channel<actions::ActionCode> actionCheckedChanged() const override;
+    void triggerControllers(const muse::mpe::ControllerChangeEventList& list, notation::staff_idx_t staffIdx, int tick) override;
+
+    void seekElement(const notation::EngravingItem* element, bool flushSound = true) override;
+    void seekBeat(int measureIndex, int beatIndex, bool flushSound = true) override;
+
+    bool actionChecked(const muse::actions::ActionCode& actionCode) const override;
+    muse::async::Channel<muse::actions::ActionCode> actionCheckedChanged() const override;
 
     QTime totalPlayTime() const override;
-    async::Notification totalPlayTimeChanged() const override;
+    muse::async::Notification totalPlayTimeChanged() const override;
 
     notation::Tempo currentTempo() const override;
-    async::Notification currentTempoChanged() const override;
+    muse::async::Notification currentTempoChanged() const override;
 
     notation::MeasureBeat currentBeat() const override;
-    audio::msecs_t beatToMilliseconds(int measureIndex, int beatIndex) const override;
+    muse::audio::secs_t beatToSecs(int measureIndex, int beatIndex) const override;
 
     double tempoMultiplier() const override;
     void setTempoMultiplier(double multiplier) override;
 
-    framework::Progress loadingProgress() const override;
+    muse::Progress loadingProgress() const override;
 
     void applyProfile(const SoundProfileName& profileName) override;
 
     void setNotation(notation::INotationPtr notation) override;
     void setIsExportingAudio(bool exporting) override;
+
+    const std::map<muse::audio::TrackId, muse::audio::AudioResourceMeta>& onlineSounds() const override;
+    muse::async::Notification onlineSoundsChanged() const override;
+    muse::Progress onlineSoundsProcessingProgress() const override;
 };
 }
 

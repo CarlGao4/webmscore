@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -27,18 +27,18 @@
 #include "io/ifilesystem.h"
 #include "modularity/ioc.h"
 
-namespace mu::framework {
+namespace muse::deprecated {
 class XmlReader;
 }
 
 namespace mu::project {
 class MscMetaReader : public IMscMetaReader
 {
-    INJECT(io::IFileSystem, fileSystem)
+    INJECT(muse::io::IFileSystem, fileSystem)
 
 public:
-    RetVal<ProjectMeta> readMeta(const io::path_t& filePath) const override;
-    RetVal<CloudProjectInfo> readCloudProjectInfo(const io::path_t& filePath) const override;
+    muse::RetVal<ProjectMeta> readMeta(const muse::io::path_t& filePath) const override;
+    muse::RetVal<CloudProjectInfo> readCloudProjectInfo(const muse::io::path_t& filePath) const override;
 
 private:
 
@@ -70,11 +70,11 @@ private:
         size_t partsCount = 0;
     };
 
-    Ret prepareReader(const io::path_t& filePath, mu::engraving::MscReader& reader) const;
+    muse::Ret prepareReader(const muse::io::path_t& filePath, mu::engraving::MscReader& reader) const;
 
-    void doReadMeta(framework::XmlReader& xmlReader, ProjectMeta& meta) const;
-    RawMeta doReadBox(framework::XmlReader& xmlReader) const;
-    RawMeta doReadRawMeta(framework::XmlReader& xmlReader) const;
+    void doReadMeta(muse::deprecated::XmlReader& xmlReader, ProjectMeta& meta) const;
+    RawMeta doReadBox(muse::deprecated::XmlReader& xmlReader) const;
+    RawMeta doReadRawMeta(muse::deprecated::XmlReader& xmlReader) const;
     QString formatFromXml(const std::string& xml) const;
 
     QString format(const std::string& str) const;
@@ -82,8 +82,8 @@ private:
     QString simplified(const std::string& str) const;
     std::string cutXmlTags(const std::string& str) const;
 
-    QString readText(framework::XmlReader& xmlReader) const;
-    QString readMetaTagText(framework::XmlReader& xmlReader) const;
+    QString readText(muse::deprecated::XmlReader& xmlReader) const;
+    QString readMetaTagText(muse::deprecated::XmlReader& xmlReader) const;
 };
 }
 

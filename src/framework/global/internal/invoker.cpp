@@ -22,11 +22,11 @@
 #include "invoker.h"
 
 #include <QMetaObject>
-#include <QGuiApplication>
+#include <QApplication>
 
 #include "log.h"
 
-using namespace mu::framework;
+using namespace muse;
 
 std::thread::id Invoker::m_mainThreadId;
 

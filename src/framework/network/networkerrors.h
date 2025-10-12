@@ -19,13 +19,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_NETWORK_NETWORKERRORS_H
-#define MU_NETWORK_NETWORKERRORS_H
+#ifndef MUSE_NETWORK_NETWORKERRORS_H
+#define MUSE_NETWORK_NETWORKERRORS_H
 
 #include "types/ret.h"
 #include "translation.h"
 
-namespace mu::network {
+namespace muse::network {
 enum class Err {
     Undefined       = int(Ret::Code::Undefined),
     NoError         = int(Ret::Code::Ok),
@@ -46,15 +46,15 @@ inline Ret make_ret(Err e)
     case Err::Undefined: return Ret(retCode);
     case Err::NoError: return Ret(retCode);
     case Err::UnknownError: return Ret(retCode);
-    case Err::Abort: return Ret(retCode, trc("network", "The request was aborted"));
-    case Err::Timeout: return Ret(retCode, trc("network", "The connection to the remote server timed out"));
-    case Err::NetworkError: return Ret(retCode, trc("network", "An unknown network-related error occurred"));
-    case Err::FiledOpenIODeviceRead: return Ret(retCode, trc("network", "The I/O device was not opened for reading"));
-    case Err::FiledOpenIODeviceWrite: return Ret(retCode, trc("network", "The I/O device was not opened for writing"));
+    case Err::Abort: return Ret(retCode, muse::trc("network", "The request was aborted"));
+    case Err::Timeout: return Ret(retCode, muse::trc("network", "The connection to the remote server timed out"));
+    case Err::NetworkError: return Ret(retCode, muse::trc("network", "An unknown network-related error occurred"));
+    case Err::FiledOpenIODeviceRead: return Ret(retCode, muse::trc("network", "The I/O device was not opened for reading"));
+    case Err::FiledOpenIODeviceWrite: return Ret(retCode, muse::trc("network", "The I/O device was not opened for writing"));
     }
 
     return Ret(static_cast<int>(e));
 }
 }
 
-#endif // MU_NETWORK_NETWORKERRORS_H
+#endif // MUSE_NETWORK_NETWORKERRORS_H

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -21,6 +21,8 @@
  */
 #include "keysignaturesettingsmodel.h"
 
+#include "dom/layoutbreak.h"
+#include "dom/measure.h"
 #include "translation.h"
 
 using namespace mu::inspector;
@@ -29,8 +31,8 @@ KeySignatureSettingsModel::KeySignatureSettingsModel(QObject* parent, IElementRe
     : AbstractInspectorModel(parent, repository)
 {
     setModelType(InspectorModelType::TYPE_KEYSIGNATURE);
-    setTitle(qtrc("inspector", "Key signature"));
-    setIcon(ui::IconCode::Code::KEY_SIGNATURE);
+    setTitle(muse::qtrc("inspector", "Key signature"));
+    setIcon(muse::ui::IconCode::Code::KEY_SIGNATURE);
     createProperties();
 }
 
@@ -50,17 +52,24 @@ void KeySignatureSettingsModel::loadProperties()
     loadPropertyItem(m_hasToShowCourtesy);
     loadPropertyItem(m_mode);
 
-    bool enabled = true;
+    bool enableMode = true;
+    bool enableCourtesy = true;
 
     for (const mu::engraving::EngravingItem* element : m_elementList) {
         if (element->generated()) {
-            enabled = false;
-            break;
+            enableMode = false;
+        }
+
+        const engraving::Measure* measure = element->findMeasure();
+        const engraving::Measure* prevMeasure = measure ? measure->prevMeasure() : nullptr;
+        const engraving::LayoutBreak* sectionBreak = prevMeasure ? prevMeasure->sectionBreakElement() : nullptr;
+        if (sectionBreak && !sectionBreak->showCourtesy()) {
+            enableCourtesy = false;
         }
     }
 
-    m_hasToShowCourtesy->setIsEnabled(enabled);
-    m_mode->setIsEnabled(enabled);
+    m_hasToShowCourtesy->setIsEnabled(enableCourtesy);
+    m_mode->setIsEnabled(enableMode);
 }
 
 void KeySignatureSettingsModel::resetProperties()
