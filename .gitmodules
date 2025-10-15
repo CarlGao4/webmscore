@@ -7,3 +7,6 @@
 [submodule "thirdparty/vorbis"]
 	path = thirdparty/vorbis
 	url = https://github.com/xiph/vorbis.git
+[submodule "thirdparty/brotli"]
+	path = thirdparty/brotli
+	url = https://github.com/google/brotli.git
