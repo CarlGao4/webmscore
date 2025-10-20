@@ -56,6 +56,9 @@ static bool setThreadPriority(std::thread& thread, ThreadPriority priority)
     if (!SetThreadPriority(thread.native_handle(), winPriority)) {
         return false;
     }
+#elif defined(Q_OS_WASM)
+    // Not implemented
+    return true;
 #else
     pthread_t pthread = thread.native_handle();
     struct sched_param param;

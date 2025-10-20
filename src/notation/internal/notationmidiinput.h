@@ -26,12 +26,12 @@
 
 #include "modularity/ioc.h"
 #include "playback/iplaybackcontroller.h"
-#include "inotationconfiguration.h"
+#include "../inotationconfiguration.h"
 #include "actions/iactionsdispatcher.h"
 
 #include "../inotationmidiinput.h"
 #include "igetscore.h"
-#include "inotationinteraction.h"
+#include "../inotationinteraction.h"
 #include "inotationundostack.h"
 
 namespace mu::engraving {

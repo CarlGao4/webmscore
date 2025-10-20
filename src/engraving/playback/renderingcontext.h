@@ -27,9 +27,9 @@
 #include "../dom/note.h"
 #include "../dom/sig.h"
 
-#include "playback/utils/arrangementutils.h"
-#include "playback/utils/pitchutils.h"
-#include "playback/playbackcontext.h"
+#include "engraving/playback/utils/arrangementutils.h"
+#include "engraving/playback/utils/pitchutils.h"
+#include "engraving/playback/playbackcontext.h"
 
 namespace mu::engraving {
 struct RenderingContext {

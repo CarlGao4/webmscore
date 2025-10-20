@@ -28,7 +28,7 @@
 
 #include "../inotationplayback.h"
 #include "igetscore.h"
-#include "inotationconfiguration.h"
+#include "../inotationconfiguration.h"
 
 namespace mu::engraving {
 class Score;

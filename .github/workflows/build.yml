@@ -6,14 +6,13 @@ on:
   push:
     branches:
       - 'webmscore'
-      - 'Xmader/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:
-  EM_VERSION: 2.0.6
+  EM_VERSION: 3.1.70
   EM_CACHE_FOLDER: 'emsdk-cache'
   COMMIT_MSG: ${{ github.event.head_commit.message }}
 
@@ -23,12 +22,12 @@ jobs:
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: true
       - uses: actions/setup-node@v1
         with:
-          node-version: 16
+          node-version: 24
       - uses: actions/cache@v3
         with:
           path: ${{env.EM_CACHE_FOLDER}}
@@ -43,28 +42,26 @@ jobs:
           path: ${{ github.workspace }}/.ccache
 
       - name: Install Qt
-        uses: jurplel/install-qt-action@v3
-        with:
-          # aqtversion: '==2.1.*'
-          version: '5.15.2'
-          host: 'linux'
-          target: 'desktop'
-          arch: 'wasm_32'
-          archives: 'qtbase'
-          dir: ${{ github.workspace }}/build.qt5
-          setup-python: true
-          cache: true
+        # uses: jurplel/install-qt-action@v3
+        # with:
+        #   # aqtversion: '==2.1.*'
+        #   version: '5.15.2'
+        #   host: 'linux'
+        #   target: 'desktop'
+        #   arch: 'wasm_32'
+        #   archives: 'qtbase'
+        #   dir: ${{ github.workspace }}/build.qt5
+        #   setup-python: true
+        #   cache: true
+        run: |
+          pip install aqtinstall
+          aqt install-qt all_os wasm 6.9.1 wasm_singlethread --autodesktop --outputdir ${{ github.workspace }}/build.qt6 --archives qtbase qtdeclarative qtsvg --modules qt5compat qtscxml qtshadertools
+          aqt install-qt linux desktop 6.9.1 --outputdir ${{ github.workspace }}/build.qt6 --archives icu
       - name: Install emscripten
         uses: Xmader/setup-emsdk@master
         with:
           version: ${{env.EM_VERSION}}
           actions-cache-folder: ${{env.EM_CACHE_FOLDER}}
-      - name: Apply patches for Qt and emscripten
-        run: |
-          echo $Qt5_DIR
-          cp --verbose -r build/qt/* ${Qt5_DIR}
-          echo $(which emcc).py
-          sed -i -r "s/(shared.Settings.MEM_INIT_IN_WASM = )True/\1False/" "$(which emcc).py"
       - name: Install ccache
         run: |
           sudo apt install -y ccache

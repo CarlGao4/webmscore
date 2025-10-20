@@ -24,7 +24,7 @@
 #define MU_NOTATION_MASTERNOTATIONPARTS_H
 
 #include "notationparts.h"
-#include "imasternotation.h"
+#include "../imasternotation.h"
 
 namespace mu::notation {
 class MasterNotationParts : public NotationParts

@@ -40,7 +40,7 @@
 #include "engraving/dom/tempotext.h"
 #include "engraving/dom/utils.h"
 
-#include "notationerrors.h"
+#include "../notationerrors.h"
 
 #include "log.h"
 

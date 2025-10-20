@@ -1,5 +1,5 @@
 
-set(MODULE MainAudio)
+declare_module(MainAudio)
 
 set(MUE_ENABLE_AUDIO_EXPORT ON)
 
@@ -15,18 +15,20 @@ set(MODULE_SRC
     ${MU_ROOT}/src/playback/internal/soundprofilesrepository.h
     ${MU_ROOT}/src/playback/internal/drumsetloader.cpp
     ${MU_ROOT}/src/playback/internal/drumsetloader.h
+    ${MU_ROOT}/src/notation/utilities/percussionutilities.cpp
+    ${MU_ROOT}/src/notation/utilities/percussionutilities.h
 )
 
 set(MODULE_INCLUDE
     ${MU_ROOT}/src/framework/audio
 )
 
-add_subdirectory(${MU_ROOT}/src/framework/audio          audio)
+add_subdirectory(${MU_ROOT}/src/framework/audio          muse_audio)
 add_subdirectory(${MU_ROOT}/src/importexport/audioexport audioexport)
 
 set(MODULE_LINK
-    audio
+    muse_audio
     iex_audioexport
 )
 
-include(SetupModule)
+setup_module()

@@ -21,7 +21,7 @@
  */
 #include "notationparts.h"
 
-#include "dom/barline.h"
+#include "engraving/dom/barline.h"
 #include "translation.h"
 
 #include "engraving/dom/factory.h"

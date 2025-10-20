@@ -25,7 +25,7 @@
 
 #include "mpe/mpetypes.h"
 
-#include "dom/pitchspelling.h"
+#include "engraving/dom/pitchspelling.h"
 
 namespace mu::engraving {
 inline muse::mpe::PitchClass pitchClassFromTpc(const int tpc)

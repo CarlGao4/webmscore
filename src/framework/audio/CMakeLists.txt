@@ -18,6 +18,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+# fluidsynth dependency
+include(SetupSndFile)
+
 declare_module(muse_audio)
 set(MODULE_ALIAS muse::audio)
 
@@ -51,9 +54,6 @@ set(MODULE_SRC
     ${CMAKE_CURRENT_LIST_DIR}/internal/audioconfiguration.cpp
     ${CMAKE_CURRENT_LIST_DIR}/internal/audioconfiguration.h
     )
-
-# fluidsynth dependency
-include(SetupSndFile)
 
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/thirdparty/fluidsynth fluidsynth)
 

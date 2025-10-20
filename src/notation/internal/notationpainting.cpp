@@ -26,7 +26,7 @@
 #include "engraving/dom/score.h"
 
 #include "notation.h"
-#include "notationinteraction.h"
+// #include "notationinteraction.h"
 
 #include "log.h"
 
@@ -125,9 +125,9 @@ void NotationPainting::doPaint(Painter* painter, const Options& opt)
 
     scoreRenderer()->paintScore(painter, score(), myopt);
 
-    if (!myopt.isPrinting) {
-        static_cast<NotationInteraction*>(m_notation->interaction().get())->paint(painter);
-    }
+    // if (!myopt.isPrinting) {
+    //     static_cast<NotationInteraction*>(m_notation->interaction().get())->paint(painter);
+    // }
 }
 
 void NotationPainting::paintPageSheet(Painter* painter, const Page* page, const RectF& pageRect, bool printPageBackground) const
@@ -180,6 +180,8 @@ void NotationPainting::paintPageSheet(Painter* painter, const Page* page, const 
 
 void NotationPainting::paintView(Painter* painter, const RectF& frameRect, bool isPrinting)
 {
+    NOT_IMPLEMENTED;
+#if 0
     Options opt;
     opt.isSetViewport = false;
     opt.isMultiPage = true;
@@ -187,6 +189,7 @@ void NotationPainting::paintView(Painter* painter, const RectF& frameRect, bool 
     opt.deviceDpi = uiConfiguration()->logicalDpi();
     opt.isPrinting = isPrinting;
     doPaint(painter, opt);
+#endif
 }
 
 void NotationPainting::paintPdf(Painter* painter, const Options& opt)

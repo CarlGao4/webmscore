@@ -23,7 +23,7 @@
 #ifndef MU_NOTATION_EXCERPTNOTATION_H
 #define MU_NOTATION_EXCERPTNOTATION_H
 
-#include "iexcerptnotation.h"
+#include "../iexcerptnotation.h"
 #include "notation.h"
 
 namespace mu::notation {

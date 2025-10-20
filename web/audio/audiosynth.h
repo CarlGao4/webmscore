@@ -48,7 +48,7 @@ private:
 
     // can't use std::set<std::function<>>
     // https://stackoverflow.com/questions/53459693
-    static std::vector<std::function<SynthRes*(bool)>> synthIterators;
+    inline static std::vector<std::function<SynthRes*(bool)>> synthIterators;
 };
 
 } // namespace MainAudio

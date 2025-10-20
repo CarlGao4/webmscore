@@ -39,11 +39,11 @@
 #include "engraving/engravingerrors.h"
 #include "engraving/rw/write/writecontext.h"
 
-#include "iprojectautosaver.h"
+#include "../iprojectautosaver.h"
 #include "notation/notationerrors.h"
 #include "projectaudiosettings.h"
 #include "projectfileinfoprovider.h"
-#include "projecterrors.h"
+#include "../projecterrors.h"
 
 #include "defer.h"
 #include "log.h"

@@ -21,7 +21,7 @@
  */
 #include "playbackcontroller.h"
 
-#include "playbacktypes.h"
+#include "../playbacktypes.h"
 
 #include "engraving/dom/stafftext.h"
 #include "engraving/dom/utils.h"

@@ -11,22 +11,146 @@ if (OS_IS_WIN AND (NOT MINGW))
 elseif (OS_IS_WASM)
     set(LIBSND_PATH "" CACHE PATH "Path to libsnd sources")
     set(LIBOGG_PATH "" CACHE PATH "Path to libogg sources")
-    set(LIBVORBIS_PATH "" CACHE PATH "Path to libogg sources")
-    set(SNDFILE_INCDIR LIBSND_PATH)
+    set(LIBVORBIS_PATH "" CACHE PATH "Path to libvorbis sources")
+    set(SNDFILE_INCDIR ${LIBSND_PATH}/include)
 
     declare_thirdparty_module(sndfile)
 
+    list(APPEND CMAKE_MODULE_PATH ${LIBSND_PATH}/cmake)
+    include(SndFileChecks)
+    configure_file(${LIBSND_PATH}/src/config.h.cmake ${LIBSND_PATH}/src/config.h)
+
+    include(CheckIncludeFiles)
+    # Configure config_type.h
+    check_include_files(inttypes.h INCLUDE_INTTYPES_H)
+    check_include_files(stdint.h INCLUDE_STDINT_H)
+    check_include_files(sys/types.h INCLUDE_SYS_TYPES_H)
+
+    list(APPEND CMAKE_MODULE_PATH "${LIBOGG_PATH}/cmake")
+    set(SIZE16 int16_t)
+    set(USIZE16 uint16_t)
+    set(SIZE32 int32_t)
+    set(USIZE32 uint32_t)
+    set(SIZE64 int64_t)
+    set(USIZE64 uint64_t)
+
+    include(CheckSizes)
+    configure_file(${LIBOGG_PATH}/include/ogg/config_types.h.in ${LIBOGG_PATH}/include/ogg/config_types.h @ONLY)
+
     set(MODULE_SRC
-        ${LIBSND_PATH}/sndfile.c
-        ${LIBSND_PATH}/sndfile.hh
-        ${LIBSND_PATH}/command.c
-        ${LIBSND_PATH}/common.c
-        ${LIBSND_PATH}/common.h
-        ${LIBSND_PATH}/au.c
-        ${LIBSND_PATH}/caf.c
-        ${LIBSND_PATH}/file_io.c
-        ${LIBSND_PATH}/ogg.c
-        ${LIBSND_PATH}/ogg_vorbis.c
+        ${LIBSND_PATH}/src/sndfile.c
+        ${LIBSND_PATH}/include/sndfile.hh
+        ${LIBSND_PATH}/src/command.c
+        ${LIBSND_PATH}/src/common.c
+        ${LIBSND_PATH}/src/common.h
+        ${LIBSND_PATH}/src/au.c
+        ${LIBSND_PATH}/src/caf.c
+        ${LIBSND_PATH}/src/file_io.c
+        ${LIBSND_PATH}/src/ogg.c
+        ${LIBSND_PATH}/src/ogg_vorbis.c
+
+        ${LIBSND_PATH}/src/pcm.c
+        ${LIBSND_PATH}/src/ulaw.c
+        ${LIBSND_PATH}/src/alaw.c
+        ${LIBSND_PATH}/src/float32.c
+        ${LIBSND_PATH}/src/double64.c
+        ${LIBSND_PATH}/src/ima_adpcm.c
+        ${LIBSND_PATH}/src/ms_adpcm.c
+        ${LIBSND_PATH}/src/gsm610.c
+        ${LIBSND_PATH}/src/dwvw.c
+        ${LIBSND_PATH}/src/vox_adpcm.c
+        ${LIBSND_PATH}/src/interleave.c
+        ${LIBSND_PATH}/src/strings.c
+        ${LIBSND_PATH}/src/dither.c
+        ${LIBSND_PATH}/src/cart.c
+        ${LIBSND_PATH}/src/broadcast.c
+        ${LIBSND_PATH}/src/audio_detect.c
+        ${LIBSND_PATH}/src/ima_oki_adpcm.c
+        ${LIBSND_PATH}/src/ima_oki_adpcm.h
+        ${LIBSND_PATH}/src/alac.c
+        ${LIBSND_PATH}/src/chunk.c
+        ${LIBSND_PATH}/src/chanmap.h
+        ${LIBSND_PATH}/src/chanmap.c
+        ${LIBSND_PATH}/src/id3.h
+        ${LIBSND_PATH}/src/id3.c
+        ${LIBSND_PATH}/src/aiff.c
+        ${LIBSND_PATH}/src/avr.c
+        ${LIBSND_PATH}/src/dwd.c
+        ${LIBSND_PATH}/src/flac.c
+        ${LIBSND_PATH}/src/g72x.c
+        ${LIBSND_PATH}/src/htk.c
+        ${LIBSND_PATH}/src/ircam.c
+        ${LIBSND_PATH}/src/macos.c
+        ${LIBSND_PATH}/src/mat4.c
+        ${LIBSND_PATH}/src/mat5.c
+        ${LIBSND_PATH}/src/nist.c
+        ${LIBSND_PATH}/src/paf.c
+        ${LIBSND_PATH}/src/pvf.c
+        ${LIBSND_PATH}/src/raw.c
+        ${LIBSND_PATH}/src/rx2.c
+        ${LIBSND_PATH}/src/sd2.c
+        ${LIBSND_PATH}/src/sds.c
+        ${LIBSND_PATH}/src/svx.c
+        ${LIBSND_PATH}/src/txw.c
+        ${LIBSND_PATH}/src/voc.c
+        ${LIBSND_PATH}/src/wve.c
+        ${LIBSND_PATH}/src/w64.c
+        ${LIBSND_PATH}/src/wavlike.h
+        ${LIBSND_PATH}/src/wavlike.c
+        ${LIBSND_PATH}/src/wav.c
+        ${LIBSND_PATH}/src/xi.c
+        ${LIBSND_PATH}/src/mpc2k.c
+        ${LIBSND_PATH}/src/rf64.c
+        ${LIBSND_PATH}/src/ogg_speex.c
+        ${LIBSND_PATH}/src/ogg_pcm.c
+        ${LIBSND_PATH}/src/ogg_opus.c
+        ${LIBSND_PATH}/src/ogg_vcomment.h
+        ${LIBSND_PATH}/src/ogg_vcomment.c
+        ${LIBSND_PATH}/src/nms_adpcm.c
+        ${LIBSND_PATH}/src/mpeg.c
+        ${LIBSND_PATH}/src/mpeg_decode.c
+        ${LIBSND_PATH}/src/mpeg_l3_encode.c
+        ${LIBSND_PATH}/src/GSM610/config.h
+        ${LIBSND_PATH}/src/GSM610/gsm.h
+        ${LIBSND_PATH}/src/GSM610/gsm610_priv.h
+        ${LIBSND_PATH}/src/GSM610/add.c
+        ${LIBSND_PATH}/src/GSM610/code.c
+        ${LIBSND_PATH}/src/GSM610/decode.c
+        ${LIBSND_PATH}/src/GSM610/gsm_create.c
+        ${LIBSND_PATH}/src/GSM610/gsm_decode.c
+        ${LIBSND_PATH}/src/GSM610/gsm_destroy.c
+        ${LIBSND_PATH}/src/GSM610/gsm_encode.c
+        ${LIBSND_PATH}/src/GSM610/gsm_option.c
+        ${LIBSND_PATH}/src/GSM610/long_term.c
+        ${LIBSND_PATH}/src/GSM610/lpc.c
+        ${LIBSND_PATH}/src/GSM610/preprocess.c
+        ${LIBSND_PATH}/src/GSM610/rpe.c
+        ${LIBSND_PATH}/src/GSM610/short_term.c
+        ${LIBSND_PATH}/src/GSM610/table.c
+        ${LIBSND_PATH}/src/G72x/g72x.h
+        ${LIBSND_PATH}/src/G72x/g72x_priv.h
+        ${LIBSND_PATH}/src/G72x/g721.c
+        ${LIBSND_PATH}/src/G72x/g723_16.c
+        ${LIBSND_PATH}/src/G72x/g723_24.c
+        ${LIBSND_PATH}/src/G72x/g723_40.c
+        ${LIBSND_PATH}/src/G72x/g72x.c
+        ${LIBSND_PATH}/src/ALAC/ALACAudioTypes.h
+        ${LIBSND_PATH}/src/ALAC/ALACBitUtilities.h
+        ${LIBSND_PATH}/src/ALAC/EndianPortable.h
+        ${LIBSND_PATH}/src/ALAC/aglib.h
+        ${LIBSND_PATH}/src/ALAC/dplib.h
+        ${LIBSND_PATH}/src/ALAC/matrixlib.h
+        ${LIBSND_PATH}/src/ALAC/alac_codec.h
+        ${LIBSND_PATH}/src/ALAC/shift.h
+        ${LIBSND_PATH}/src/ALAC/ALACBitUtilities.c
+        ${LIBSND_PATH}/src/ALAC/ag_dec.c
+        ${LIBSND_PATH}/src/ALAC/ag_enc.c
+        ${LIBSND_PATH}/src/ALAC/dp_dec.c
+        ${LIBSND_PATH}/src/ALAC/dp_enc.c
+        ${LIBSND_PATH}/src/ALAC/matrix_dec.c
+        ${LIBSND_PATH}/src/ALAC/matrix_enc.c
+        ${LIBSND_PATH}/src/ALAC/alac_decoder.c
+        ${LIBSND_PATH}/src/ALAC/alac_encoder.c
 
         #ogg
         ${LIBOGG_PATH}/include/ogg/ogg.h
@@ -60,7 +184,8 @@ elseif (OS_IS_WASM)
         )
 
     set(MODULE_INCLUDE
-        ${LIBSND_PATH}
+        ${LIBSND_PATH}/src
+        ${LIBSND_PATH}/include
         ${LIBOGG_PATH}/include
         ${LIBVORBIS_PATH}/include
         ${LIBVORBIS_PATH}/lib

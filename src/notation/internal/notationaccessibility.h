@@ -23,8 +23,8 @@
 #ifndef MU_NOTATION_NOTATIONACCESSIBILITY_H
 #define MU_NOTATION_NOTATIONACCESSIBILITY_H
 
-#include "inotationaccessibility.h"
-#include "notationtypes.h"
+#include "../inotationaccessibility.h"
+#include "../notationtypes.h"
 
 #include "async/asyncable.h"
 #include "async/notification.h"

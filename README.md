@@ -124,38 +124,20 @@ https://emscripten.org/docs/getting_started/downloads.html
 3. Get Qt5 for WebAssembly and apply patches
 
 ```sh
-AQT_PREFIX=$PWD/build.qt5
-Qt5_VER=5.15.2
-Qt5_DIR=${AQT_PREFIX}/${Qt5_VER}/wasm_32
-# if you change the install directory or Qt version, remember to also change the `PREFIX_PATH` variable in `web/Makefile` file
+AQT_PREFIX=$PWD/build.qt6
+Qt6_VER=6.9.1
+# if you change the install directory or Qt version, remember to also change the variables in `web/Makefile` file
 
 # Download Qt using aqtinstall (https://github.com/miurahr/aqtinstall)
-pip install aqtinstall==2.1.*
-aqt install-qt linux desktop ${Qt5_VER} wasm_32 --outputdir ${AQT_PREFIX} --archives qtbase
+pip install aqtinstall
+aqt install-qt all_os wasm ${Qt6_VER} wasm_singlethread --autodesktop --outputdir ${AQT_PREFIX} --archives qtbase qtdeclarative qtsvg --modules qt5compat qtscxml qtshadertools
 
-# # Compile the `offscreen` platform plugin
-# aqt install-src linux desktop ${Qt5_VER} --outputdir ${AQT_PREFIX} --archives qtbase
-# cd ${AQT_PREFIX}/${Qt5_VER}/Src/qtbase/src/plugins/platforms/offscreen
-# ${Qt5_DIR}/bin/qmake offscreen.pro && make
-# cd - && cp -r ${AQT_PREFIX}/${Qt5_VER}/Src/qtbase/plugins build/qt/
-
-# Apply patches, which 
-#   enable the prebuilt `offscreen` QPA platform plugin (https://doc.qt.io/qt-5/qpa.html), and
-#   exclude other Qt5Gui plugins
-cp -r build/qt/* ${Qt5_DIR}
-
-# Patch emcc.py to emit separate .mem files regardless of MEM_INIT_METHOD settings (MEM_INIT_METHOD won't work with wasm)
-sed -i -r "s/(shared.Settings.MEM_INIT_IN_WASM = )True/\1False/" "$(which emcc).py"
+# If you encounter libicui18n.so not found error during the build, you may need to install ICU from aqt
+# If you are not using Linux, adjust the platform name accordingly
+aqt install-qt linux desktop ${Qt6_VER} --outputdir ${AQT_PREFIX} --archives icu
 ```
 
-4. Checkout submodules
-
-```sh
-git submodule init
-git submodule update
-```
-
-5. Compile `webmscore`
+4. Compile `webmscore`
 
 ```sh
 cd web-public

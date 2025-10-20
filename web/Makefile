@@ -5,8 +5,9 @@ MU_ROOT	  := $(dir ${CURDIR})
 # EMBED_PRELOADS = "OFF"
 # BUILD_NUMBER   = $(shell git rev-parse --short=7 HEAD)
 
-# change path to include your Qt5 installation
-export CMAKE_PREFIX_PATH	=	../../build.qt5/5.15.2/wasm_32
+# change path to include your Qt6 installation. If you are not using Linux x64, adjust accordingly.
+export QT6_WASM_PATH		=	${MU_ROOT}/build.qt6/6.9.1/wasm_singlethread
+export QT6_HOST_PATH		=	${MU_ROOT}/build.qt6/6.9.1/gcc_64
 
 # setup ccache
 export CCACHE_BASEDIR		=	${MU_ROOT}
@@ -20,20 +21,22 @@ release:
 	  cd build.release;                                        \
 	  emcmake cmake -DCMAKE_BUILD_TYPE=RELEASE	                \
 	  -DEMBED_PRELOADS="${EMBED_PRELOADS}"                       \
-	  -DCMAKE_TOOLCHAIN_FILE="${CMAKE_TOOLCHAIN_FILE}"            \
-	  -DCMAKE_BUILD_NUMBER="${BUILD_NUMBER}" ..;                   \
-	  emmake make -j ${CPUS};                                       \
-	  mv ./webmscore.* ../../web-public;                             \
+	  -DQT6_WASM_PATH="${QT6_WASM_PATH}"                          \
+	  -DQT_HOST_PATH="${QT6_HOST_PATH}"                            \
+	  -DCMAKE_BUILD_NUMBER="${BUILD_NUMBER}" ..;                    \
+	  emmake make -j ${CPUS};                                        \
+	  mv ./webmscore.* ../../web-public;                              \
 
 debug:
 	if test ! -d build.debug; then mkdir build.debug; fi; \
 	  cd build.debug;                                      \
 	  emcmake cmake -DCMAKE_BUILD_TYPE=DEBUG	            \
 	  -DEMBED_PRELOADS="${EMBED_PRELOADS}"                   \
-	  -DCMAKE_TOOLCHAIN_FILE="${CMAKE_TOOLCHAIN_FILE}"        \
-	  -DCMAKE_BUILD_NUMBER="${BUILD_NUMBER}" ..;               \
-	  emmake make -j ${CPUS};                                   \
-	  mv ./webmscore.* ../../web-public;                         \
+	  -DQT6_WASM_PATH="${QT6_WASM_PATH}"                      \
+	  -DQT_HOST_PATH="${QT6_HOST_PATH}"                        \
+	  -DCMAKE_BUILD_NUMBER="${BUILD_NUMBER}" ..;                \
+	  emmake make -j ${CPUS};                                    \
+	  mv ./webmscore.* ../../web-public;                          \
 
 #
 # clean out of source build

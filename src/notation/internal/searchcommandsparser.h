@@ -22,7 +22,7 @@
 #ifndef MU_NOTATION_SEARCHCOMMANDSPARSER_H
 #define MU_NOTATION_SEARCHCOMMANDSPARSER_H
 
-#include "notationtypes.h"
+#include "../notationtypes.h"
 
 namespace mu::notation {
 class SearchCommandsParser

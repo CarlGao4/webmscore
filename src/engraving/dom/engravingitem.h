@@ -161,6 +161,7 @@ class EngravingItem : public EngravingObject
     M_PROPERTY2(bool, excludeFromOtherParts, setExcludeFromOtherParts, false)
 
 public:
+    mutable muse::RectF m_bbox;  ///< Bounding box relative to _pos + _offset
 
     virtual ~EngravingItem();
 
@@ -261,6 +262,9 @@ public:
     Fraction beat() const;
 
     bool isNudged() const { return !m_offset.isNull(); }
+
+    virtual const muse::RectF& bbox() const { return m_bbox; }
+    virtual muse::RectF& bbox() { return m_bbox; }
 
     bool contains(const PointF& p) const;
     bool intersects(const RectF& r) const;

@@ -23,7 +23,7 @@
 #ifndef MU_NOTATION_NOTATIONSTYLE_H
 #define MU_NOTATION_NOTATIONSTYLE_H
 
-#include "inotationstyle.h"
+#include "../inotationstyle.h"
 #include "inotationundostack.h"
 
 #include "igetscore.h"

@@ -78,6 +78,8 @@
    typedef int64_t ogg_int64_t;
    typedef u_int64_t ogg_uint64_t;
 
+#elif defined(__WEBASSEMBLY__)
+
 #elif defined(__HAIKU__)
 
   /* Haiku */

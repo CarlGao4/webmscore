@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.22) # Min. required by Qt 6.9
 
 # project(webmscore LANGUAGES CXX C) # allowing to build C objects
 project(webmscore)
@@ -12,13 +12,22 @@ set(MU_ROOT ${CMAKE_CURRENT_LIST_DIR}/..)
 set(PROJECT_ROOT_DIR ${MU_ROOT})
 
 set(CMAKE_MODULE_PATH
-    ${MU_ROOT}/build
-    ${MU_ROOT}/build/cmake
+    ${MU_ROOT}
+    ${MU_ROOT}/buildscripts
+    ${MU_ROOT}/buildscripts/cmake
     ${CMAKE_MODULE_PATH}
     )
 
 # Load MuseScore version
-set(MUSESCORE_BUILD_MODE "release")
+set(MUSE_APP_BUILD_MODE "release")
+set(MUSE_FRAMEWORK_PATH ${MU_ROOT})
+set(MUSE_FRAMEWORK_SRC_PATH ${MU_ROOT}/src/framework)
+set(THIRDPARTY_DIR ${MU_ROOT}/thirdparty)
+
+set(LIBSND_PATH ${THIRDPARTY_DIR}/libsndfile)
+set(LIBOGG_PATH ${THIRDPARTY_DIR}/ogg)
+set(LIBVORBIS_PATH ${THIRDPARTY_DIR}/vorbis)
+
 include(${MU_ROOT}/SetupConfigure.cmake)
 
 set(QT_SUPPORT ON)
@@ -26,7 +35,7 @@ set(QT_SUPPORT ON)
 # include(SetupBuildEnvironment)
 include(GetPlatformInfo)
 include(SetupCompileWarnings)
-include(TryUseCcache)
+include(SetupCompilerCache)
 
 include_directories(
     ${CMAKE_CURRENT_LIST_DIR}
@@ -56,7 +65,7 @@ set(WASM_LINK_FLAGS         "${WASM_LINK_FLAGS} --no-entry")
 set(WASM_LINK_FLAGS         "${WASM_LINK_FLAGS} --emit-symbol-map")
 # set(WASM_LINK_FLAGS         "${WASM_LINK_FLAGS} -s WASM=0 -s SINGLE_FILE=1")
 set(WASM_LINK_FLAGS         "${WASM_LINK_FLAGS} -s WASM=1")
-set(WASM_LINK_FLAGS         "${WASM_LINK_FLAGS} -s EXPORT_ES6=1 -s USE_ES6_IMPORT_META=0 -s MODULARIZE=1")
+set(WASM_LINK_FLAGS         "${WASM_LINK_FLAGS} -s EXPORT_ES6=1 -s USE_ES6_IMPORT_META=1 -s MODULARIZE=1 -s ENVIRONMENT='web,node'")
 set(WASM_LINK_FLAGS         "${WASM_LINK_FLAGS} -s NODEJS_CATCH_EXIT=0 -s NODEJS_CATCH_REJECTION=0")
 set(WASM_LINK_FLAGS         "${WASM_LINK_FLAGS} -s ALLOW_TABLE_GROWTH=1")
 set(WASM_LINK_FLAGS         "${WASM_LINK_FLAGS} -s ALLOW_MEMORY_GROWTH=1")
@@ -73,7 +82,7 @@ set(CMAKE_CXX_FLAGS         "${CMAKE_CXX_FLAGS} -s USE_ZLIB=1")      # 1 = use z
 # set(CMAKE_CXX_FLAGS         "${CMAKE_CXX_FLAGS} -s USE_FREETYPE=1")  # 1 = use freetype from emscripten-ports
 set(CMAKE_CXX_FLAGS         "${CMAKE_CXX_FLAGS} -s USE_VORBIS=1")    # 1 = use vorbis from emscripten-ports
 set(CMAKE_CXX_FLAGS         "${CMAKE_CXX_FLAGS} -s USE_OGG=1")       # 1 = use ogg from emscripten-ports
-set(CMAKE_CXX_FLAGS         "${CMAKE_CXX_FLAGS} -s DEMANGLE_SUPPORT=1")
+# set(CMAKE_CXX_FLAGS         "${CMAKE_CXX_FLAGS} -s DEMANGLE_SUPPORT=1")    # No longer supported
 
 set(CMAKE_CXX_FLAGS_DEBUG   "-g4 -s ASSERTIONS=2 -s STACK_OVERFLOW_CHECK=2 -s SAFE_HEAP=1")
 set(CMAKE_CXX_FLAGS_RELEASE "-Oz -DNDEBUG -DQT_NO_DEBUG")
@@ -92,10 +101,11 @@ include(EmbedFiles)
 # Setup external dependencies
 ###########################################
 
-set(QT_MIN_VERSION    "5.15.0")
-include(FindQt5)
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${QT6_WASM_PATH})
+list(APPEND CMAKE_FIND_ROOT_PATH ${QT6_WASM_PATH})
+include(SetupQt6)
 
-include(SetupFreetypeBrotli)
+include(SetupBrotli)
 
 ###########################################
 # Add source tree
@@ -110,12 +120,11 @@ add_subdirectory(${MU_ROOT}/src/framework/draw draw)
 # set(ENGRAVING_NO_INTERNAL ON)
 set(ENGRAVING_NO_ACCESSIBILITY ON)
 add_subdirectory(${MU_ROOT}/src/engraving engraving)
-
 add_subdirectory(${MU_ROOT}/src/framework/mpe mpe)
+add_subdirectory(${MU_ROOT}/src/context context)
 
 add_subdirectory(importexport)
 add_subdirectory(audio)
-
 add_executable(webmscore
     main.cpp
     score.cpp
@@ -141,17 +150,21 @@ add_executable(webmscore
 set_target_properties (webmscore PROPERTIES LINK_FLAGS ${WASM_LINK_FLAGS})
 
 target_include_directories(webmscore PUBLIC
+    ${MU_ROOT}/src
+    ${MU_ROOT}/src/framework
     ${MU_ROOT}/src/framework/global
     ${MU_ROOT}/src/engraving
 )
 
 target_link_libraries(webmscore
     ${QT_LIBRARIES}
-    global
+    context
+    muse_global
     engraving
-    mpe
+    muse_mpe
     importexport
     MainAudio
+    sndfile
     freetype # important for supporting woff2 files
-    brotlidec-static
+    brotlidec
 )

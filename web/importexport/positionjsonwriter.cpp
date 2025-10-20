@@ -3,9 +3,9 @@
 
 #include <cmath>
 
-#include "dom/masterscore.h"
-#include "dom/repeatlist.h"
-#include "dom/system.h"
+#include "engraving/dom/masterscore.h"
+#include "engraving/dom/repeatlist.h"
+#include "engraving/dom/system.h"
 
 #include "engraving/types/types.h"
 
@@ -14,13 +14,13 @@
 #include <QJsonObject>
 #include <QJsonDocument>
 
+using namespace muse;
+using namespace muse::io;
 using namespace mu::project;
 using namespace mu::notation;
 using namespace mu::engraving;
-using namespace mu::io;
-using namespace mu::framework;
 
-static void writeElementPosition(QJsonArray& elements, const std::string& id, const mu::PointF& pos, const mu::PointF& sPos,
+static void writeElementPosition(QJsonArray& elements, const std::string& id, const PointF& pos, const PointF& sPos,
                                  page_idx_t pageIndex)
 {
     QJsonObject el;
@@ -93,14 +93,14 @@ QByteArray PositionJsonWriter::jsonData(INotationPtr notation) {
     return jsonData(score);
 }
 
-mu::Ret PositionJsonWriter::write(INotationPtr notation, QIODevice& destinationDevice, const Options&)
+Ret PositionJsonWriter::write(INotationPtr notation, IODevice& destinationDevice, const Options&)
 {
     destinationDevice.write(jsonData(notation));
     destinationDevice.close();
     return true;
 }
 
-mu::Ret PositionJsonWriter::writeList(const INotationPtrList&, QIODevice&, const Options&)
+Ret PositionJsonWriter::writeList(const INotationPtrList&, IODevice&, const Options&)
 {
     NOT_SUPPORTED;
     return Ret(Ret::Code::NotSupported);

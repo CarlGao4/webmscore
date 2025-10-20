@@ -29,8 +29,8 @@
 #include "async/asyncable.h"
 #include "modularity/ioc.h"
 
-#include "isoundprofilesrepository.h"
-#include "iplaybackconfiguration.h"
+#include "../isoundprofilesrepository.h"
+#include "../iplaybackconfiguration.h"
 
 namespace mu::playback {
 class SoundProfilesRepository : public ISoundProfilesRepository, public muse::async::Asyncable

@@ -22,6 +22,7 @@
 #pragma once
 
 #include "internal/midishared/generalmidi.h"
+#include <QList>
 
 class QString;
 

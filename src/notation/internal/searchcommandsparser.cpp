@@ -27,7 +27,7 @@
 
 #include "log.h"
 #include "translation.h"
-#include "notationerrors.h"
+#include "../notationerrors.h"
 
 using namespace mu::notation;
 

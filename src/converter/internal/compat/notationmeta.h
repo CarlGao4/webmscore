@@ -34,9 +34,10 @@ class NotationMeta
 {
 public:
     static muse::RetVal<std::string> metaJson(notation::INotationPtr notation);
+    static muse::RetVal<std::string> metaJson(mu::engraving::Score* score);
+    static QString title(const mu::engraving::Score* score);
 
 private:
-    static QString title(const mu::engraving::Score* score);
     static QString subtitle(const mu::engraving::Score* score);
     static QString composer(const mu::engraving::Score* score);
     static QString poet(const mu::engraving::Score* score);

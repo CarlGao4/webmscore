@@ -26,6 +26,8 @@
 #include "modularity/ioc.h"
 #include "project/inotationwriter.h"
 
+using namespace muse;
+
 namespace mu::engraving {
 class Score;
 }
@@ -45,8 +47,8 @@ public:
     std::vector<UnitType> supportedUnitTypes() const override;
     bool supportsUnitType(UnitType unitType) const override;
 
-    Ret write(notation::INotationPtr notation, QIODevice& device, const Options& options = Options()) override;
-    Ret writeList(const INotationPtrList& notations, QIODevice& device, const Options& options = Options()) override;
+    Ret write(notation::INotationPtr notation, muse::io::IODevice& device, const Options& options = Options()) override;
+    Ret writeList(const INotationPtrList& notations, muse::io::IODevice& device, const Options& options = Options()) override;
 
     QByteArray jsonData(engraving::Score* score);
     QByteArray jsonData(INotationPtr notation);

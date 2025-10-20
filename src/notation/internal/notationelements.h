@@ -22,7 +22,7 @@
 #ifndef MU_NOTATION_NOTATIONELEMENTS_H
 #define MU_NOTATION_NOTATIONELEMENTS_H
 
-#include "inotationelements.h"
+#include "../inotationelements.h"
 #include "igetscore.h"
 
 namespace mu::notation {

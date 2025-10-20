@@ -29,11 +29,11 @@
 /* #undef HAS_AUDIOFILE */
 
 #define CRASH_REPORT_URL       ""
-#define MUSESCORE_NAME_VERSION "MuseScore 4 (4.0.0 unstable)"
+#define MUSESCORE_NAME_VERSION "MuseScore Studio 4 (4.6.2)"
 #define MUSESCORE_REVISION     ""
 #define INSTALL_NAME           "mscore-4.0/"
 #define INSTPREFIX             "/home/igor/Dev/MuseScore/build.debug/install"
-#define VERSION                "4.0.0"
+#define VERSION                "4.6.2"
 #define VERSION_LABEL          "Development"
 #define BUILD_NUMBER           ""
 #define SPARKLE_APPCAST_URL    ""

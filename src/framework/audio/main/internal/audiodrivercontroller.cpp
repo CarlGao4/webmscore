@@ -91,7 +91,8 @@ void AudioDriverController::init()
     m_audioDriver = std::shared_ptr<IAudioDriver>(new OSXAudioDriver());
 #endif
 
-#ifdef Q_OS_WASM
+// #ifdef Q_OS_WASM
+#if 0
     m_audioDriver = std::shared_ptr<IAudioDriver>(new WebAudioDriver());
 #endif
 

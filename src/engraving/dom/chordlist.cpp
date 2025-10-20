@@ -2155,12 +2155,12 @@ bool ChordList::read(const String& name)
     if (ftest.isAbsolute()) {
         path = name;
     } else {
-        path = u":/engraving/styles/" + name;
+        path = u"/engraving/styles/" + name;
     }
 
     // default to chords_std.xml
     if (!FileInfo::exists(path)) {
-        path = u":/engraving/styles/chords_std.xml";
+        path = u"/engraving/styles/chords_std.xml";
     }
 
     if (name.isEmpty()) {

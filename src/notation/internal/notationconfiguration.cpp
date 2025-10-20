@@ -27,7 +27,7 @@
 #include "settings.h"
 #include "io/path.h"
 
-#include "notationtypes.h"
+#include "../notationtypes.h"
 
 using namespace mu;
 using namespace mu::notation;

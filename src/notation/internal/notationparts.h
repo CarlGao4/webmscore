@@ -22,10 +22,10 @@
 #ifndef MU_NOTATION_NOTATIONPARTS_H
 #define MU_NOTATION_NOTATIONPARTS_H
 
-#include "inotationparts.h"
+#include "../inotationparts.h"
 #include "async/asyncable.h"
 #include "inotationundostack.h"
-#include "inotationinteraction.h"
+#include "../inotationinteraction.h"
 
 namespace mu::notation {
 class IGetScore;

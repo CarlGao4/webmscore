@@ -1,6 +1,6 @@
 {
-    "name": "webmscore",
-    "version": "1.2.1",
+    "name": "webmscore4",
+    "version": "4.6.2",
     "description": "MuseScore's libmscore in WebAssembly! Read mscz data, and generate audio/MIDI/MusicXML/SVG/PNG/PDF sheets right in browsers",
     "type": "module",
     "types": "./src/index.d.ts",
