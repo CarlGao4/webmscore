@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -26,7 +26,7 @@
 #include <map>
 
 #include "containers.h"
-#include "types/fraction.h"
+#include "../types/fraction.h"
 
 namespace mu::engraving {
 class Harmony;
@@ -81,8 +81,8 @@ public:
 
     bool valid() const { return !m_dirty && m_harmony; }
 
-    const std::vector<int> pitches() const { return mu::keys(notes()); }
-    const std::vector<int> tpcs() const { return mu::values(notes()); }
+    const std::vector<int> pitches() const { return muse::keys(notes()); }
+    const std::vector<int> tpcs() const { return muse::values(notes()); }
 
     const PitchMap& notes() const;
     const PitchMap generateNotes(int rootTpc, int bassTpc, bool literal, Voicing voicing, int transposeOffset) const;

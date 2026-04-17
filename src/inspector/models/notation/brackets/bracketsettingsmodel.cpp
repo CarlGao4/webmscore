@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -34,8 +34,8 @@ BracketSettingsModel::BracketSettingsModel(QObject* parent, IElementRepositorySe
     : AbstractInspectorModel(parent, repository, mu::engraving::ElementType::BRACKET)
 {
     setModelType(InspectorModelType::TYPE_BRACKET);
-    setTitle(qtrc("inspector", "Bracket"));
-    setIcon(ui::IconCode::Code::BRACKET);
+    setTitle(muse::qtrc("inspector", "Bracket"));
+    setIcon(muse::ui::IconCode::Code::BRACKET);
     createProperties();
 
     connect(this, &BracketSettingsModel::selectionChanged, this, &BracketSettingsModel::maxBracketColumnPositionChanged);
@@ -78,11 +78,11 @@ void BracketSettingsModel::onNotationChanged(const PropertyIdSet& changedPropert
 
 void BracketSettingsModel::loadProperties(const PropertyIdSet& propertyIdSet)
 {
-    if (mu::contains(propertyIdSet, Pid::BRACKET_COLUMN)) {
+    if (muse::contains(propertyIdSet, Pid::BRACKET_COLUMN)) {
         loadPropertyItem(m_bracketColumnPosition);
     }
 
-    if (mu::contains(propertyIdSet, Pid::BRACKET_SPAN)) {
+    if (muse::contains(propertyIdSet, Pid::BRACKET_SPAN)) {
         loadPropertyItem(m_bracketSpanStaves);
     }
 }

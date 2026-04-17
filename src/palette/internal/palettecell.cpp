@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -24,19 +24,24 @@
 
 #include "mimedatautils.h"
 
-#include "engraving/rw/rwregister.h"
 #include "engraving/dom/actionicon.h"
 #include "engraving/dom/engravingitem.h"
+#include "engraving/dom/factory.h"
 #include "engraving/dom/fret.h"
 #include "engraving/dom/masterscore.h"
 #include "engraving/dom/textbase.h"
-#include "engraving/dom/factory.h"
+#include "engraving/dom/tremolosinglechord.h"
+#include "engraving/dom/tremolotwochord.h"
+
+#include "engraving/rw/rwregister.h"
+#include "engraving/rw/compat/tremolocompat.h"
 
 #include "view/widgets/palettewidget.h"
 
 #include "log.h"
 #include "translation.h"
 
+using namespace muse;
 using namespace mu::palette;
 using namespace mu::engraving;
 
@@ -107,8 +112,21 @@ const char* PaletteCell::translationContext() const
         return "engraving/bagpipeembellishment";
     case ElementType::CLEF:
         return "engraving/cleftype";
+    case ElementType::DYNAMIC:
+        return "engraving/dynamictype";
+    case ElementType::HAIRPIN:
+        if (name == u"Dynamic + hairpin") {
+            return "palette";
+        }
+        return "engraving/hairpintype";
+    case ElementType::LAYOUT_BREAK:
+        return "engraving/layoutbreaktype";
     case ElementType::NOTEHEAD:
         return "engraving/noteheadgroup";
+    case ElementType::OTTAVA:
+        return "engraving/ottavatype";
+    case ElementType::SPACER:
+        return "engraving/spacertype";
     case ElementType::ACCIDENTAL:
     case ElementType::ARTICULATION:
     case ElementType::BAR_LINE:
@@ -118,9 +136,12 @@ const char* PaletteCell::translationContext() const
     case ElementType::ORNAMENT:
     case ElementType::SYMBOL:
         return "engraving/sym";
+    case ElementType::PLAYTECH_ANNOTATION:
+        return "engraving/playtechtype";
     case ElementType::TIMESIG:
         return "engraving/timesig";
-    case ElementType::TREMOLO:
+    case ElementType::TREMOLO_SINGLECHORD:
+    case ElementType::TREMOLO_TWOCHORD:
         return "engraving/tremolotype";
     case ElementType::TRILL:
         return "engraving/trilltype";
@@ -136,7 +157,7 @@ const char* PaletteCell::translationContext() const
 
 QString PaletteCell::translatedName() const
 {
-    const QString trName = mu::qtrc(translationContext(), name.toUtf8());
+    const QString trName = muse::qtrc(translationContext(), name.toUtf8());
 
     if (element && element->isTextBase() && name.contains("%1")) {
         return trName.arg(toTextBase(element.get())->plainText());
@@ -151,7 +172,7 @@ void PaletteCell::retranslate()
         TextBase* target = toTextBase(element.get());
         TextBase* orig = toTextBase(untranslatedElement.get());
         const QString& text = orig->xmlText();
-        target->setXmlText(mu::qtrc("palette", text.toUtf8().constData()));
+        target->setXmlText(muse::qtrc("palette", text.toUtf8().constData()));
     }
 }
 
@@ -199,29 +220,47 @@ bool PaletteCell::read(XmlReader& e, bool pasteMode)
             custom = e.readBool();
         } else if (s == "visible") {
             visible = e.readBool();
+        } else if (s == "Tremolo") {
+            compat::TremoloCompat tc;
+            tc.parent = gpaletteScore->dummy()->chord();
+            rw::RWRegister::reader()->readTremoloCompat(&tc, e);
+            if (tc.single) {
+                element.reset(tc.single);
+            } else if (tc.two) {
+                element.reset(tc.two);
+            } else {
+                UNREACHABLE;
+            }
+
+            if (element) {
+                element->styleChanged();
+            }
         } else {
             element.reset(Factory::createItemByName(s, gpaletteScore->dummy()));
             if (!element) {
                 e.unknown();
             } else {
                 rw::RWRegister::reader()->readItem(element.get(), e);
-                PaletteCompat::migrateOldPaletteItemIfNeeded(element, gpaletteScore);
-                element->styleChanged();
-
-                if (element->type() == ElementType::ACTION_ICON) {
-                    ActionIcon* icon = toActionIcon(element.get());
-                    const mu::ui::UiAction& action = actionsRegister()->action(icon->actionCode());
-                    if (action.isValid()) {
-                        icon->setAction(icon->actionCode(), static_cast<char16_t>(action.iconCode));
-                    } else {
-                        add = false;
-                    }
-                }
             }
         }
     }
 
     setElementTranslated(translateElement);
+
+    if (element) {
+        PaletteCompat::migrateOldPaletteCellIfNeeded(this, gpaletteScore);
+        element->styleChanged();
+
+        if (element->type() == ElementType::ACTION_ICON) {
+            ActionIcon* icon = toActionIcon(element.get());
+            const muse::ui::UiAction& action = actionsRegister()->action(icon->actionCode());
+            if (action.isValid()) {
+                icon->setAction(icon->actionCode(), static_cast<char16_t>(action.iconCode));
+            } else {
+                add = false;
+            }
+        }
+    }
 
     return add && element;
 }
@@ -266,14 +305,14 @@ void PaletteCell::write(XmlWriter& xml, bool pasteMode) const
     if (!tag.isEmpty()) {
         xml.tag("tag", tag);
     }
-    if (mag != 1.0) {
+    if (!RealIsEqual(mag, 1.0)) {
         xml.tag("mag", mag);
     }
 
     if (untranslatedElement) {
-        rw::RWRegister::writer()->writeItem(untranslatedElement.get(), xml);
+        rw::RWRegister::writer(untranslatedElement->iocContext())->writeItem(untranslatedElement.get(), xml);
     } else {
-        rw::RWRegister::writer()->writeItem(element.get(), xml);
+        rw::RWRegister::writer(element->iocContext())->writeItem(element.get(), xml);
     }
     xml.endElement();
 }
@@ -299,7 +338,7 @@ PaletteCellPtr PaletteCell::fromElementMimeData(const QByteArray& data)
 
     if (element->isActionIcon()) {
         ActionIcon* icon = toActionIcon(element.get());
-        const mu::ui::UiAction& action = actionsRegister()->action(icon->actionCode());
+        const muse::ui::UiAction& action = actionsRegister()->action(icon->actionCode());
         if (action.isValid()) {
             icon->setAction(icon->actionCode(), static_cast<char16_t>(action.iconCode));
         }

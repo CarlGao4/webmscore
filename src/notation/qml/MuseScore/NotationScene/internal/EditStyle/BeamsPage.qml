@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -20,10 +20,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 import QtQuick 2.15
+import QtQuick.Layouts 1.15
 
 import MuseScore.NotationScene 1.0
-import MuseScore.UiComponents 1.0
-import MuseScore.Ui 1.0
+import Muse.UiComponents 1.0
+import Muse.Ui 1.0
 
 StyleDialogPage {
     id: root
@@ -53,7 +54,6 @@ StyleDialogPage {
 
                 Column {
                     anchors.centerIn: parent
-                    height: childrenRect.height
                     spacing: 8
 
                     StyledIconLabel {
@@ -121,6 +121,46 @@ StyleDialogPage {
         checked: beamsPageModel.beamNoSlope.value
         onClicked: {
             beamsPageModel.beamNoSlope.value = !checked
+        }
+    }
+
+    StyledGroupBox {
+        width: parent.width
+        height: Math.max(120, implicitHeight)
+
+        title: qsTrc("notation", "Beam style")
+
+        RowLayout {
+            anchors.fill: parent
+            spacing: 12
+
+            RadioButtonGroup {
+                Layout.fillWidth: true
+
+                spacing: 12
+                orientation: ListView.Vertical
+
+                model: [
+                    { title: qsTrc("notation", "Draw inner stems through beams"), value: false },
+                    { title: qsTrc("notation", "Draw inner stems to nearest beam (“French” style)"), value: true }
+                ]
+
+                delegate: RoundedRadioButton {
+                    width: ListView.view.width
+                    text: modelData.title
+                    checked: modelData.value === beamsPageModel.frenchStyleBeams.value
+                    onToggled: {
+                        beamsPageModel.frenchStyleBeams.value = modelData.value
+                    }
+                }
+            }
+
+            StyledImage {
+                forceWidth: 140
+                forceHeight: 52
+                verticalPadding: 12
+                source: beamsPageModel.frenchStyleBeams.value ? "beam_style_french.svg" : "beam_style_regular.svg"
+            }
         }
     }
 }

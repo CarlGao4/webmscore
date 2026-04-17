@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -33,18 +33,30 @@
 #include "iappshellconfiguration.h"
 #include "isessionsmanager.h"
 #include "project/iprojectautosaver.h"
+#include "audioplugins/iregisteraudiopluginsscenario.h"
+
+#include "update/iupdatescenario.h"
+#include "musesounds/imusesoundscheckupdatescenario.h"
+#include "musesounds/imusesamplercheckupdatescenario.h"
 
 namespace mu::appshell {
-class StartupScenario : public IStartupScenario, public async::Asyncable
+class StartupScenario : public IStartupScenario, public muse::Injectable, public muse::async::Asyncable
 {
-    INJECT(framework::IInteractive, interactive)
-    INJECT(actions::IActionsDispatcher, dispatcher)
-    INJECT(mi::IMultiInstancesProvider, multiInstancesProvider)
-    INJECT(IAppShellConfiguration, configuration)
-    INJECT(ISessionsManager, sessionsManager)
-    INJECT(project::IProjectAutoSaver, projectAutoSaver)
+    muse::Inject<muse::IInteractive> interactive = { this };
+    muse::Inject<muse::actions::IActionsDispatcher> dispatcher = { this };
+    muse::Inject<muse::mi::IMultiInstancesProvider> multiInstancesProvider = { this };
+    muse::Inject<IAppShellConfiguration> configuration = { this };
+    muse::Inject<ISessionsManager> sessionsManager = { this };
+    muse::Inject<project::IProjectAutoSaver> projectAutoSaver = { this };
+    muse::Inject<muse::audioplugins::IRegisterAudioPluginsScenario> registerAudioPluginsScenario = { this };
+
+    muse::Inject<muse::update::IUpdateScenario> appUpdateScenario = { this };
+    muse::Inject<mu::musesounds::IMuseSoundsCheckUpdateScenario> museSoundsUpdateScenario = { this };
+    muse::Inject<musesounds::IMuseSamplerCheckUpdateScenario> museSamplerCheckForUpdateScenario = { this };
 
 public:
+    StartupScenario(const muse::modularity::ContextPtr& iocCtx)
+        : muse::Injectable(iocCtx) {}
 
     void setStartupType(const std::optional<std::string>& type) override;
 
@@ -53,23 +65,35 @@ public:
     const project::ProjectFile& startupScoreFile() const override;
     void setStartupScoreFile(const std::optional<project::ProjectFile>& file) override;
 
-    void run() override;
+    muse::async::Promise<muse::Ret> runOnSplashScreen() override;
+    void runAfterSplashScreen() override;
     bool startupCompleted() const override;
 
+    QList<QVariantMap> welcomeDialogData() const override;
+
 private:
+    void registerAudioPlugins();
+    void checkAndShowMuseSamplerUpdateIfNeed();
+
     void onStartupPageOpened(StartupModeType modeType);
 
     StartupModeType resolveStartupModeType() const;
-    Uri startupPageUri(StartupModeType modeType) const;
+    muse::Uri startupPageUri(StartupModeType modeType) const;
 
     void openScore(const project::ProjectFile& file);
 
     void restoreLastSession();
-    void removeProjectsUnsavedChanges(const io::paths_t& projectsPaths);
+    void removeProjectsUnsavedChanges(const muse::io::paths_t& projectsPaths);
+
+    void showWelcomeDialog();
 
     std::string m_startupTypeStr;
     project::ProjectFile m_startupScoreFile;
     bool m_startupCompleted = false;
+
+    bool m_updateChecksInProgress = false;
+    size_t m_totalChecksExpected = 0;
+    size_t m_totalChecksReceived = 0;
 };
 }
 

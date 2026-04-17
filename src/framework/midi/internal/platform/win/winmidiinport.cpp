@@ -34,12 +34,13 @@
 #include "defer.h"
 #include "log.h"
 
-struct mu::midi::WinMidiInPort::Win {
+struct muse::midi::WinMidiInPort::Win {
     HMIDIIN midiIn;
     int deviceID = -1;
 };
 
-using namespace mu::midi;
+using namespace muse;
+using namespace muse::midi;
 
 namespace wmidi_prv {
 static std::string errorString(MMRESULT ret)
@@ -93,7 +94,7 @@ MidiDeviceList WinMidiInPort::availableDevices() const
     std::lock_guard lock(m_devicesMutex);
     MidiDeviceList ret;
 
-    ret.push_back({ NONE_DEVICE_ID, trc("midi", "No device") });
+    ret.push_back({ NONE_DEVICE_ID, muse::trc("midi", "No device") });
 
     unsigned int numDevs = midiInGetNumDevs();
     if (numDevs == 0) {
@@ -117,7 +118,7 @@ MidiDeviceList WinMidiInPort::availableDevices() const
     return ret;
 }
 
-mu::async::Notification WinMidiInPort::availableDevicesChanged() const
+async::Notification WinMidiInPort::availableDevicesChanged() const
 {
     return m_availableDevicesChanged;
 }
@@ -141,13 +142,13 @@ static void CALLBACK process(HMIDIIN hMidiIn, UINT wMsg, DWORD_PTR dwInstance, D
 
 void WinMidiInPort::doProcess(uint32_t message, tick_t timing)
 {
-    auto e = Event::fromMIDI10Package(message).toMIDI20();
+    auto e = Event::fromMidi10Package(message).toMIDI20();
     if (e) {
         m_eventReceived.send(timing, e);
     }
 }
 
-mu::Ret WinMidiInPort::connect(const MidiDeviceID& deviceID)
+Ret WinMidiInPort::connect(const MidiDeviceID& deviceID)
 {
     DEFER {
         m_deviceChanged.notify();
@@ -157,7 +158,7 @@ mu::Ret WinMidiInPort::connect(const MidiDeviceID& deviceID)
         disconnect();
     }
 
-    Ret ret = make_ok();
+    Ret ret = muse::make_ok();
 
     if (!deviceID.empty() && deviceID != NONE_DEVICE_ID) {
         std::vector<int> deviceParams = splitDeviceId(deviceID);
@@ -216,17 +217,17 @@ MidiDeviceID WinMidiInPort::deviceID() const
     return m_deviceID;
 }
 
-mu::async::Notification WinMidiInPort::deviceChanged() const
+async::Notification WinMidiInPort::deviceChanged() const
 {
     return m_deviceChanged;
 }
 
-mu::async::Channel<tick_t, Event> WinMidiInPort::eventReceived() const
+async::Channel<tick_t, Event> WinMidiInPort::eventReceived() const
 {
     return m_eventReceived;
 }
 
-mu::Ret WinMidiInPort::run()
+Ret WinMidiInPort::run()
 {
     if (!isConnected()) {
         return make_ret(Err::MidiNotConnected);

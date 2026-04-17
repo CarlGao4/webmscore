@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,7 +22,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 
-import MuseScore.UiComponents 1.0
+import Muse.UiComponents 1.0
 import MuseScore.Project 1.0
 import MuseScore.NotationScene 1.0
 
@@ -50,17 +50,35 @@ Item {
         font: ui.theme.bodyBoldFont
     }
 
-    NotationScrollAndZoomArea {
+    StyledViewScrollAndZoomArea {
         anchors.top: title.bottom
         anchors.topMargin: 16
         anchors.bottom: parent.bottom
         anchors.left: parent.left
         anchors.right: parent.right
 
+        horizontalScrollbarSize: templateView.horizontalScrollbarSize
+        startHorizontalScrollPosition: templateView.startHorizontalScrollPosition
+
+        verticalScrollbarSize: templateView.verticalScrollbarSize
+        startVerticalScrollPosition: templateView.startVerticalScrollPosition
+
         TemplatePaintView {
             id: templateView
             objectName: "TemplatePreview"
             anchors.fill: parent
+        }
+
+        onPinchToZoom: function(scale, pos) {
+            templateView.pinchToZoom(scale, pos)
+        }
+
+        onScrollHorizontal: function(newPos) {
+            templateView.scrollHorizontal(newPos)
+        }
+
+        onScrollVertical: function(newPos) {
+            templateView.scrollVertical(newPos)
         }
     }
 

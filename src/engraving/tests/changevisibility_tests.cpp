@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -227,7 +227,7 @@ TEST_F(Engraving_ChangeVisibilityTests, UndoChangeVisible_IgnoredElements)
     };
 
     for (EngravingObject* child : chord->scanChildren()) {
-        if (mu::contains(IGNORED_TYPES, child->type())) {
+        if (muse::contains(IGNORED_TYPES, child->type())) {
             EngravingItem* item = toEngravingItem(child);
             EXPECT_TRUE(item->visible());
         }
@@ -244,7 +244,7 @@ TEST_F(Engraving_ChangeVisibilityTests, UndoChangeVisible_IgnoredElements)
     EXPECT_TRUE(note->visible());
 
     for (EngravingObject* child : chord->scanChildren()) {
-        if (mu::contains(IGNORED_TYPES, child->type())) {
+        if (muse::contains(IGNORED_TYPES, child->type())) {
             EngravingItem* item = toEngravingItem(child);
             EXPECT_TRUE(item->visible());
         }
@@ -537,7 +537,7 @@ TEST_F(Engraving_ChangeVisibilityTests, CmdToggleVisible)
     // [WHEN] Select the first measure and call cmdToggleVisible()
     m_score->select(measure);
 
-    m_score->startCmd();
+    m_score->startCmd(TranslatableString::untranslatable("Change visibility tests"));
     m_score->cmdToggleVisible();
     m_score->endCmd();
 
@@ -551,7 +551,7 @@ TEST_F(Engraving_ChangeVisibilityTests, CmdToggleVisible)
     };
 
     for (const EngravingItem* item : items) {
-        if (mu::contains(alwaysVisibleItems, item->type())) {
+        if (muse::contains(alwaysVisibleItems, item->type())) {
             EXPECT_TRUE(item->visible());
         } else {
             EXPECT_FALSE(item->visible());
@@ -559,7 +559,7 @@ TEST_F(Engraving_ChangeVisibilityTests, CmdToggleVisible)
     }
 
     // [WHEN] Call cmdToggleVisible() again
-    m_score->startCmd();
+    m_score->startCmd(TranslatableString::untranslatable("Change visibility tests"));
     m_score->cmdToggleVisible();
     m_score->endCmd();
 
@@ -577,7 +577,7 @@ TEST_F(Engraving_ChangeVisibilityTests, CmdToggleVisible)
         m_score->select(note, SelectType::ADD);
     }
 
-    m_score->startCmd();
+    m_score->startCmd(TranslatableString::untranslatable("Change visibility tests"));
     m_score->cmdToggleVisible();
     m_score->endCmd();
 
@@ -589,7 +589,7 @@ TEST_F(Engraving_ChangeVisibilityTests, CmdToggleVisible)
     // [WHEN] Select the first measure and call cmdToggleVisible() again
     m_score->select(measure);
 
-    m_score->startCmd();
+    m_score->startCmd(TranslatableString::untranslatable("Change visibility tests"));
     m_score->cmdToggleVisible();
     m_score->endCmd();
 

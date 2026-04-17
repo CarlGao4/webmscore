@@ -23,37 +23,105 @@
 #include "uiengine.h"
 
 #include <QApplication>
-#include <QQmlEngine>
+#include <QQmlApplicationEngine>
 #include <QStringList>
 #include <QDir>
 #include <QQmlContext>
+#include <QEventLoop>
+#include <QTimer>
+
+#include "global/types/color.h"
+#include "graphicsapiprovider.h"
 
 #include "log.h"
 
-using namespace mu::ui;
+using namespace muse::ui;
 
-UiEngine* UiEngine::instance()
+namespace muse::ui {
+class QmlApiEngine : public muse::api::IApiEngine
 {
-    static UiEngine e;
-    return &e;
+public:
+    QmlApiEngine(QQmlEngine* e, const modularity::ContextPtr& iocContext)
+        : m_engine(e), m_iocContext(iocContext) {}
+
+    const modularity::ContextPtr& iocContext() const override
+    {
+        return m_iocContext;
+    }
+
+    QJSValue newQObject(QObject* o) override
+    {
+        if (!o->parent()) {
+            o->setParent(m_engine);
+        }
+        return m_engine->newQObject(o);
+    }
+
+    QJSValue newObject() override
+    {
+        return m_engine->newObject();
+    }
+
+    QJSValue newArray(size_t length = 0) override
+    {
+        return m_engine->newArray(uint(length));
+    }
+
+private:
+    QQmlEngine* m_engine = nullptr;
+    const modularity::ContextPtr& m_iocContext;
+};
 }
 
-UiEngine::UiEngine()
+UiEngine::UiEngine(const modularity::ContextPtr& iocCtx)
+    : Injectable(iocCtx)
 {
+    m_engine = new QQmlApplicationEngine(this);
+    m_apiEngine = new QmlApiEngine(m_engine, iocContext());
     m_translation = new QmlTranslation(this);
-    m_interactiveProvider = std::make_shared<InteractiveProvider>();
-    m_api = new QmlApi(this);
-    m_tooltip = new QmlToolTip(this);
+    m_interactiveProvider = std::make_shared<InteractiveProvider>(iocContext());
+    m_api = new QmlApi(this, iocContext());
+    m_tooltip = new QmlToolTip(this, iocContext());
+    m_dataFormatter = new QmlDataFormatter(this);
 
     //! NOTE At the moment, UiTheme is also QProxyStyle
     //! Inside the theme, QApplication::setStyle(this) is calling and the QStyleSheetStyle becomes as parent.
     //! So, the UiTheme will be deleted when will deleted the application (as a child of QStyleSheetStyle).
-    m_theme = new UiTheme();
+    m_theme = new api::ThemeApi(m_apiEngine);
 }
 
 UiEngine::~UiEngine()
 {
     delete m_translation;
+}
+
+void UiEngine::init()
+{
+    m_theme->init();
+    m_tooltip->init();
+    m_engine->rootContext()->setContextProperty("ui", this);
+    m_engine->rootContext()->setContextProperty("api", m_api);
+
+    QmlIoCContext* qmlIoc = new QmlIoCContext(this);
+    qmlIoc->ctx = iocContext();
+    m_engine->setProperty("ioc_context", QVariant::fromValue(qmlIoc));
+
+    QJSValue translator = m_engine->newQObject(m_translation);
+    QJSValue translateFn = translator.property("translate");
+    m_engine->globalObject().setProperty("qsTrc", translateFn);
+
+#ifdef Q_OS_WIN
+    QDir dir(QCoreApplication::applicationDirPath() + QString("/../qml"));
+    m_engine->addImportPath(dir.absolutePath());
+#endif
+
+    m_engine->addImportPath(":/qml");
+
+#ifdef MUE_ENABLE_LOAD_QML_FROM_SOURCE
+    for (const QString& path : m_sourceImportPaths) {
+        m_engine->addImportPath(path);
+    }
+#endif
 }
 
 void UiEngine::quit()
@@ -62,9 +130,14 @@ void UiEngine::quit()
         return;
     }
 
-    m_engine->quit();
+    emit m_engine->quit();
     delete m_engine;
     m_engine = nullptr;
+}
+
+QmlDataFormatter* UiEngine::df() const
+{
+    return m_dataFormatter;
 }
 
 QQuickItem* UiEngine::rootItem() const
@@ -82,50 +155,17 @@ void UiEngine::setRootItem(QQuickItem* rootItem)
     emit rootItemChanged(m_rootItem);
 }
 
-QQmlEngine* UiEngine::engine()
+bool UiEngine::isEffectsAllowed() const
 {
-    if (m_engine) {
-        return m_engine;
+    if (m_isEffectsAllowed == -1) {
+        m_isEffectsAllowed = GraphicsApiProvider::graphicsApi() != GraphicsApi::Software;
     }
-
-    setup(new QQmlEngine(this));
-
-    return m_engine;
+    return m_isEffectsAllowed;
 }
 
-void UiEngine::moveQQmlEngine(QQmlEngine* e)
+bool UiEngine::isSystemDragSupported() const
 {
-    setup(e);
-}
-
-void UiEngine::setup(QQmlEngine* engine)
-{
-    IF_ASSERT_FAILED_X(!m_engine, "UiEngine already inited") {
-        return;
-    }
-
-    m_engine = engine;
-    m_theme->init();
-    m_tooltip->init();
-    m_engine->rootContext()->setContextProperty("ui", this);
-    m_engine->rootContext()->setContextProperty("api", m_api);
-
-    QJSValue translator = m_engine->newQObject(m_translation);
-    QJSValue translateFn = translator.property("translate");
-    m_engine->globalObject().setProperty("qsTrc", translateFn);
-
-#ifdef Q_OS_WIN
-    QDir dir(QCoreApplication::applicationDirPath() + QString("/../qml"));
-    m_engine->addImportPath(dir.absolutePath());
- #endif
-
-    m_engine->addImportPath(":/qml");
-
-#ifdef MUE_ENABLE_LOAD_QML_FROM_SOURCE
-    for (const QString& path : m_sourceImportPaths) {
-        m_engine->addImportPath(path);
-    }
-#endif
+    return configuration()->isSystemDragSupported();
 }
 
 void UiEngine::addSourceImportPath(const QString& path)
@@ -155,7 +195,7 @@ QmlApi* UiEngine::api() const
     return m_api;
 }
 
-UiTheme* UiEngine::theme() const
+muse::api::ThemeApi* UiEngine::theme() const
 {
     return m_theme;
 }
@@ -185,12 +225,53 @@ Qt::LayoutDirection UiEngine::currentLanguageLayoutDirection() const
     return languagesService()->currentLanguage().direction;
 }
 
+QColor UiEngine::blendColors(const QColor& c1, const QColor& c2) const
+{
+    return muse::blendQColors(c1, c2);
+}
+
+QColor UiEngine::blendColors(const QColor& c1, const QColor& c2, float alpha) const
+{
+    return muse::blendQColors(c1, c2, alpha);
+}
+
+QColor UiEngine::colorWithAlphaF(const QColor& src, float alpha) const
+{
+    QColor c = src;
+    c.setAlphaF(alpha);
+    return c;
+}
+
+QQmlApplicationEngine* UiEngine::qmlAppEngine() const
+{
+    return m_engine;
+}
+
 QQmlEngine* UiEngine::qmlEngine() const
 {
-    return const_cast<UiEngine*>(this)->engine();
+    return qmlAppEngine();
 }
 
 void UiEngine::clearComponentCache()
 {
-    engine()->clearComponentCache();
+    m_engine->clearComponentCache();
+}
+
+GraphicsApi UiEngine::graphicsApi() const
+{
+    return GraphicsApiProvider::graphicsApi();
+}
+
+QString UiEngine::graphicsApiName() const
+{
+    return GraphicsApiProvider::graphicsApiName();
+}
+
+void UiEngine::sleep(int msec)
+{
+    QEventLoop loop;
+    QTimer::singleShot(msec, [&loop]() {
+        loop.quit();
+    });
+    loop.exec();
 }

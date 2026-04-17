@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -35,7 +35,7 @@ class PickScrape;
 class PickScrapeSegment final : public TextLineBaseSegment
 {
     OBJECT_ALLOCATOR(engraving, PickScrapeSegment)
-    DECLARE_CLASSOF(ElementType::WHAMMY_BAR_SEGMENT)
+    DECLARE_CLASSOF(ElementType::PICK_SCRAPE_SEGMENT)
 
 public:
     PickScrapeSegment(PickScrape* sp, System* parent);
@@ -54,7 +54,7 @@ public:
 class PickScrape final : public ChordTextLineBase
 {
     OBJECT_ALLOCATOR(engraving, PickScrape)
-    DECLARE_CLASSOF(ElementType::WHAMMY_BAR)
+    DECLARE_CLASSOF(ElementType::PICK_SCRAPE)
 
 public:
     PickScrape(EngravingItem* parent);

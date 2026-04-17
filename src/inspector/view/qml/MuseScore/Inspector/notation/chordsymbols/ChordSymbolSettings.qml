@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,8 +22,8 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 
-import MuseScore.Ui 1.0
-import MuseScore.UiComponents 1.0
+import Muse.Ui 1.0
+import Muse.UiComponents 1.0
 import MuseScore.Inspector 1.0
 
 import "../../common"
@@ -49,6 +49,8 @@ Column {
         titleText: qsTrc("inspector", "Interpretation")
         propertyItem: root.model ? root.model.isLiteral : null
 
+        visible: root.model ? !root.model.insideFretBox : true
+
         navigationPanel: root.navigationPanel
         navigationRowStart: root.navigationRowStart + 1
 
@@ -62,6 +64,8 @@ Column {
         id: voicingSection
         titleText: qsTrc("inspector", "Voicing")
         propertyItem: root.model ? root.model.voicingType : null
+
+        visible: root.model ? !root.model.insideFretBox : true
 
         navigationPanel: root.navigationPanel
         navigationRowStart: interpretationSection.navigationRowEnd + 1
@@ -78,16 +82,137 @@ Column {
     }
 
     DropdownPropertyView {
+        id: durationSection
         titleText: qsTrc("inspector", "Duration")
         propertyItem: root.model ? root.model.durationType : null
 
         navigationPanel: root.navigationPanel
-        navigationRowStart: voicingSection.navigationRowEnd + 1
+        navigationRowStart: (voicingSection.visible ? voicingSection.navigationRowEnd : root.navigationRowStart) + 1
 
         model: [
             { text: qsTrc("inspector", "Until the next chord symbol"), value: ChordSymbolTypes.DURATION_UNTIL_NEXT_CHORD_SYMBOL },
             { text: qsTrc("inspector", "Until the end of the measure"), value: ChordSymbolTypes.DURATION_STOP_AT_MEASURE_END },
             { text: qsTrc("inspector", "Until the end of the attached duration"), value: ChordSymbolTypes.DURATION_SEGMENT_DURATION }
         ]
+    }
+
+    PropertyCheckBox {
+        id: verticalAlignCheckBox
+
+        text: qsTrc("inspector", "Exclude from vertical alignment")
+        propertyItem: root.model ? root.model.verticalAlign : null
+
+        visible: root.model ? !root.model.insideFretBox : true
+
+        navigation.name: "Exclude from vertical alignment"
+        navigation.panel: root.navigationPanel
+        navigation.row: durationSection.navigationRowEnd + 1
+    }
+
+    PropertyCheckBox {
+        id: doNotStackModifiersCheckBox
+
+        text: qsTrc("inspector", "Do not stack modifiers")
+        propertyItem: root.model ? root.model.doNotStackModifiers : null
+
+        visible: root.model ? root.model.showStackModifiers : true
+
+        navigation.name: "Do not stack modifiers"
+        navigation.panel: root.navigationPanel
+        navigation.row: (verticalAlignCheckBox.visible ? verticalAlignCheckBox.navigation.row : durationSection.navigationRowEnd) + 1
+    }
+
+    Item {
+        height: childrenRect.height
+        width: parent.width
+
+        SpinBoxPropertyView {
+            id: bassNoteScale
+
+            anchors.left: parent.left
+            anchors.right: parent.horizontalCenter
+            anchors.rightMargin: 4
+
+            titleText: qsTrc("inspector", "Bass note scale")
+            propertyItem: root.model ? root.model.bassScale : null
+
+            step: 1
+            decimals: 0
+            maxValue: 300
+            minValue: 0
+            measureUnitsSymbol: "%"
+
+            navigationName: "Bass note scale"
+            navigationPanel: root.navigationPanel
+            navigationRowStart: {
+                if (doNotStackModifiersCheckBox.visible) {
+                    return doNotStackModifiersCheckBox.navigation.row + 1
+                } else if (verticalAlignCheckBox.visible) {
+                    return verticalAlignCheckBox.navigation.row + 1
+                } else {
+                    return durationSection.navigationRowEnd
+                }
+            }
+        }
+
+        FlatRadioButtonGroupPropertyView {
+            id: alignmentButtonList
+
+            anchors.left: parent.horizontalCenter
+            anchors.leftMargin: 4
+            anchors.right: parent.right
+
+            transparent: true
+
+            visible: root.model ? !root.model.insideFretBox : true
+
+            titleText: qsTrc("inspector", "Alignment")
+            propertyItem: root.model ? root.model.position : null
+
+            navigationPanel: root.navigationPanel
+            navigationRowStart: bassNoteScale.navigationRowEnd + 1
+
+            requestIconFontSize: 16
+            requestWidth: 98
+
+            model: [
+                { iconCode: IconCode.NOTE_ALIGN_LEFT,
+                    value: 0,
+                    title: qsTrc("inspector", "Align left"),
+                    description: qsTrc("inspector", "Align left edge of text to notehead")
+                },
+                { iconCode: IconCode.NOTE_ALIGN_CENTER,
+                    value: 2,
+                    title: qsTrc("inspector", "Align center"),
+                    description: qsTrc("inspector", "Align horizontal center of text to notehead")
+                },
+                { iconCode: IconCode.NOTE_ALIGN_RIGHT,
+                    value: 1 ,
+                    title: qsTrc("inspector", "Align right"),
+                    description: qsTrc("inspector", "Align right edge of text to notehead")
+                }
+            ]
+        }
+    }
+
+    FlatButton {
+        id: addFretBoardDiagramButton
+        width: parent.width
+
+        navigation.name: "AddFretboardDiagram"
+        navigation.panel: root.navigationPanel
+        navigation.row: (alignmentButtonList.visible ? alignmentButtonList.navigationRowEnd : bassNoteScale.navigationRowEnd) + 1
+
+        text: qsTrc("inspector", "Add fretboard diagram")
+        icon: IconCode.FRETBOARD_DIAGRAM
+        orientation: Qt.Horizontal
+
+        visible: root.model ? !root.model.hasLinkedFretboardDiagram : false
+
+        onClicked: {
+            if (root.model) {
+                root.model.addFretboardDiagram()
+            }
+        }
     }
 }

@@ -5,10 +5,12 @@ MU_ROOT	  := $(dir ${CURDIR})
 # EMBED_PRELOADS = "OFF"
 # BUILD_NUMBER   = $(shell git rev-parse --short=7 HEAD)
 
-# change path to include your Qt5 installation
-export CMAKE_PREFIX_PATH	=	../../build.qt5/5.15.2/wasm_32
+# change path to include your Qt6 installation
+export CMAKE_PREFIX_PATH	=	../../build.qt6/Qt/${Qt6_VER}/wasm_32
+export CMAKE_TOOLCHAIN_FILE = $(CMAKE_PREFIX_PATH)/lib/cmake/Qt6/qt.toolchain.cmake
 
 # setup ccache
+export CCACHE_CPP2          =   true
 export CCACHE_BASEDIR		=	${MU_ROOT}
 export CCACHE_DIR			=	${MU_ROOT}/.ccache
 export CCACHE_COMPRESS		=	true

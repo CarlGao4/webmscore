@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,8 +22,8 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 
-import MuseScore.Ui 1.0
-import MuseScore.UiComponents 1.0
+import Muse.Ui 1.0
+import Muse.UiComponents 1.0
 import MuseScore.Inspector 1.0
 
 import "."
@@ -31,12 +31,11 @@ import "."
 Rectangle {
     id: root
 
-    property alias model: inspectorRepeater.model
+    property alias model: sectionList.model
     property alias notationView: popupController.notationView
 
     property NavigationSection navigationSection: null
-    property NavigationPanel navigationPanel: inspectorRepeater.count > 0 ? inspectorRepeater.itemAt(0).navigationPanel : null // first panel
-    property int navigationOrderStart: 0
+    property int navigationOrderStart: 1
 
     color: ui.theme.backgroundPrimaryColor
 
@@ -45,7 +44,7 @@ Rectangle {
     }
 
     function focusFirstItem() {
-        var item = inspectorRepeater.itemAt(0)
+        var item = sectionList.itemAtIndex(0)
         if (item) {
             item.navigation.requestActive()
         }
@@ -61,6 +60,13 @@ Rectangle {
 
             popupController.visualControl = visualControl
             popupController.popup = newOpenedPopup
+
+            popupController.popup.closed.connect(function() {
+                if (sectionList.contentY + sectionList.height > sectionList.contentHeight) {
+                    var invisibleContentHeight = sectionList.contentY + sectionList.height - sectionList.contentHeight
+                    Qt.callLater(sectionList.ensureContentVisible, -invisibleContentHeight)
+                }
+            })
         }
     }
 
@@ -68,82 +74,72 @@ Rectangle {
         id: popupController
     }
 
-    StyledFlickable {
-        id: flickableArea
+    Component.onCompleted: {
+        popupController.load()
+    }
+
+    StyledListView {
+        id: sectionList
         anchors.fill: parent
 
+        topMargin: 12
+        bottomMargin: 12
+
+        spacing: 12
+
         function ensureContentVisible(invisibleContentHeight) {
-            if (flickableArea.contentY + invisibleContentHeight > 0) {
-                flickableArea.contentY += invisibleContentHeight
+            if (sectionList.contentY + invisibleContentHeight > 0) {
+                sectionList.contentY += invisibleContentHeight
             } else {
-                flickableArea.contentY = 0
+                sectionList.contentY = 0
             }
         }
-
-        flickableDirection: Flickable.VerticalFlick
-
-        contentHeight: contentColumn.childrenRect.height + 2 * contentColumn.anchors.margins
 
         Behavior on contentY {
             NumberAnimation { duration: 250 }
         }
 
-        ScrollBar.vertical: StyledScrollBar {}
+        model: InspectorListModel {
+            id: inspectorListModel
+        }
 
-        Column {
-            id: contentColumn
+        onContentHeightChanged: {
+            returnToBounds()
 
-            anchors.fill: parent
-            anchors.margins: 12
+            if (contentHeight > cacheBuffer) {
+                cacheBuffer = contentHeight
+            }
+        }
 
-            height: childrenRect.height
-            spacing: 12
+        delegate: Column {
+            width: ListView.view.width
+            spacing: sectionList.spacing
 
-            Repeater {
-                id: inspectorRepeater
+            property var navigationPanel: _item.navigationPanel
 
-                model: InspectorListModel {
-                    id: inspectorListModel
+            SeparatorLine {
+                visible: model.index !== 0
+            }
+
+            InspectorSectionDelegate {
+                id: _item
+
+                anchors.left: parent.left
+                anchors.leftMargin: 12
+                anchors.right: parent.right
+                anchors.rightMargin: 12
+
+                sectionModel: model.inspectorSectionModel
+                anchorItem: root
+                navigationPanel.section: root.navigationSection
+                navigationPanel.order: root.navigationOrderStart + model.index
+
+                onEnsureContentVisibleRequested: function(invisibleContentHeight) {
+                    sectionList.ensureContentVisible(invisibleContentHeight)
                 }
 
-                delegate: Column {
-                    width: parent.width
-
-                    spacing: contentColumn.spacing
-
-                    property var navigationPanel: _item.navigationPanel
-
-                    SeparatorLine {
-                        anchors.margins: -12
-
-                        visible: model.index !== 0
-                    }
-
-                    InspectorSectionDelegate {
-                        id: _item
-
-                        sectionModel: model.inspectorSectionModel
-                        anchorItem: root
-                        navigationPanel.section: root.navigationSection
-                        navigationPanel.order: root.navigationOrderStart + model.index
-                        navigationPanel.onOrderChanged: {
-                            if (model.index === 0) {
-                                root.navigationOrderStart = navigationPanel.order
-                            }
-                        }
-
-                        onReturnToBoundsRequested: {
-                            flickableArea.returnToBounds()
-                        }
-
-                        onEnsureContentVisibleRequested: function(invisibleContentHeight) {
-                            flickableArea.ensureContentVisible(invisibleContentHeight)
-                        }
-
-                        onPopupOpened: {
-                            prv.closePreviousOpenedPopup(openedPopup, visualControl)
-                        }
-                    }
+                onPopupOpened: function(openedPopup, visualControl) {
+                    prv.closePreviousOpenedPopup(openedPopup, visualControl)
                 }
             }
         }

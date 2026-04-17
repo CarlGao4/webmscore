@@ -19,8 +19,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_MIDI_COREMIDIOUTPORT_H
-#define MU_MIDI_COREMIDIOUTPORT_H
+#ifndef MUSE_MIDI_COREMIDIOUTPORT_H
+#define MUSE_MIDI_COREMIDIOUTPORT_H
 
 #include <memory>
 
@@ -29,7 +29,7 @@
 #include "modularity/ioc.h"
 #include "imidiconfiguration.h"
 
-namespace mu::midi {
+namespace muse::midi {
 class CoreMidiOutPort : public IMidiOutPort
 {
     INJECT(IMidiConfiguration, configuration)
@@ -56,7 +56,6 @@ public:
 
 private:
     void initCore();
-    void getDestinationProtocolId();
 
     struct Core;
     std::unique_ptr<Core> m_core;
@@ -66,4 +65,4 @@ private:
 };
 }
 
-#endif // MU_MIDI_COREMIDIOUTPORT_H
+#endif // MUSE_MIDI_COREMIDIOUTPORT_H

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -25,17 +25,20 @@
 
 #include <memory>
 
-#include "dom/measure.h"
-#include "dom/mscore.h"
-#include "dom/synthesizerstate.h"
-#include "types/types.h"
+#include "../../dom/measure.h"
+#include "../../dom/mscore.h"
+#include "../../types/types.h"
+
 #include "pitchwheelrenderer.h"
+#include "pausemap.h"
+#include "velocitymap.h"
 
 namespace mu::engraving {
 class EventsHolder;
 class MasterScore;
 class Staff;
-class SynthesizerState;
+class Instrument;
+class Chord;
 // This struct specifies how to render an articulation.
 //   atype - the articulation type to implement, such as SymId::ornamentTurn
 //   ostyles - the actual ornament has a property called ornamentStyle whose value is
@@ -78,6 +81,7 @@ static const std::set<OrnamentStyle> any;             // empty set has the speci
 static constexpr int _16th = Constants::DIVISION / 4;
 static constexpr int _32nd = _16th / 2;
 constexpr int SLIDE_DURATION = _32nd;
+constexpr int GRACE_BEND_DURATION = _16th;
 static const std::vector<OrnamentExcursion> excursions = {
     //  articulation type            set of  duration       body         repeatp      suffix
     //                               styles          prefix                    sustainp
@@ -127,6 +131,7 @@ public:
             int32_t string = INVALID_STRING;
             staff_idx_t staffIdx = 0;
             MidiInstrumentEffect effect = MidiInstrumentEffect::NONE;
+            bool harmony = false;
 
             bool operator<(const LookupData& other) const;
         };
@@ -137,14 +142,37 @@ public:
         uint32_t getChannel(uint32_t instrumentChannel, const LookupData& lookupData);
     };
 
+    enum HarmonyChannelSetting {
+        DISABLED = -1, // harmony chords should not be played
+        DEFAULT = 0,   // harmony chords' channels are setup in default way
+        LOOKUP         // harmony chords' channels are setup in specific way
+    };
+
     struct Context
     {
-        int sndController = CTRL_BREATH;
-        bool metronome = true;
-        std::shared_ptr<ChannelLookup> channels = std::make_shared<ChannelLookup>();
+        struct BuiltInArticulation {
+            double velocityMultiplier = 1.0;
+            int gateTime = 100;
+        };
+
+        static std::unordered_map<String, BuiltInArticulation> s_builtInArticulationsValues;
 
         bool eachStringHasChannel = false; //!to better display the guitar instrument, each string has its own channel
         bool instrumentsHaveEffects = false; //!when effect is applied, new channel should be used
+        bool useDefaultArticulations = false; //!using default articulations means ignoring the ones stored for each instrument
+        bool applyCaesuras = false; //! to add pauses (caesura) between midi events
+        HarmonyChannelSetting harmonyChannelSetting = HarmonyChannelSetting::DEFAULT;
+        std::unordered_set<std::string> partsWithMutedHarmony;
+
+        int sndController = CTRL_BREATH;
+
+        std::unordered_map<track_idx_t, VelocityMap> velocitiesByTrack;
+        std::unordered_map<track_idx_t, VelocityMap> velocityMultiplicationsByTrack;
+        std::unordered_map<String, std::unordered_set<String> > articulationsWithoutValuesByInstrument;
+        std::unordered_set<const Chord*> chordsWithHammerOnPullOff;
+
+        std::shared_ptr<ChannelLookup> channels = std::make_shared<ChannelLookup>();
+        std::shared_ptr<PauseMap> pauseMap = std::make_shared<PauseMap>();
     };
 
     explicit CompatMidiRendererInternal(Score* s);
@@ -162,9 +190,6 @@ private:
     void doRenderSpanners(EventsHolder& events, Spanner* s, uint32_t channel, PitchWheelRenderer& pitchWheelRenderer,
                           MidiInstrumentEffect effect);
 
-    void renderMetronome(EventsHolder& events);
-    void renderMetronome(EventsHolder& events, Measure const* m);
-
     void collectMeasureEvents(EventsHolder& events, Measure const* m, const Staff* sctx, int tickOffset,
                               PitchWheelRenderer& pitchWheelRenderer, std::array<Chord*, VOICES>& prevChords);
     void doCollectMeasureEvents(EventsHolder& events, Measure const* m, const Staff* sctx, int tickOffset,
@@ -179,10 +204,11 @@ private:
     ChordParams collectChordParams(const Chord* chord, int tickOffset) const;
     void collectGraceBeforeChordEvents(Chord* chord, Chord* prevChord, EventsHolder& events, double veloMultiplier, Staff* st,
                                        int tickOffset, PitchWheelRenderer& pitchWheelRenderer, MidiInstrumentEffect effect);
+    void fillArticulationsInfo();
+    void fillHammerOnPullOffsInfo();
 
     Score* score = nullptr;
-
-    Context _context;
+    Context m_context;
 };
 } // namespace mu::engraving
 

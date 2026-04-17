@@ -23,24 +23,27 @@
 #ifndef MUSE_MPE_PLAYBACKSETUPDATA_H
 #define MUSE_MPE_PLAYBACKSETUPDATA_H
 
-#include <variant>
 #include <optional>
 
 #include "soundid.h"
 
-namespace mu::mpe {
+namespace muse::mpe {
 struct PlaybackSetupData
 {
     String id;
-    SoundCategory category = SoundCategory::Undefined;
     StringList subCategories;
 
+    std::optional<std::string> scoreId;
     std::optional<std::string> musicXmlSoundId;
+
+    SoundCategory category = SoundCategory::Undefined;
+
+    bool supportsSingleNoteDynamics = false;
 
     PlaybackSetupData() = default;
 
-    PlaybackSetupData(SoundId id, SoundCategory category, SoundSubCategories&& soundSubCategories = {})
-        : id(soundIdToString(id)), category(category)
+    PlaybackSetupData(SoundId id, SoundCategory category, SoundSubCategories&& soundSubCategories = {}, bool supportsSND = false)
+        : id(soundIdToString(id)), category(category), supportsSingleNoteDynamics(supportsSND)
     {
         for (SoundSubCategory subCategory : soundSubCategories) {
             subCategories.push_back(soundSubCategoryToString(subCategory));
@@ -48,7 +51,7 @@ struct PlaybackSetupData
     }
 
     PlaybackSetupData(String id, SoundCategory category, StringList&& subCategories = {})
-        : id(std::move(id)), category(category), subCategories(std::move(subCategories))
+        : id(std::move(id)), subCategories(std::move(subCategories)), category(category)
     {}
 
     SoundId soundId() const
@@ -83,7 +86,7 @@ struct PlaybackSetupData
 
     bool contains(const SoundSubCategory subcategory) const
     {
-        return mu::contains(subCategories, soundSubCategoryToString(subcategory));
+        return muse::contains(subCategories, soundSubCategoryToString(subcategory));
     }
 
     void add(const SoundSubCategory subcategory)
@@ -100,7 +103,8 @@ struct PlaybackSetupData
     {
         return id == other.id
                && category == other.category
-               && subCategories == other.subCategories;
+               && subCategories == other.subCategories
+               && supportsSingleNoteDynamics == other.supportsSingleNoteDynamics;
     }
 
     bool operator<(const PlaybackSetupData& other) const

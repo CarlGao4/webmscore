@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -19,10 +19,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_NOTATION_IMASTERNOTATION_H
-#define MU_NOTATION_IMASTERNOTATION_H
+#pragma once
 
-#include "types/retval.h"
+#include "async/notification.h"
+#include "types/ret.h"
 
 #include "inotation.h"
 #include "iexcerptnotation.h"
@@ -35,7 +35,7 @@ class IMasterNotation
 {
 public:
 
-    virtual Ret setupNewScore(engraving::MasterScore* score, const ScoreCreateOptions& options) = 0;
+    virtual muse::Ret setupNewScore(engraving::MasterScore* score, const ScoreCreateOptions& options) = 0;
     virtual void applyOptions(engraving::MasterScore* score, const ScoreCreateOptions& options, bool createdFromTemplate = false) = 0;
     virtual engraving::MasterScore* masterScore() const = 0;
     virtual void setMasterScore(engraving::MasterScore* masterScore) = 0;
@@ -47,7 +47,7 @@ public:
     virtual IExcerptNotationPtr createEmptyExcerpt(const QString& name = QString()) const = 0;
 
     virtual const ExcerptNotationList& excerpts() const = 0;
-    virtual async::Notification excerptsChanged() const = 0;
+    virtual muse::async::Notification excerptsChanged() const = 0;
     virtual const ExcerptNotationList& potentialExcerpts() const = 0;
 
     virtual void initExcerpts(const ExcerptNotationList& excerpts) = 0;
@@ -59,12 +59,11 @@ public:
 
     virtual INotationPartsPtr parts() const = 0;
     virtual bool hasParts() const = 0;
-    virtual async::Notification hasPartsChanged() const = 0;
+    virtual muse::async::Notification hasPartsChanged() const = 0;
 
     virtual INotationPlaybackPtr playback() const = 0;
+    virtual void initNotationSoloMuteState(const INotationPtr notation) = 0;
 };
 
 using IMasterNotationPtr = std::shared_ptr<IMasterNotation>;
 }
-
-#endif // MU_NOTATION_IMASTERNOTATION_H

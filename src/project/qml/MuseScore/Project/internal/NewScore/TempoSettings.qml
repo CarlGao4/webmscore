@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -23,8 +23,8 @@ import QtQuick 2.9
 import QtQuick.Controls 2.2
 import QtQuick.Layouts 1.3
 
-import MuseScore.Ui 1.0
-import MuseScore.UiComponents 1.0
+import Muse.Ui 1.0
+import Muse.UiComponents 1.0
 import MuseScore.Project 1.0
 import MuseScore.CommonScene 1.0
 
@@ -75,7 +75,7 @@ FlatButton {
         ColumnLayout {
             id: content
 
-            spacing: 0
+            spacing: 26
 
             property NavigationPanel navigationPanel: NavigationPanel {
                 name: "TempoSettingsPanel"
@@ -89,6 +89,7 @@ FlatButton {
 
                 Layout.topMargin: 26
                 Layout.leftMargin: 32
+                Layout.rightMargin: 32
 
                 checked: root.model.withTempo
 
@@ -107,18 +108,13 @@ FlatButton {
                 }
             }
 
-            SeparatorLine {
-                Layout.topMargin: 26
-            }
+            SeparatorLine {}
 
             RadioButtonGroup {
                 id: tempoMarkingView
 
-                Layout.topMargin: 26
                 Layout.leftMargin: 32
                 Layout.rightMargin: 32
-
-                height: 48
 
                 model: root.model.tempoNotes()
 
@@ -129,7 +125,7 @@ FlatButton {
                 }
 
                 delegate: FlatRadioButton {
-                    width: 48
+                    width: 36
                     height: width
 
                     enabled: withTempo.checked
@@ -150,35 +146,32 @@ FlatButton {
                     }
 
                     StyledTextLabel {
-                        topPadding: 24
+                        anchors.centerIn: parent
+                        anchors.verticalCenterOffset: 10
                         font.family: ui.theme.musicalFont.family
                         font.pixelSize: 24
-                        font.letterSpacing: 1
-                        lineHeightMode: Text.FixedHeight
-                        lineHeight: 10
+                        font.letterSpacing: 2
                         text: modelData.noteSymbol
                     }
                 }
             }
 
             Row {
-                Layout.topMargin: 26
                 Layout.alignment: Qt.AlignHCenter
-                Layout.bottomMargin: 22
+                Layout.bottomMargin: 26
 
-                spacing: 20
+                spacing: 6
                 enabled: withTempo.checked
 
                 StyledTextLabel {
                     anchors.verticalCenter: parent.verticalCenter
                     text: "="
-                    font: ui.theme.headerFont
                 }
 
                 IncrementalPropertyControl {
                     id: control
 
-                    implicitWidth: 126
+                    implicitWidth: 76
 
                     currentValue: root.model.tempo.value
                     step: 1

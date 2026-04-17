@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,8 +22,8 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 
-import MuseScore.Ui 1.0
-import MuseScore.UiComponents 1.0
+import Muse.Ui 1.0
+import Muse.UiComponents 1.0
 import MuseScore.Inspector 1.0
 
 FlatButton {
@@ -54,10 +54,6 @@ FlatButton {
         property bool needActiveFirstItem: false
     }
 
-    Component.onCompleted: {
-        popupController.load()
-    }
-
     onClicked: {
         prv.needActiveFirstItem = root.navigation.highlight
         contentLoader.active = !contentLoader.active
@@ -68,27 +64,44 @@ FlatButton {
         id: popup
 
         anchorItem: root.anchorItem
-        contentWidth: root.popupAvailableWidth - 2 * margins
+
+        contentWidth: contentLoader.width
+        contentHeight: contentLoader.height
+
+        placementPolicies: PopupView.PreferBelow | PopupView.IgnoreFit
 
         closePolicies: PopupView.NoAutoClose
+
+        openPolicies: PopupView.Default | PopupView.OpenOnContentReady
+        isContentReady: false
 
         contentData: Loader {
             id: contentLoader
 
             active: false
 
-            width: popup.contentWidth
+            width: root.popupAvailableWidth - 2 * popup.margins
             height: implicitHeight
 
             sourceComponent: root.popupContent
+
+            onStatusChanged: {
+                if (contentLoader.status == Loader.Ready) {
+                    Qt.callLater(popup.markContentIsReady)
+                }
+            }
         }
 
         onContentHeightChanged: {
-            checkForInsufficientSpace()
+            if (contentHeight > 0) {
+                Qt.callLater(checkForInsufficientSpace)
+            }
         }
 
         onOpened: {
-            Qt.callLater(checkForInsufficientSpace)
+            if (contentHeight > 0) {
+                Qt.callLater(checkForInsufficientSpace)
+            }
 
             if (prv.needActiveFirstItem) {
                 forceFocusIn()
@@ -99,8 +112,7 @@ FlatButton {
 
         onClosed: {
             contentLoader.active = false
-
-            root.ensureContentVisibleRequested(root.anchorItem.height) // reset contentY
+            popup.isContentReady = false
         }
 
         function forceFocusIn() {
@@ -110,15 +122,22 @@ FlatButton {
         }
 
         function checkForInsufficientSpace() {
-            if (!isOpened) {
+            var buttonGlobalPos = root.mapToItem(root.anchorItem, Qt.point(0, 0))
+            var popupHeight = contentHeight + padding*2 + margins*2
+
+            var buttonBottom = buttonGlobalPos.y + root.height
+            var spaceBelow = root.anchorItem.height - buttonBottom
+            if (spaceBelow > popupHeight) {
                 return
             }
 
-            var buttonGlobalPos = root.mapToItem(root.anchorItem, Qt.point(0, 0))
-            var popupHeight = contentHeight + padding*2 + margins*2
-            var invisibleContentHeight = root.anchorItem.height - (buttonGlobalPos.y + root.height + popupHeight)
+            var invisibleContentHeight = spaceBelow - popupHeight
 
             root.ensureContentVisibleRequested(invisibleContentHeight)
+        }
+
+        function markContentIsReady() {
+            popup.isContentReady = true
         }
 
         property NavigationPanel navigationPanel: NavigationPanel {

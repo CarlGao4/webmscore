@@ -19,8 +19,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_GLOBAL_STRING_H
-#define MU_GLOBAL_STRING_H
+#ifndef MUSE_GLOBAL_STRING_H
+#define MUSE_GLOBAL_STRING_H
 
 #include <memory>
 #include <cstring>
@@ -38,7 +38,7 @@
 #include <QStringList>
 #endif
 
-namespace mu {
+namespace muse {
 enum CaseSensitivity {
     CaseInsensitive = 0,
     CaseSensitive = 1
@@ -177,10 +177,21 @@ private:
 class UtfCodec
 {
 public:
+    enum class Encoding {
+        Unknown,
+        UTF_8,
+        UTF_16LE,
+        UTF_16BE,
+    };
+
+    static Encoding xmlEncoding(const ByteArray& data);
+
     static void utf8to16(std::string_view src, std::u16string& dst);
     static void utf16to8(std::u16string_view src, std::string& dst);
     static void utf8to32(std::string_view src, std::u32string& dst);
     static void utf32to8(std::u32string_view src, std::string& dst);
+    static void replaceInvalid(std::string_view src, std::string& dst);
+    static bool isValidUtf8(const std::string_view& src);
 };
 
 // ============================
@@ -195,7 +206,7 @@ public:
     String();
     String(const char16_t* str);
     String(const Char& ch);
-    String(const Char* unicode, size_t size = mu::nidx);
+    String(const Char* unicode, size_t size = muse::nidx);
 
 #ifndef NO_QT_SUPPORT
     String(const QString& str) { *this = fromQString(str); }
@@ -217,6 +228,8 @@ public:
     inline bool operator ==(const String& s) const { return constStr() == s.constStr(); }
     inline bool operator !=(const String& s) const { return !operator ==(s); }
 
+    bool isEqualIgnoreCase(const String& s) const;
+
     bool operator ==(const AsciiStringView& s) const;
     inline bool operator !=(const AsciiStringView& s) const { return !operator ==(s); }
     inline bool operator ==(const char16_t* s) const { return constStr() == s; }
@@ -232,7 +245,7 @@ public:
     String& operator +=(const char16_t* s);
     inline String& operator +=(char16_t s) { return append(s); }
 
-    inline String operator+(const mu::String& s) const { String t(*this); t += s; return t; }
+    inline String operator+(const muse::String& s) const { String t(*this); t += s; return t; }
     inline String operator+(const char16_t* s) const { String t(*this); t += s; return t; }
     inline String operator+(char16_t s) const { String t(*this); t += s; return t; }
 
@@ -244,17 +257,22 @@ public:
     String& prepend(Char ch);
     String& prepend(const String& s);
 
+    static String fromUtf16LE(const ByteArray& data);
+    static String fromUtf16BE(const ByteArray& data);
+
     static String fromUtf8(const char* str);
+    static String fromUtf8(std::string_view);
+    static String fromUtf8(const ByteArray& data);
     ByteArray toUtf8() const;
 
-    static String fromAscii(const char* str, size_t size = mu::nidx);
+    static String fromAscii(const char* str, size_t size = muse::nidx);
     ByteArray toAscii(bool* ok = nullptr) const;
 
     static String fromStdString(const std::string& str);
     std::string toStdString() const;
     std::u16string toStdU16String() const;
 
-    static String fromUcs4(const char32_t* str, size_t size = mu::nidx);
+    static String fromUcs4(const char32_t* str, size_t size = muse::nidx);
     static String fromUcs4(char32_t chr);
     std::u32string toStdU32String() const;
 
@@ -266,14 +284,17 @@ public:
     inline bool isEmpty() const { return empty(); }
     void clear();
     Char at(size_t i) const;
+    Char front() const { return at(0); }
+    Char back() const { return at(size() - 1); }
     bool contains(const Char& ch) const;
     bool contains(const String& str, CaseSensitivity cs = CaseSensitive) const;
     bool contains(const std::wregex& re) const;
     int count(const Char& ch) const;
     int count(const String& str) const;
     size_t indexOf(const Char& ch, size_t from = 0) const;
+    size_t indexOf(const String& str, size_t from = 0) const;
     size_t indexOf(const char16_t* str, size_t from = 0) const;
-    size_t lastIndexOf(const Char& ch, size_t from = mu::nidx) const;
+    size_t lastIndexOf(const Char& ch, size_t from = muse::nidx) const;
 
     //! NOTE Now implemented only compare with ASCII
     bool startsWith(const String& str, CaseSensitivity cs = CaseSensitive) const;
@@ -284,15 +305,19 @@ public:
     StringList split(const Char& ch, SplitBehavior behavior = KeepEmptyParts) const;
     StringList split(const String& str, SplitBehavior behavior = KeepEmptyParts) const;
     StringList split(const std::regex& re, SplitBehavior behavior = KeepEmptyParts) const;
+    StringList search(const std::regex& re, std::initializer_list<int> matches, SplitBehavior behavior = KeepEmptyParts) const;
+    StringList search(const std::wregex& re, std::initializer_list<int> matches, SplitBehavior behavior = KeepEmptyParts) const;
     String& replace(const String& before, const String& after);
     String& replace(char16_t before, char16_t after);
     String& replace(const std::regex& re, const String& after);
+    String& replace(const std::wregex& re, const String& after);
     String& insert(size_t position, const String& str);
     String& remove(const String& str) { return replace(str, String()); }
     String& remove(const std::regex& rx) { return replace(rx, String()); }
+    String& remove(const std::wregex& rx) { return replace(rx, String()); }
     String& remove(const Char& ch);
     String& remove(char16_t ch);
-    String& remove(size_t position, size_t n = mu::nidx);
+    String& remove(size_t position, size_t n = muse::nidx);
     void chop(size_t n);
     void truncate(size_t position);
 
@@ -318,7 +343,7 @@ public:
     String arg(double val1, double val2) const { return arg(number(val1), number(val2)); }
     String arg(double val1, double val2, double val3) const { return arg(number(val1), number(val2), number(val3)); }
 
-    String mid(size_t pos, size_t count = mu::nidx) const;
+    String mid(size_t pos, size_t count = muse::nidx) const;
     String left(size_t n) const;
     String right(size_t n) const;
 
@@ -327,6 +352,7 @@ public:
     String toXmlEscaped() const;
     static String toXmlEscaped(const String& str);
     static String toXmlEscaped(char16_t c);
+    static String decodeXmlEntities(const String& src);
 
     String toLower() const;
     String toUpper() const;
@@ -352,7 +378,7 @@ private:
 
     std::shared_ptr<std::u16string> m_data;
 
-#ifdef STRING_DEBUG_HACK
+#ifdef MUSE_STRING_DEBUG_HACK
     //! HACK On MacOS with clang there are problems with debugging - the value of the std::u16string is not visible.
     //! This is hack for debugging on MacOS
     void updateDebugView();
@@ -373,8 +399,8 @@ public:
     StringList& operator <<(const StringList& l) { return append(l); }
     StringList& append(const StringList& l);
 
-    size_t indexOf(const String& s) const { return mu::indexOf(*this, s); }
-    bool contains(const String& s) const { return mu::contains(*this, s); }
+    size_t indexOf(const String& s) const { return muse::indexOf(*this, s); }
+    bool contains(const String& s) const { return muse::contains(*this, s); }
     StringList filter(const String& str) const;
     String join(const String& sep) const;
 
@@ -413,6 +439,9 @@ public:
 #endif
 
     operator std::string_view() const {
+        if (!m_data) {
+            return std::string_view{};
+        }
         return std::string_view(m_data, m_size);
     }
 
@@ -451,27 +480,27 @@ private:
 
 inline String operator+(char16_t s1, const String& s2) { String t(s1); t += s2; return t; }
 inline String operator+(const char16_t* s1, const String& s2) { String t(s1); t += s2; return t; }
-}
+} // namespace muse
 
 // ============================
 // Char (UTF-16)
 // ============================
-inline bool operator ==(const char16_t c1, const mu::Char c2) { return c2 == c1; }
-inline bool operator !=(const char16_t c1, const mu::Char c2) { return c2 != c1; }
+inline bool operator ==(const char16_t c1, const muse::Char c2) { return c2 == c1; }
+inline bool operator !=(const char16_t c1, const muse::Char c2) { return c2 != c1; }
 
 // ============================
 // String (UTF-16)
 // ============================
-inline bool operator ==(const char16_t* s1, const mu::String& s2) { return s2 == s1; }
-inline bool operator !=(const char16_t* s1, const mu::String& s2) { return s2 != s1; }
+inline bool operator ==(const char16_t* s1, const muse::String& s2) { return s2 == s1; }
+inline bool operator !=(const char16_t* s1, const muse::String& s2) { return s2 != s1; }
 
 template<>
-struct std::hash<mu::String>
+struct std::hash<muse::String>
 {
-    std::size_t operator()(const mu::String& s) const noexcept { return s.hash(); }
+    std::size_t operator()(const muse::String& s) const noexcept { return s.hash(); }
 };
 
-inline mu::logger::Stream& operator<<(mu::logger::Stream& s, const mu::String& str)
+inline muse::logger::Stream& operator<<(muse::logger::Stream& s, const muse::String& str)
 {
     s << str.toUtf8().constChar();
     return s;
@@ -480,10 +509,10 @@ inline mu::logger::Stream& operator<<(mu::logger::Stream& s, const mu::String& s
 // ============================
 // AsciiStringView (ASCII)
 // ============================
-inline bool operator ==(const char* s1, const mu::AsciiStringView& s2) { return s2 == s1; }
-inline bool operator !=(const char* s1, const mu::AsciiStringView& s2) { return s2 != s1; }
+inline bool operator ==(const char* s1, const muse::AsciiStringView& s2) { return s2 == s1; }
+inline bool operator !=(const char* s1, const muse::AsciiStringView& s2) { return s2 != s1; }
 
-inline mu::logger::Stream& operator<<(mu::logger::Stream& s, const mu::AsciiStringView& str)
+inline muse::logger::Stream& operator<<(muse::logger::Stream& s, const muse::AsciiStringView& str)
 {
     s << str.ascii();
     return s;
@@ -493,4 +522,4 @@ inline mu::logger::Stream& operator<<(mu::logger::Stream& s, const mu::AsciiStri
 #  define muPrintable(string) string.toUtf8().constChar()
 #endif
 
-#endif // MU_GLOBAL_STRING_H
+#endif // MUSE_GLOBAL_STRING_H

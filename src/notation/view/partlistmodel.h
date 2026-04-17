@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -20,26 +20,27 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_NOTATION_PARTLISTMODEL_H
-#define MU_NOTATION_PARTLISTMODEL_H
+#pragma once
+
+#include <QAbstractListModel>
 
 #include "modularity/ioc.h"
 #include "context/iglobalcontext.h"
 #include "iinteractive.h"
 
-namespace mu::uicomponents {
+namespace muse::uicomponents {
 class ItemMultiSelectionModel;
 }
 
 namespace mu::notation {
-class PartListModel : public QAbstractListModel
+class PartListModel : public QAbstractListModel, public muse::Injectable, public muse::async::Asyncable
 {
     Q_OBJECT
 
-    INJECT(context::IGlobalContext, context)
-    INJECT(framework::IInteractive, interactive)
-
     Q_PROPERTY(bool hasSelection READ hasSelection NOTIFY selectionChanged)
+
+    muse::Inject<context::IGlobalContext> context = { this };
+    muse::Inject<muse::IInteractive> interactive = { this };
 
 public:
     explicit PartListModel(QObject* parent = nullptr);
@@ -70,7 +71,7 @@ signals:
 private:
     void openExcerpts(const QList<int>& rows) const;
 
-    Ret doValidatePartTitle(int partIndex, const QString& title) const;
+    muse::Ret doValidatePartTitle(int partIndex, const QString& title) const;
 
     bool isExcerptIndexValid(int index) const;
 
@@ -89,10 +90,8 @@ private:
         RoleIsCustom
     };
 
-    uicomponents::ItemMultiSelectionModel* m_selectionModel = nullptr;
+    muse::uicomponents::ItemMultiSelectionModel* m_selectionModel = nullptr;
     QList<IExcerptNotationPtr> m_excerpts;
     INotationPtr m_currentNotation;
 };
 }
-
-#endif // MU_NOTATION_PARTLISTMODEL_H

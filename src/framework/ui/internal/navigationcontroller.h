@@ -19,8 +19,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_UI_NAVIGATIONCONTROLLER_H
-#define MU_UI_NAVIGATIONCONTROLLER_H
+#ifndef MUSE_UI_NAVIGATIONCONTROLLER_H
+#define MUSE_UI_NAVIGATIONCONTROLLER_H
 
 #include <QObject>
 #include <QList>
@@ -34,15 +34,18 @@
 
 #include "../inavigationcontroller.h"
 
-namespace mu::ui {
-class NavigationController : public QObject, public INavigationController, public actions::Actionable, public async::Asyncable
+namespace muse::ui {
+class NavigationController : public QObject, public INavigationController, public Injectable, public actions::Actionable,
+    public async::Asyncable
 {
-    INJECT(actions::IActionsDispatcher, dispatcher)
-    INJECT(framework::IInteractive, interactive)
-    INJECT(IMainWindow, mainWindow)
+public:
+    Inject<actions::IActionsDispatcher> dispatcher = { this };
+    Inject<IInteractive> interactive = { this };
+    Inject<IMainWindow> mainWindow = { this };
 
 public:
-    NavigationController() = default;
+    NavigationController(const modularity::ContextPtr& iocCtx)
+        : Injectable(iocCtx) {}
 
     enum MoveDirection {
         First = 0,
@@ -56,14 +59,18 @@ public:
     void reg(INavigationSection* section) override;
     void unreg(INavigationSection* section) override;
 
-    const std::set<INavigationSection*>& sections() const override;
-
     bool requestActivateByName(const std::string& section, const std::string& panel, const std::string& controlName) override;
     bool requestActivateByIndex(const std::string& section, const std::string& panel, const INavigation::Index& controlIndex) override;
 
     INavigationSection* activeSection() const override;
     INavigationPanel* activePanel() const override;
     INavigationControl* activeControl() const override;
+
+    const std::set<INavigationSection*>& sections() const override;
+    const INavigationSection* findSection(const std::string& sectionName) const override;
+    const INavigationPanel* findPanel(const std::string& sectionName, const std::string& panelName) const override;
+    const INavigationControl* findControl(const std::string& sectionName, const std::string& panelName,
+                                          const std::string& controlName) const override;
 
     void setDefaultNavigationControl(INavigationControl* control) override;
 
@@ -148,4 +155,4 @@ private:
 };
 }
 
-#endif // MU_UI_NAVIGATIONCONTROLLER_H
+#endif // MUSE_UI_NAVIGATIONCONTROLLER_H

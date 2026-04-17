@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
-# MuseScore-CLA-applies
+# MuseScore-Studio-CLA-applies
 #
-# MuseScore
+# MuseScore Studio
 # Music Composition & Notation
 #
-# Copyright (C) 2021 MuseScore BVBA and others
+# Copyright (C) 2021 MuseScore Limited
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 3 as
@@ -21,17 +21,19 @@
 
 trap 'echo Generate PNGs failed; exit 1' ERR
 
-REF_BIN=./musescore_reference/app/bin/mscore4portable
-CUR_BIN=./musescore_current/app/bin/mscore4portable
+sudo apt-get install libegl1 libfuse2 -y
+export QT_QPA_PLATFORM=offscreen
+export MU_QT_QPA_PLATFORM=offscreen
 
+REF_BIN=./musescore_reference/MuseScore-Studio-vtest.AppImage
 chmod +x $REF_BIN
-# chmod +x ./musescore_reference/app/bin/crashpad_handler
-
-chmod +x $CUR_BIN
-# chmod +x ./musescore_current/app/bin/crashpad_handler
 
 echo reference version:
 $REF_BIN --long-version
+
+CUR_BIN=./musescore_current/MuseScore-Studio-vtest.AppImage
+chmod +x $CUR_BIN
+
 echo current version:
 $CUR_BIN --long-version
 
@@ -41,6 +43,10 @@ echo =======================
 
 echo Generate reference pngs: 
 ./vtest/vtest-generate-pngs.sh -o ./reference_pngs -m $REF_BIN
+./vtest/vtest-generate-pngs.sh -o ./reference_pngs_small -m $REF_BIN -s ./vtest/scores_small -d 460 -S ./vtest/small.mss
+./vtest/vtest-generate-pngs.sh -o ./reference_pngs_gp_small -m $REF_BIN -s ./vtest/gp_small -d 460 -S ./vtest/small.mss --gp-linked
 
 echo Generate current pngs: 
 ./vtest/vtest-generate-pngs.sh -o ./current_pngs -m $CUR_BIN
+./vtest/vtest-generate-pngs.sh -o ./current_pngs_small -m $CUR_BIN -s ./vtest/scores_small -d 460 -S ./vtest/small.mss
+./vtest/vtest-generate-pngs.sh -o ./current_pngs_gp_small -m $CUR_BIN -s ./vtest/gp_small -d 460 -S ./vtest/small.mss --gp-linked

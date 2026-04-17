@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -33,10 +33,10 @@
 #include "ui/view/musicalsymbolcodes.h"
 #include "ui/view/widgetstatestore.h"
 
-static QString TIME_SIGNATURE_PROPERTIES_DIALOG_NAME("TimeSignaturePropertiesDialog");
+static const QString TIME_SIGNATURE_PROPERTIES_DIALOG_NAME("TimeSignaturePropertiesDialog");
 
 using namespace mu::palette;
-using namespace mu::ui;
+using namespace muse::ui;
 using namespace mu::notation;
 using namespace mu::engraving;
 
@@ -68,19 +68,18 @@ TimeSignaturePropertiesDialog::TimeSignaturePropertiesDialog(QWidget* parent)
 
     const INotationInteractionPtr interaction = notation() ? notation()->interaction() : nullptr;
     EngravingItem* element = interaction ? interaction->hitElementContext().element : nullptr;
-    m_originTimeSig = element ? toTimeSig(element) : nullptr;
-
-    if (!m_originTimeSig) {
+    IF_ASSERT_FAILED(element && element->isTimeSig()) {
         return;
     }
 
+    m_originTimeSig = toTimeSig(element);
     m_editedTimeSig = m_originTimeSig->clone();
 
     zText->setText(m_editedTimeSig->numeratorString());
     nText->setText(m_editedTimeSig->denominatorString());
     // set validators for numerator and denominator strings
-    // which only accept '+', '(', ')', digits and some time symb conventional representations
-    QRegularExpression regex("[0-9+CO()\\x00A2\\x00D8\\x00BD\\x00BC]*");
+    // which only accept '+', '*' (or 'x'), '(', ')', '[', ']', digits and some time symb conventional representations
+    QRegularExpression regex("[0-9+COXx()\\[\\]\\*\\x00A2\\x00D7\\x00D8\\x00BD\\x00BC]*");
     QValidator* validator = new QRegularExpressionValidator(regex, this);
     zText->setValidator(validator);
     nText->setValidator(validator);
@@ -154,13 +153,6 @@ TimeSignaturePropertiesDialog::TimeSignaturePropertiesDialog(QWidget* parent)
         g = Groups::endings(m_editedTimeSig->sig()); // initialize with default
     }
     groups->setSig(m_editedTimeSig->sig(), g, m_editedTimeSig->numeratorString(), m_editedTimeSig->denominatorString());
-
-    WidgetStateStore::restoreGeometry(this);
-}
-
-TimeSignaturePropertiesDialog::TimeSignaturePropertiesDialog(const TimeSignaturePropertiesDialog& other)
-    : QDialog(other.parentWidget())
-{
 }
 
 TimeSignaturePropertiesDialog::~TimeSignaturePropertiesDialog()
@@ -168,15 +160,16 @@ TimeSignaturePropertiesDialog::~TimeSignaturePropertiesDialog()
     delete m_editedTimeSig;
 }
 
+void TimeSignaturePropertiesDialog::showEvent(QShowEvent* event)
+{
+    WidgetStateStore::restoreGeometry(this);
+    QDialog::showEvent(event);
+}
+
 void TimeSignaturePropertiesDialog::hideEvent(QHideEvent* event)
 {
     WidgetStateStore::saveGeometry(this);
     QDialog::hideEvent(event);
-}
-
-int TimeSignaturePropertiesDialog::static_metaTypeId()
-{
-    return QMetaType::type(TIME_SIGNATURE_PROPERTIES_DIALOG_NAME.toStdString().c_str());
 }
 
 //---------------------------------------------------------
@@ -219,13 +212,19 @@ void TimeSignaturePropertiesDialog::accept()
     Groups g = groups->groups();
     m_editedTimeSig->setGroups(g);
 
-    notation->undoStack()->prepareChanges();
+    notation->undoStack()->prepareChanges(TranslatableString("undoableAction", "Edit time signature properties"));
 
-    m_originTimeSig->undoChangeProperty(Pid::TIMESIG_TYPE, int(m_editedTimeSig->timeSigType()));
-    m_originTimeSig->undoChangeProperty(Pid::SHOW_COURTESY, m_editedTimeSig->showCourtesySig());
-    m_originTimeSig->undoChangeProperty(Pid::NUMERATOR_STRING, m_editedTimeSig->numeratorString());
-    m_originTimeSig->undoChangeProperty(Pid::DENOMINATOR_STRING, m_editedTimeSig->denominatorString());
-    m_originTimeSig->undoChangeProperty(Pid::GROUP_NODES, g.nodes());
+    // Change linked mmr timesigs too
+    for (EngravingObject* obj : m_originTimeSig->linkList()) {
+        TimeSig* timeSig = toTimeSig(obj);
+        if (timeSig == m_originTimeSig || (timeSig->track() == m_originTimeSig->track() && timeSig->score() == m_originTimeSig->score())) {
+            timeSig->undoChangeProperty(Pid::TIMESIG_TYPE, int(m_editedTimeSig->timeSigType()));
+            timeSig->undoChangeProperty(Pid::SHOW_COURTESY, m_editedTimeSig->showCourtesySig());
+            timeSig->undoChangeProperty(Pid::NUMERATOR_STRING, m_editedTimeSig->numeratorString());
+            timeSig->undoChangeProperty(Pid::DENOMINATOR_STRING, m_editedTimeSig->denominatorString());
+            timeSig->undoChangeProperty(Pid::GROUP_NODES, g.nodes());
+        }
+    }
 
     if (m_editedTimeSig->sig() != m_originTimeSig->sig()) {
         notation->interaction()->addTimeSignature(m_originTimeSig->measure(), m_originTimeSig->staffIdx(), m_editedTimeSig);

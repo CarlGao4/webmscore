@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,8 +22,8 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 
-import MuseScore.Ui 1.0
-import MuseScore.UiComponents 1.0
+import Muse.Ui 1.0
+import Muse.UiComponents 1.0
 import MuseScore.Inspector 1.0
 
 import "../../common"
@@ -58,6 +58,7 @@ Column {
             { text: qsTrc("inspector", "Auto (diatonic)"), value: OrnamentTypes.TYPE_AUTO_DIATONIC},
             { text: qsTrc("inspector", "Minor second"), value: OrnamentTypes.TYPE_MINOR_SECOND},
             { text: qsTrc("inspector", "Major second"), value: OrnamentTypes.TYPE_MAJOR_SECOND},
+            { text: qsTrc("inspector", "Augmented second"), value: OrnamentTypes.TYPE_AUGMENTED_SECOND},
         ]
     }
 
@@ -75,6 +76,7 @@ Column {
             { text: qsTrc("inspector", "Auto (diatonic)"), value: OrnamentTypes.TYPE_AUTO_DIATONIC},
             { text: qsTrc("inspector", "Minor second"), value: OrnamentTypes.TYPE_MINOR_SECOND},
             { text: qsTrc("inspector", "Major second"), value: OrnamentTypes.TYPE_MAJOR_SECOND},
+            { text: qsTrc("inspector", "Augmented second"), value: OrnamentTypes.TYPE_AUGMENTED_SECOND},
         ]
     }
 
@@ -111,10 +113,10 @@ Column {
                 anchors.right: parent.horizontalCenter
                 anchors.rightMargin: 2
 
-                navigation.name: root.navigationName + " Dropdown"
-                navigation.panel: root.navigationPanel
+                navigation.name: interval.navigationName + " Dropdown"
+                navigation.panel: interval.navigationPanel
                 navigation.row: interval.navigationRowStart + 1
-                navigation.accessible.name: root.titleText + " " + currentText
+                navigation.accessible.name: interval.titleText + " " + currentText
 
                 model: root.model && root.model.isPerfectStep ? [
                     { text: qsTrc("inspector", "Auto (diatonic)"), value: OrnamentTypes.TYPE_AUTO},
@@ -147,10 +149,10 @@ Column {
                 anchors.left: parent.horizontalCenter
                 anchors.leftMargin: 2
 
-                navigation.name: root.navigationName + " Dropdown"
-                navigation.panel: root.navigationPanel
+                navigation.name: interval.navigationName + " Dropdown"
+                navigation.panel: interval.navigationPanel
                 navigation.row: intervalType.navigation.row + 1
-                navigation.accessible.name: root.titleText + " " + currentText
+                navigation.accessible.name: interval.titleText + " " + currentText
 
                 model:  [
                     { text: qsTrc("inspector", "Unison"), value: OrnamentTypes.STEP_UNISON},
@@ -186,6 +188,23 @@ Column {
             { text: qsTrc("inspector", "Default"), value: OrnamentTypes.SHOW_ACCIDENTAL_DEFAULT},
             { text: qsTrc("inspector", "Show any alteration"), value: OrnamentTypes.SHOW_ACCIDENTAL_ANY_ALTERATION},
             { text: qsTrc("inspector", "Always display an accidental"), value: OrnamentTypes.SHOW_ACCIDENTAL_ALWAYS},
+        ]
+    }
+
+    FlatRadioButtonGroupPropertyView {
+        id: showCueNote
+        visible: root.model ? root.model.isFullIntervalChoiceAvailable : false
+
+        titleText: qsTrc("inspector", "Cue note visibility")
+        propertyItem: root.model ? root.model.showCueNote : null
+
+        navigationPanel: root.navigationPanel
+        navigationRowStart: interval.navigationRowEnd + 1
+
+        model: [
+            { text: qsTrc("inspector", "Auto"), value: CommonTypes.AUTO_ON_OFF_AUTO},
+            { text: qsTrc("inspector", "On"), value: CommonTypes.AUTO_ON_OFF_ON},
+            { text: qsTrc("inspector", "Off"), value: CommonTypes.AUTO_ON_OFF_OFF},
         ]
     }
 

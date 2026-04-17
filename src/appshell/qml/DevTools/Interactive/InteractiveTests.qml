@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -20,8 +20,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 import QtQuick 2.7
-import MuseScore.Ui 1.0
-import MuseScore.UiComponents 1.0
+import Muse.Ui 1.0
+import Muse.UiComponents 1.0
 
 Rectangle {
 
@@ -47,6 +47,10 @@ Rectangle {
         id: testModel
     }
 
+    Component.onCompleted: {
+        testModel.init()
+    }
+
     StyledTextLabel {
         id: header
         width: parent.width
@@ -63,13 +67,44 @@ Rectangle {
         spacing: 16
         columns: 2
 
+        FlatButton {
+            width: 200
+            navigation.panel: navPanel
+            navigation.row: 0
+            text: "[cpp] selectOpeningFile"
+            onClicked: testModel.selectOpeningFile()
+        }
 
         FlatButton {
             width: 200
             navigation.panel: navPanel
             navigation.row: 0
-            text: "[cpp] Sample dialog"
-            onClicked: testModel.openSampleDialog()
+            text: "[cpp] selectSavingFile"
+            onClicked: testModel.selectSavingFile()
+        }
+
+        FlatButton {
+            width: 200
+            navigation.panel: navPanel
+            navigation.row: 0
+            text: "[cpp] selectDirectory"
+            onClicked: testModel.selectDirectory()
+        }
+
+        FlatButton {
+            width: 200
+            navigation.panel: navPanel
+            navigation.row: 0
+            text: "[cpp] showProgress"
+            onClicked: testModel.showProgress()
+        }
+
+        FlatButton {
+            width: 200
+            navigation.panel: navPanel
+            navigation.row: 0
+            text: "[cpp] Sample dialog sync"
+            onClicked: testModel.openSampleDialogSync()
         }
 
         FlatButton {
@@ -79,7 +114,7 @@ Rectangle {
             text: "[qml] Sample dialog"
             onClicked: {
                 console.log("qml: before open")
-                api.launcher.open("musescore://devtools/interactive/sample?color=#0F9D58&isApplyColor=true")
+                api.launcher.open("muse://devtools/interactive/sample?color=#0F9D58&isApplyColor=true")
                 console.log("qml: after open")
             }
         }
@@ -95,11 +130,19 @@ Rectangle {
         FlatButton {
             width: 200
             navigation.panel: navPanel
+            navigation.row: 2
+            text: "[cpp] Sample dialog async with promise"
+            onClicked: testModel.openSampleDialogAsyncWithPromise()
+        }
+
+        FlatButton {
+            width: 200
+            navigation.panel: navPanel
             navigation.row: 3
             text: "[qml] Sample dialog sync"
             onClicked: {
                 console.log("qml: before open")
-                api.launcher.open("musescore://devtools/interactive/sample?sync=true&color=#EF8605")
+                api.launcher.openSync("muse://devtools/interactive/sample?color=#EF8605")
                 console.log("qml: after open")
             }
         }
@@ -111,7 +154,7 @@ Rectangle {
             text: "[qml] Sample dialog modal"
             onClicked: {
                 console.log("qml: before open")
-                api.launcher.open("musescore://devtools/interactive/sample?modal=true&color=#D13F31")
+                api.launcher.open("muse://devtools/interactive/sample?modal=true&color=#D13F31")
                 console.log("qml: after open")
             }
         }
@@ -137,9 +180,27 @@ Rectangle {
         FlatButton {
             width: 200
             navigation.panel: navPanel
+            navigation.row: 6
+            text: "Open MuseHub"
+            onClicked: {
+                api.launcher.openApp("musehub://?from=musescore")
+            }
+        }
+
+        FlatButton {
+            width: 200
+            navigation.panel: navPanel
             navigation.row: 7
             text: "Question"
             onClicked: testModel.question()
+        }
+
+        FlatButton {
+            width: 200
+            navigation.panel: navPanel
+            navigation.row: 7
+            text: "Question (by uri)"
+            onClicked: testModel.questionByUri()
         }
 
         FlatButton {

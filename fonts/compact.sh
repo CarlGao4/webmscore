@@ -33,7 +33,7 @@ FILES=(
     #  music fonts
     fonts/leland/Leland.woff2
     fonts/bravura/Bravura.woff2    
-    fonts/mscore/mscore.woff2
+    fonts/mscore/MScore.woff2
     fonts/gootville/Gootville.woff2
     fonts/musejazz/MuseJazz.woff2
     fonts/petaluma/Petaluma.woff2

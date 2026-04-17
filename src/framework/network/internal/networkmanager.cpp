@@ -23,23 +23,19 @@
 
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
-#include <QTimer>
 #include <QEventLoop>
 #include <QUrl>
 
-#include "log.h"
 #include "networkerrors.h"
 
-using namespace mu;
-using namespace mu::network;
-using namespace mu::framework;
-
-static constexpr int NET_TIMEOUT_MS = 60000;
+using namespace muse;
+using namespace muse::network;
 
 NetworkManager::NetworkManager(QObject* parent)
     : QObject(parent)
 {
     m_manager = new QNetworkAccessManager(this);
+    m_manager->setTransferTimeout(); // Use Qt's default timeout (30s)
 }
 
 NetworkManager::~NetworkManager()
@@ -98,15 +94,20 @@ Ret NetworkManager::execRequest(RequestType requestType, const QUrl& url, Incomi
     QNetworkRequest request(url);
     request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, true);
 
-    for (QNetworkRequest::KnownHeaders knownHeader: headers.knownHeaders.keys()) {
-        request.setHeader(knownHeader, headers.knownHeaders[knownHeader]);
+    RequestHeaders _headers = headers;
+    if (_headers.isEmpty()) {
+        _headers = configuration()->defaultHeaders();
     }
 
-    for (const QByteArray& rawHeader: headers.rawHeaders.keys()) {
-        request.setRawHeader(rawHeader, headers.rawHeaders[rawHeader]);
+    for (auto it = _headers.knownHeaders.cbegin(); it != _headers.knownHeaders.cend(); ++it) {
+        request.setHeader(it.key(), it.value());
     }
 
-    m_progress.started.notify();
+    for (auto it = _headers.rawHeaders.cbegin(); it != _headers.rawHeaders.cend(); ++it) {
+        request.setRawHeader(it.key(), it.value());
+    }
+
+    m_progress.start();
 
     QNetworkReply* reply = receiveReply(requestType, request, outgoingData);
 
@@ -118,12 +119,12 @@ Ret NetworkManager::execRequest(RequestType requestType, const QUrl& url, Incomi
         prepareReplyReceive(reply, m_incomingData);
     }
 
-    Ret ret = waitForReplyFinished(reply, NET_TIMEOUT_MS);
-    if (!ret) {
-        LOGE() << ret.toString();
-    }
+    Ret ret = waitForReplyFinished(reply);
+    m_progress.finish(ret);
 
-    m_progress.finished.send(ret);
+    if (reply) {
+        reply->disconnect();
+    }
 
     if (outgoingData && outgoingData->device()) {
         closeDevice(outgoingData->device());
@@ -167,6 +168,7 @@ QNetworkReply* NetworkManager::receiveReply(RequestType requestType, const QNetw
     }
     }
 
+    UNREACHABLE;
     return nullptr;
 }
 
@@ -181,8 +183,7 @@ void NetworkManager::abort()
         m_reply->abort();
     }
 
-    m_isAborted = true;
-    m_progress.finished.send(make_ret(Err::Abort));
+    m_progress.finish(make_ret(Err::Abort));
 }
 
 bool NetworkManager::openDevice(QIODevice* device, QIODevice::OpenModeFlag flags)
@@ -205,16 +206,11 @@ void NetworkManager::closeDevice(QIODevice* device)
     }
 }
 
-bool NetworkManager::isAborted() const
-{
-    return m_isAborted;
-}
-
 void NetworkManager::prepareReplyReceive(QNetworkReply* reply, IncomingDevice* incomingData)
 {
     if (incomingData) {
         connect(reply, &QNetworkReply::downloadProgress, this, [this](const qint64 curr, const qint64 total) {
-            m_progress.progressChanged.send(curr, total, "");
+            m_progress.progress(curr, total);
         });
 
         connect(reply, &QNetworkReply::readyRead, this, [this]() {
@@ -234,47 +230,27 @@ void NetworkManager::prepareReplyReceive(QNetworkReply* reply, IncomingDevice* i
 
 void NetworkManager::prepareReplyTransmit(QNetworkReply* reply)
 {
-    connect(reply, &QNetworkReply::uploadProgress, [this](const qint64 curr, const qint64 total) {
-        m_progress.progressChanged.send(curr, total, "");
+    connect(reply, &QNetworkReply::uploadProgress, this, [this](qint64 curr, qint64 total) {
+        m_progress.progress(curr, total);
     });
 }
 
-Ret NetworkManager::waitForReplyFinished(QNetworkReply* reply, int timeoutMs)
+Ret NetworkManager::waitForReplyFinished(QNetworkReply* reply)
 {
-    QTimer timeoutTimer;
-    timeoutTimer.setSingleShot(true);
-    m_isAborted = false;
+    IF_ASSERT_FAILED(reply) {
+        return make_ret(Err::UnknownError);
+    }
 
-    bool isTimeout = false;
-    connect(&timeoutTimer, &QTimer::timeout, this, [this, &isTimeout]() {
-        isTimeout = true;
-        abort();
-    });
-
-    auto restartTimeoutTimer = [&timeoutTimer, &isTimeout](qint64, qint64) {
-        if (!isTimeout) {
-            timeoutTimer.start();
-        }
-    };
-
-    connect(reply, &QNetworkReply::downloadProgress, this, restartTimeoutTimer);
-    connect(reply, &QNetworkReply::uploadProgress, this, restartTimeoutTimer);
+    if (reply->isFinished()) {
+        return errorFromReply(reply);
+    }
 
     QEventLoop loop;
     connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
 
     m_reply = reply;
-    timeoutTimer.start(timeoutMs);
     loop.exec();
     m_reply = nullptr;
-
-    if (isTimeout) {
-        return make_ret(Err::Timeout);
-    }
-
-    if (isAborted()) {
-        return make_ret(Err::Abort);
-    }
 
     return errorFromReply(reply);
 }
@@ -285,9 +261,13 @@ Ret NetworkManager::errorFromReply(const QNetworkReply* reply) const
         return make_ret(Err::NetworkError);
     }
 
-    Ret ret = make_ok();
+    Ret ret = muse::make_ok();
 
-    if (reply->error() != QNetworkReply::NoError) {
+    if (reply->error() == QNetworkReply::TimeoutError) {
+        ret = make_ret(Err::Timeout);
+    } else if (reply->error() == QNetworkReply::OperationCanceledError) {
+        ret = make_ret(Err::Abort);
+    } else if (reply->error() != QNetworkReply::NoError) {
         ret.setCode(static_cast<int>(Err::NetworkError));
     }
 

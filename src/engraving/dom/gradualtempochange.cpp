@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,9 +22,15 @@
 
 #include "gradualtempochange.h"
 
+#include "dom/rehearsalmark.h"
+#include "dom/text.h"
 #include "measure.h"
 #include "score.h"
 #include "segment.h"
+#include "system.h"
+#include "tempotext.h"
+
+#include "types/typesconv.h"
 
 #include "log.h"
 
@@ -131,7 +137,7 @@ double GradualTempoChange::tempoChangeFactor() const
         return m_tempoChangeFactor.value();
     }
 
-    return mu::value(DEFAULT_FACTORS_MAP, m_tempoChangeType, 1.0);
+    return muse::value(DEFAULT_FACTORS_MAP, m_tempoChangeType, 1.0);
 }
 
 PropertyValue GradualTempoChange::getProperty(Pid id) const
@@ -143,6 +149,10 @@ PropertyValue GradualTempoChange::getProperty(Pid id) const
         return m_tempoEasingMethod;
     case Pid::TEMPO_CHANGE_FACTOR:
         return tempoChangeFactor();
+    case Pid::SNAP_AFTER:
+        return snapToItemAfter();
+    case Pid::TEMPO_ALIGN_RIGHT_OF_REHEARSAL_MARK:
+        return m_alignRightOfRehearsalMark;
     default:
         return TextLineBase::getProperty(id);
     }
@@ -159,6 +169,12 @@ bool GradualTempoChange::setProperty(Pid id, const PropertyValue& val)
         break;
     case Pid::TEMPO_CHANGE_FACTOR:
         m_tempoChangeFactor = val.toReal();
+        break;
+    case Pid::SNAP_AFTER:
+        setSnapToItemAfter(val.toBool());
+        break;
+    case Pid::TEMPO_ALIGN_RIGHT_OF_REHEARSAL_MARK:
+        m_alignRightOfRehearsalMark = val.toBool();
         break;
     default:
         if (!TextLineBase::setProperty(id, val)) {
@@ -209,7 +225,13 @@ PropertyValue GradualTempoChange::propertyDefault(Pid propertyId) const
     case Pid::TEMPO_EASING_METHOD:
         return ChangeMethod::NORMAL;
     case Pid::TEMPO_CHANGE_FACTOR:
-        return mu::value(DEFAULT_FACTORS_MAP, m_tempoChangeType, 1.0);
+        return muse::value(DEFAULT_FACTORS_MAP, m_tempoChangeType, 1.0);
+
+    case Pid::SNAP_AFTER:
+        return true;
+
+    case Pid::TEMPO_ALIGN_RIGHT_OF_REHEARSAL_MARK:
+        return true;
 
     default:
         return TextLineBase::propertyDefault(propertyId);
@@ -249,6 +271,67 @@ Sid GradualTempoChange::getPropertyStyle(Pid id) const
         break;
     }
     return TextLineBase::getPropertyStyle(id);
+}
+
+bool GradualTempoChange::adjustForRehearsalMark(bool start) const
+{
+    const Segment* segment = start ? startSegment() : endSegment();
+    if (!m_alignRightOfRehearsalMark || !segment) {
+        return false;
+    }
+
+    const RehearsalMark* rehearsalMark = toRehearsalMark(segment->findAnnotation(ElementType::REHEARSAL_MARK, track(), track()));
+    if (!rehearsalMark) {
+        return false;
+    }
+    RectF thisBbox = ldata()->bbox().translated(pos());
+    RectF rehearsalMarkBbox = rehearsalMark ? rehearsalMark->ldata()->bbox().translated(rehearsalMark->pos()) : RectF();
+
+    const bool sameSide = placeAbove() == rehearsalMark->placeAbove();
+    const bool collision = placeAbove() ? muse::RealIsEqualOrMore(rehearsalMarkBbox.bottom(), thisBbox.top()) : muse::RealIsEqualOrLess(
+        rehearsalMarkBbox.top(), thisBbox.bottom());
+
+    return sameSide && collision;
+}
+
+PointF GradualTempoChange::linePos(Grip grip, System** system) const
+{
+    bool start = grip == Grip::START;
+    PointF defaultPos = TextLineBase::linePos(grip, system);
+    if (!adjustForRehearsalMark(start)) {
+        return defaultPos;
+    }
+
+    const Segment* segment = start ? startSegment() : endSegment();
+    const RehearsalMark* rehearsalMark = toRehearsalMark(segment->findAnnotation(ElementType::REHEARSAL_MARK, track(), track()));
+    RectF rehearsalMarkBbox = rehearsalMark ? rehearsalMark->ldata()->bbox().translated(rehearsalMark->pos()) : RectF();
+
+    PointF rehearsalMarkPos = segment->pos() + segment->measure()->pos();
+    rehearsalMarkBbox.translate(rehearsalMarkPos);
+
+    Text* text = start ? toGradualTempoChangeSegment(frontSegment())->text() : toGradualTempoChangeSegment(backSegment())->endText();
+
+    const double sp = spatium();
+
+    double padding = sp;
+    if (text) {
+        const double fontSizeScaleFactor = text->size() / 10.0;
+        padding = 0.5 * sp * fontSizeScaleFactor;
+    }
+
+    padding *= start ? 1.0 : -1.0;
+    double x = (start ? rehearsalMarkBbox.right() : rehearsalMarkBbox.left()) + padding;
+
+    *system = segment->measure()->system();
+
+    x = start ? std::max(x, defaultPos.x()) : x;
+
+    return PointF(x, 0.0);
+}
+
+TranslatableString GradualTempoChange::subtypeUserName() const
+{
+    return TConv::userName(m_tempoChangeType);
 }
 
 void GradualTempoChange::added()
@@ -297,6 +380,80 @@ Sid GradualTempoChangeSegment::getPropertyStyle(Pid id) const
         }
     }
     return TextLineBaseSegment::getPropertyStyle(id);
+}
+
+GradualTempoChangeSegment* GradualTempoChangeSegment::findElementToSnapBefore() const
+{
+    const System* sys = system();
+    IF_ASSERT_FAILED(sys) {
+        return nullptr;
+    }
+
+    GradualTempoChange* thisTempoChange = tempoChange();
+    Fraction startTick = thisTempoChange->tick();
+    if (!sys->measures().empty() && startTick == sys->measures().front()->tick()) {
+        return nullptr;
+    }
+
+    auto intervals = score()->spannerMap().findOverlapping(startTick.ticks(), startTick.ticks());
+    for (auto interval : intervals) {
+        Spanner* spanner = interval.value;
+        bool isValidTempoChange = spanner->isGradualTempoChange() && !spanner->segmentsEmpty() && spanner->visible()
+                                  && spanner != thisTempoChange;
+        if (!isValidTempoChange) {
+            continue;
+        }
+
+        GradualTempoChange* precedingTempoChange = toGradualTempoChange(spanner);
+        bool endsMatch = precedingTempoChange->track() == thisTempoChange->track()
+                         && precedingTempoChange->tick2() == startTick
+                         && precedingTempoChange->placeAbove() == thisTempoChange->placeAbove();
+
+        if (endsMatch && precedingTempoChange->snapToItemAfter()) {
+            return toGradualTempoChangeSegment(precedingTempoChange->backSegment());
+        }
+    }
+
+    return nullptr;
+}
+
+TempoText* GradualTempoChangeSegment::findElementToSnapAfter() const
+{
+    if (!tempoChange()->snapToItemAfter()) {
+        return nullptr;
+    }
+
+    System* sys = system();
+    IF_ASSERT_FAILED(sys) {
+        return nullptr;
+    }
+
+    // Note: we don't need to look for a tempoChange after.
+    // It is the next tempoChange which looks for a tempoChange before.
+    Fraction refTick = tempoChange()->tick2();
+    Measure* measure = score()->tick2measureMM(refTick);
+    if (!measure) {
+        return nullptr;
+    }
+
+    for (Segment* segment = measure->last(); segment; segment = segment->prev1()) {
+        if (segment->system() != sys) {
+            continue;
+        }
+        Fraction segmentTick = segment->tick();
+        if (segmentTick > refTick) {
+            continue;
+        }
+        if (segmentTick < refTick) {
+            break;
+        }
+        EngravingItem* tempoText = segment->findAnnotation(ElementType::TEMPO_TEXT, track(), track());
+        if (tempoText && tempoText->placeAbove() == placeAbove() && tempoText->visible()) {
+            return toTempoText(tempoText);
+        }
+    }
+
+    return nullptr;
 }
 
 void GradualTempoChangeSegment::endEdit(EditData& editData)

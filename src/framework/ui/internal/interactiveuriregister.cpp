@@ -23,23 +23,28 @@
 
 #include "log.h"
 
-using namespace mu::ui;
+using namespace muse::ui;
 
 void InteractiveUriRegister::registerUri(const Uri& uri, const ContainerMeta& meta)
 {
-    IF_ASSERT_FAILED(!m_uriHash.contains(uri)) {
-        LOGW() << "URI " << uri.toString() << " already register. Will be rewrite";
+    IF_ASSERT_FAILED(!muse::contains(m_uriMap, uri)) {
+        LOGW() << "URI " << uri.toString() << " is already registered. Will be overridden.";
     }
 
-    m_uriHash[uri] = meta;
+    m_uriMap[uri] = meta;
+}
+
+void InteractiveUriRegister::unregisterUri(const Uri& uri)
+{
+    m_uriMap.erase(uri);
 }
 
 ContainerMeta InteractiveUriRegister::meta(const Uri& uri) const
 {
-    if (!m_uriHash.contains(uri)) {
-        LOGW() << "URI " << uri.toString() << " not registered";
+    if (!muse::contains(m_uriMap, uri)) {
+        LOGW() << "URI " << uri.toString() << " is not registered";
         return ContainerMeta();
     }
 
-    return m_uriHash[uri];
+    return m_uriMap.at(uri);
 }

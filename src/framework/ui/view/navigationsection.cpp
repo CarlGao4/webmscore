@@ -26,7 +26,8 @@
 
 #include "log.h"
 
-using namespace mu::ui;
+using namespace muse;
+using namespace muse::ui;
 
 NavigationSection::NavigationSection(QObject* parent)
     : AbstractNavigation(parent)
@@ -35,6 +36,10 @@ NavigationSection::NavigationSection(QObject* parent)
 
 NavigationSection::~NavigationSection()
 {
+    if (m_type == QmlType::Ignore) {
+        return;
+    }
+
     navigationController()->unreg(this);
 }
 
@@ -46,6 +51,11 @@ void NavigationSection::componentComplete()
     }
 
     IF_ASSERT_FAILED(order() > -1) {
+        return;
+    }
+
+    if (m_type == QmlType::Ignore) {
+        LOGW() << "section is ignored, name: " << m_name;
         return;
     }
 
@@ -67,7 +77,7 @@ void NavigationSection::setIndex(const Index& index)
     AbstractNavigation::setIndex(index);
 }
 
-mu::async::Channel<INavigation::Index> NavigationSection::indexChanged() const
+async::Channel<INavigation::Index> NavigationSection::indexChanged() const
 {
     return AbstractNavigation::indexChanged();
 }
@@ -89,7 +99,7 @@ bool NavigationSection::enabled() const
     return enbl;
 }
 
-mu::async::Channel<bool> NavigationSection::enabledChanged() const
+async::Channel<bool> NavigationSection::enabledChanged() const
 {
     return AbstractNavigation::enabledChanged();
 }
@@ -104,7 +114,7 @@ void NavigationSection::setActive(bool arg)
     AbstractNavigation::setActive(arg);
 }
 
-mu::async::Channel<bool> NavigationSection::activeChanged() const
+async::Channel<bool> NavigationSection::activeChanged() const
 {
     return AbstractNavigation::activeChanged();
 }
@@ -117,6 +127,11 @@ void NavigationSection::onEvent(EventPtr e)
 QWindow* NavigationSection::window() const
 {
     return AbstractNavigation::window();
+}
+
+QQuickItem* muse::ui::NavigationSection::visualItem() const
+{
+    return AbstractNavigation::visualItem();
 }
 
 void NavigationSection::addPanel(NavigationPanel* panel)
@@ -185,7 +200,7 @@ const std::set<INavigationPanel*>& NavigationSection::panels() const
     return m_panels;
 }
 
-mu::async::Notification NavigationSection::panelsListChanged() const
+async::Notification NavigationSection::panelsListChanged() const
 {
     return m_panelsListChanged;
 }

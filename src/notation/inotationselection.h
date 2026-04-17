@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -19,13 +19,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_NOTATION_INOTATIONSELECTION_H
-#define MU_NOTATION_INOTATIONSELECTION_H
+#pragma once
 
 #include <vector>
 
 #include "notationtypes.h"
 #include "internal/inotationselectionrange.h"
+#include "types/bytearray.h"
 #include "types/ret.h"
 
 class QMimeData;
@@ -40,22 +40,27 @@ public:
     virtual bool isRange() const = 0;
     virtual SelectionState state() const = 0;
 
-    virtual mu::Ret canCopy() const = 0;
-    virtual QMimeData* mimeData() const = 0;
+    virtual muse::Ret canCopy() const = 0;
+    virtual muse::ByteArray mimeData() const = 0;
+    virtual QMimeData* qMimeData() const = 0;
 
     virtual EngravingItem* element() const = 0;
     virtual const std::vector<EngravingItem*>& elements() const = 0;
 
     virtual std::vector<Note*> notes(NoteFilter filter = NoteFilter::All) const = 0;
 
-    virtual RectF canvasBoundingRect() const = 0;
+    virtual muse::RectF canvasBoundingRect() const = 0;
 
     virtual INotationSelectionRangePtr range() const = 0;
 
     virtual EngravingItem* lastElementHit() const = 0;
+
+    virtual mu::engraving::MeasureBase* startMeasureBase() const = 0;
+    virtual mu::engraving::MeasureBase* endMeasureBase() const = 0;
+    virtual std::vector<mu::engraving::System*> selectedSystems() const = 0;
+
+    virtual bool elementsSelected(const mu::engraving::ElementTypeSet& types) const = 0;
 };
 
 using INotationSelectionPtr = std::shared_ptr<INotationSelection>;
 }
-
-#endif // MU_NOTATION_INOTATIONSELECTION_H

@@ -19,13 +19,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_FRAMEWORK_IGLOBALCONFIGURATION_H
-#define MU_FRAMEWORK_IGLOBALCONFIGURATION_H
+#ifndef MUSE_GLOBAL_IGLOBALCONFIGURATION_H
+#define MUSE_GLOBAL_IGLOBALCONFIGURATION_H
 
 #include "modularity/imoduleinterface.h"
 #include "io/path.h"
 
-namespace mu::framework {
+namespace muse {
 class IGlobalConfiguration : MODULE_EXPORT_INTERFACE
 {
     INTERFACE_ID(IGlobalConfiguration)
@@ -78,7 +78,10 @@ public:
     virtual void setMetricUnit(bool metricUnit) = 0;
 
     virtual std::string museScoreUrl() const = 0;
+    virtual std::string museHubWebUrl() const = 0;
+
+    virtual bool highResolutionTimers() const = 0;
 };
 }
 
-#endif // MU_FRAMEWORK_IGLOBALCONFIGURATION_H
+#endif // MUSE_GLOBAL_IGLOBALCONFIGURATION_H

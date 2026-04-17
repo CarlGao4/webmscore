@@ -21,14 +21,16 @@
  */
 #include "allocator.h"
 
+#include <algorithm>
 #include <cstdlib>
 #include <iostream>
+#include <set>
 #include <sstream>
 
-#include "stringutils.h"
+#include "global/stringutils.h"
 #include "log.h"
 
-using namespace mu;
+using namespace muse;
 
 int ObjectAllocator::s_used = 0;
 size_t ObjectAllocator::DEFAULT_BLOCK_SIZE(1024 * 256); // 256 kB
@@ -43,14 +45,14 @@ static inline size_t align(size_t n)
 // ============================================
 void ObjectAllocator::used()
 {
-#ifdef MUE_ENABLE_CUSTOM_ALLOCATOR
+#ifdef MUSE_ENABLE_CUSTOM_ALLOCATOR
     s_used++;
 #endif
 }
 
 void ObjectAllocator::unused()
 {
-#ifdef MUE_ENABLE_CUSTOM_ALLOCATOR
+#ifdef MUSE_ENABLE_CUSTOM_ALLOCATOR
     s_used--;
 #endif
 }
@@ -239,7 +241,7 @@ void AllocatorsRegister::cleanupAll(const std::string& module)
     }
 }
 
-#define FORMAT(str, width) mu::strings::leftJustified(str, width)
+#define FORMAT(str, width) muse::strings::leftJustified(str, width)
 #define TITLE(str) FORMAT(std::string(str), 20)
 #define VALUE(val) FORMAT(std::to_string(val), 20)
 

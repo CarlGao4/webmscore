@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2025 MuseScore BVBA and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -24,15 +24,15 @@
 //TODO: remove with global clearing of Q_OS_*** defines
 #include <QtGlobal>
 
+#include "global/settings.h"
+
+#include "audio/common/soundfonttypes.h"
+
 #include "log.h"
-#include "settings.h"
 
-#include "soundfonttypes.h"
-
-using namespace mu;
-using namespace mu::framework;
-using namespace mu::audio;
-using namespace mu::audio::synth;
+using namespace muse;
+using namespace muse::audio;
+using namespace muse::audio::synth;
 
 static const audioch_t AUDIO_CHANNELS = 2;
 
@@ -42,22 +42,26 @@ static const Settings::Key AUDIO_API_KEY("audio", "io/audioApi");
 static const Settings::Key AUDIO_OUTPUT_DEVICE_ID_KEY("audio", "io/outputDevice");
 static const Settings::Key AUDIO_BUFFER_SIZE_KEY("audio", "io/bufferSize");
 static const Settings::Key AUDIO_SAMPLE_RATE_KEY("audio", "io/sampleRate");
+static const Settings::Key AUDIO_MEASURE_INPUT_LAG("audio", "io/measureInputLag");
+static const Settings::Key AUDIO_DESIRED_THREAD_NUMBER_KEY("audio", "io/audioThreads");
+
+static const Settings::Key ONLINE_SOUNDS_PROCESS_IN_BACKGROUND("audio", "io/onlineSounds/processInBackground");
 
 static const Settings::Key USER_SOUNDFONTS_PATHS("midi", "application/paths/mySoundfonts");
 #endif
 
 static const AudioResourceId DEFAULT_SOUND_FONT_NAME = "MS Basic";
 static const AudioResourceAttributes DEFAULT_AUDIO_RESOURCE_ATTRIBUTES = {
-    { PLAYBACK_SETUP_DATA_ATTRIBUTE, mpe::GENERIC_SETUP_DATA_STRING },
+    { PLAYBACK_SETUP_DATA_ATTRIBUTE, muse::mpe::GENERIC_SETUP_DATA_STRING },
     { SOUNDFONT_NAME_ATTRIBUTE, String::fromStdString(DEFAULT_SOUND_FONT_NAME) } };
 
 static const AudioResourceMeta DEFAULT_AUDIO_RESOURCE_META
-    = { DEFAULT_SOUND_FONT_NAME, AudioResourceType::FluidSoundfont, "Fluid", DEFAULT_AUDIO_RESOURCE_ATTRIBUTES, false /*hasNativeEditor*/ };
+    = { DEFAULT_SOUND_FONT_NAME, "Fluid", DEFAULT_AUDIO_RESOURCE_ATTRIBUTES, AudioResourceType::FluidSoundfont, false /*hasNativeEditor*/ };
 
 void AudioConfiguration::init()
 {
     int defaultBufferSize = 0;
-#ifdef Q_OS_WASM
+#if defined(Q_OS_WASM)
     defaultBufferSize = 8192;
 #else
     defaultBufferSize = 1024;
@@ -66,15 +70,23 @@ void AudioConfiguration::init()
     settings()->setDefaultValue(AUDIO_BUFFER_SIZE_KEY, Val(defaultBufferSize));
     settings()->valueChanged(AUDIO_BUFFER_SIZE_KEY).onReceive(nullptr, [this](const Val&) {
         m_driverBufferSizeChanged.notify();
+        updateSamplesToPreallocate();
     });
 
-    settings()->setDefaultValue(AUDIO_API_KEY, Val("Core Audio"));
+#if defined(Q_OS_LINUX) || defined(Q_OS_FREEBSD)
+    settings()->setDefaultValue(AUDIO_API_KEY, Val("ALSA Audio"));
+#endif
+    settings()->valueChanged(AUDIO_API_KEY).onReceive(nullptr, [this](const Val&) {
+        m_currentAudioApiChanged.notify();
+    });
 
+    settings()->setDefaultValue(AUDIO_OUTPUT_DEVICE_ID_KEY, Val(DEFAULT_DEVICE_ID));
     settings()->valueChanged(AUDIO_OUTPUT_DEVICE_ID_KEY).onReceive(nullptr, [this](const Val&) {
         m_audioOutputDeviceIdChanged.notify();
     });
 
     settings()->setDefaultValue(AUDIO_SAMPLE_RATE_KEY, Val(44100));
+    settings()->setCanBeManuallyEdited(AUDIO_SAMPLE_RATE_KEY, false, Val(44100), Val(192000));
     settings()->valueChanged(AUDIO_SAMPLE_RATE_KEY).onReceive(nullptr, [this](const Val&) {
         m_driverSampleRateChanged.notify();
     });
@@ -87,19 +99,18 @@ void AudioConfiguration::init()
     for (const auto& path : userSoundFontDirectories()) {
         fileSystem()->makePath(path);
     }
+
+    settings()->setDefaultValue(AUDIO_MEASURE_INPUT_LAG, Val(false));
+
+    settings()->setDefaultValue(AUDIO_DESIRED_THREAD_NUMBER_KEY, Val(0));
+
+    settings()->setDefaultValue(ONLINE_SOUNDS_PROCESS_IN_BACKGROUND, Val(true));
+    settings()->valueChanged(ONLINE_SOUNDS_PROCESS_IN_BACKGROUND).onReceive(nullptr, [this](const Val& val) {
+        m_autoProcessOnlineSoundsInBackgroundChanged.send(val.toBool());
+    });
 #endif
-}
 
-std::vector<std::string> AudioConfiguration::availableAudioApiList() const
-{
-    std::vector<std::string> names {
-        "Core Audio",
-        "ALSA Audio",
-        "PulseAudio",
-        "JACK Audio Server"
-    };
-
-    return names;
+    updateSamplesToPreallocate();
 }
 
 std::string AudioConfiguration::currentAudioApi() const
@@ -112,6 +123,11 @@ void AudioConfiguration::setCurrentAudioApi(const std::string& name)
 {
     NOT_IMPLEMENTED;
     // settings()->setSharedValue(AUDIO_API_KEY, Val(name));
+}
+
+async::Notification AudioConfiguration::currentAudioApiChanged() const
+{
+    return m_currentAudioApiChanged;
 }
 
 std::string AudioConfiguration::audioOutputDeviceId() const
@@ -154,9 +170,36 @@ async::Notification AudioConfiguration::driverBufferSizeChanged() const
     return m_driverBufferSizeChanged;
 }
 
-samples_t AudioConfiguration::renderStep() const
+msecs_t AudioConfiguration::audioWorkerInterval(const samples_t samples, const sample_rate_t sampleRate) const
 {
-    return 512;
+    msecs_t interval = float(samples) / 4.f / float(sampleRate) * 1000.f;
+    interval = std::max(interval, msecs_t(1));
+
+    // Found experementaly on a slow laptop (2 core) running on battery power
+    interval = std::min(interval, msecs_t(10));
+
+    return interval;
+}
+
+samples_t AudioConfiguration::minSamplesToReserve(RenderMode mode) const
+{
+    // Idle: render as little as possible for lower latency
+    if (mode == RenderMode::IdleMode) {
+        return 128;
+    }
+
+    // Active: render more for better quality (rendering is usually much heavier in this scenario)
+    return 1024;
+}
+
+samples_t AudioConfiguration::samplesToPreallocate() const
+{
+    return m_samplesToPreallocate;
+}
+
+async::Channel<samples_t> AudioConfiguration::samplesToPreallocateChanged() const
+{
+    return m_samplesToPreallocateChanged;
 }
 
 unsigned int AudioConfiguration::sampleRate() const
@@ -176,10 +219,16 @@ async::Notification AudioConfiguration::sampleRateChanged() const
     return m_driverSampleRateChanged;
 }
 
+size_t AudioConfiguration::desiredAudioThreadNumber() const
+{
+    // return settings()->value(AUDIO_DESIRED_THREAD_NUMBER_KEY).toInt();
+    return 0;
+}
+
 size_t AudioConfiguration::minTrackCountForMultithreading() const
 {
     // Start mutlithreading-processing only when there are more or equal number of tracks
-    return 3;
+    return 2;
 }
 
 AudioInputParams AudioConfiguration::defaultAudioInputParams() const
@@ -217,9 +266,38 @@ async::Channel<io::paths_t> AudioConfiguration::soundFontDirectoriesChanged() co
     return m_soundFontDirsChanged;
 }
 
-io::path_t AudioConfiguration::knownAudioPluginsFilePath() const
+bool AudioConfiguration::autoProcessOnlineSoundsInBackground() const
 {
+    // return settings()->value(ONLINE_SOUNDS_PROCESS_IN_BACKGROUND).toBool();
     NOT_IMPLEMENTED;
-    return {}; // HACK: return empty path for now
-    // return globalConfiguration()->userAppDataPath() + "/known_audio_plugins.json";
+    return false;
+}
+
+void AudioConfiguration::setAutoProcessOnlineSoundsInBackground(bool value)
+{
+    // settings()->setSharedValue(ONLINE_SOUNDS_PROCESS_IN_BACKGROUND, Val(value));
+    NOT_IMPLEMENTED;
+}
+
+async::Channel<bool> AudioConfiguration::autoProcessOnlineSoundsInBackgroundChanged() const
+{
+    return m_autoProcessOnlineSoundsInBackgroundChanged;
+}
+
+bool AudioConfiguration::shouldMeasureInputLag() const
+{
+    // return settings()->value(AUDIO_MEASURE_INPUT_LAG).toBool();
+    return false;
+}
+
+void AudioConfiguration::updateSamplesToPreallocate()
+{
+    samples_t minToReserve = minSamplesToReserve(RenderMode::RealTimeMode);
+    samples_t driverBufSize = driverBufferSize();
+    samples_t newValue = std::max(minToReserve, driverBufSize);
+
+    if (m_samplesToPreallocate != newValue) {
+        m_samplesToPreallocate = newValue;
+        m_samplesToPreallocateChanged.send(newValue);
+    }
 }

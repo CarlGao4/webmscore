@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -78,7 +78,7 @@ VideoEncoder::~VideoEncoder()
     delete m_ffmpeg;
 }
 
-bool VideoEncoder::open(const io::path_t& fileName, unsigned width, unsigned height, unsigned bitrate, unsigned gop, unsigned fps)
+bool VideoEncoder::open(const muse::io::path_t& fileName, unsigned width, unsigned height, unsigned bitrate, unsigned gop, unsigned fps)
 {
     m_ffmpeg->ptsCounter = 0;
 
@@ -352,8 +352,13 @@ bool VideoEncoder::encodeImage(const QImage& img)
 
     convertImage_sws(img);
 
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(60, 3, 100)
+    m_ffmpeg->ppicture->pts = av_rescale_q(m_ffmpeg->codecCtx->frame_num, m_ffmpeg->codecCtx->time_base,
+                                           m_ffmpeg->videoStream->time_base);
+#else
     m_ffmpeg->ppicture->pts = av_rescale_q(m_ffmpeg->codecCtx->frame_number, m_ffmpeg->codecCtx->time_base,
                                            m_ffmpeg->videoStream->time_base);
+#endif
 
     int ret = avcodec_send_frame(m_ffmpeg->codecCtx, m_ffmpeg->ppicture);
     if (ret < 0) {

@@ -24,7 +24,12 @@
 #include "modularity/ioc.h"
 #include "internal/actionsdispatcher.h"
 
-using namespace mu::actions;
+#include "global/api/iapiregister.h"
+#include "api/dispatcherapi.h"
+
+using namespace muse::actions;
+using namespace muse::actions::api;
+using namespace muse::modularity;
 
 std::string ActionsModule::moduleName() const
 {
@@ -33,5 +38,15 @@ std::string ActionsModule::moduleName() const
 
 void ActionsModule::registerExports()
 {
-    modularity::ioc()->registerExport<IActionsDispatcher>("actions", new ActionsDispatcher());
+    ioc()->registerExport<IActionsDispatcher>("actions", new ActionsDispatcher());
+}
+
+void ActionsModule::registerApi()
+{
+    using namespace muse::api;
+
+    auto api = ioc()->resolve<IApiRegister>(moduleName());
+    if (api) {
+        api->regApiCreator(moduleName(), "api.dispatcher", new ApiCreator<DispatcherApi>());
+    }
 }

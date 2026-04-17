@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -36,15 +36,18 @@
 #include "isessionsmanager.h"
 
 namespace mu::appshell {
-class SessionsManager : public ISessionsManager, public async::Asyncable
+class SessionsManager : public ISessionsManager, public muse::Injectable, public muse::async::Asyncable
 {
-    INJECT(actions::IActionsDispatcher, dispatcher)
-    INJECT(mi::IMultiInstancesProvider, multiInstancesProvider)
-    INJECT(context::IGlobalContext, globalContext)
-    INJECT(project::IProjectConfiguration, projectConfiguration)
-    INJECT(IAppShellConfiguration, configuration)
+    muse::Inject<muse::actions::IActionsDispatcher> dispatcher = { this };
+    muse::Inject<muse::mi::IMultiInstancesProvider> multiInstancesProvider = { this };
+    muse::Inject<context::IGlobalContext> globalContext = { this };
+    muse::Inject<project::IProjectConfiguration> projectConfiguration = { this };
+    muse::Inject<IAppShellConfiguration> configuration = { this };
 
 public:
+    SessionsManager(const muse::modularity::ContextPtr& iocCtx)
+        : muse::Injectable(iocCtx) {}
+
     void init();
     void deinit();
 
@@ -56,10 +59,10 @@ public:
 private:
     void update();
 
-    void removeProjectFromSession(const io::path_t& projectPath);
-    void addProjectToSession(const io::path_t& projectPath);
+    void removeProjectFromSession(const muse::io::path_t& projectPath);
+    void addProjectToSession(const muse::io::path_t& projectPath);
 
-    io::path_t m_lastOpenedProjectPath;
+    muse::io::path_t m_lastOpenedProjectPath;
 };
 }
 

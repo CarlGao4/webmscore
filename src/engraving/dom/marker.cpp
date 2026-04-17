@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,6 +22,8 @@
 
 #include "marker.h"
 
+#include "dom/staff.h"
+#include "dom/system.h"
 #include "types/typesconv.h"
 
 #include "measure.h"
@@ -49,14 +51,15 @@ static const ElementStyle markerStyle {
 Marker::Marker(EngravingItem* parent)
     : Marker(parent, TextStyleType::REPEAT_LEFT)
 {
+    resetProperty(Pid::MUSIC_SYMBOL_SIZE);
 }
 
 Marker::Marker(EngravingItem* parent, TextStyleType tid)
     : TextBase(ElementType::MARKER, parent, tid, ElementFlag::MOVABLE | ElementFlag::ON_STAFF | ElementFlag::SYSTEM)
 {
     initElementStyle(&markerStyle);
+    resetProperty(Pid::MUSIC_SYMBOL_SIZE);
     m_markerType = MarkerType::FINE;
-    setLayoutToParentWidth(true);
 }
 
 //---------------------------------------------------------
@@ -183,6 +186,8 @@ PropertyValue Marker::getProperty(Pid propertyId) const
         return label();
     case Pid::MARKER_TYPE:
         return int(markerType());
+    case Pid::MARKER_CENTER_ON_SYMBOL:
+        return centerOnSymbol();
     default:
         break;
     }
@@ -201,6 +206,9 @@ bool Marker::setProperty(Pid propertyId, const PropertyValue& v)
         break;
     case Pid::MARKER_TYPE:
         setMarkerType(MarkerType(v.toInt()));
+        break;
+    case Pid::MARKER_CENTER_ON_SYMBOL:
+        setCenterOnSymbol(v.toBool());
         break;
     default:
         if (!TextBase::setProperty(propertyId, v)) {
@@ -225,6 +233,10 @@ PropertyValue Marker::propertyDefault(Pid propertyId) const
         return int(MarkerType::FINE);
     case Pid::PLACEMENT:
         return PlacementV::ABOVE;
+    case Pid::MARKER_CENTER_ON_SYMBOL:
+        return true;
+    case Pid::MUSIC_SYMBOL_SIZE:
+        return 18.0;
     default:
         break;
     }
@@ -240,12 +252,12 @@ EngravingItem* Marker::nextSegmentElement()
     Segment* seg;
     if (markerType() == MarkerType::FINE) {
         seg = measure()->last();
-        return seg->firstElement(staffIdx());
+        return seg->firstElementForNavigation(staffIdx());
     }
     Measure* prevMeasure = measure()->prevMeasureMM();
     if (prevMeasure) {
         seg = prevMeasure->last();
-        return seg->firstElement(staffIdx());
+        return seg->firstElementForNavigation(staffIdx());
     }
     return EngravingItem::nextSegmentElement();
 }
@@ -267,5 +279,53 @@ EngravingItem* Marker::prevSegmentElement()
 String Marker::accessibleInfo() const
 {
     return String(u"%1: %2").arg(EngravingItem::accessibleInfo(), markerTypeUserName());
+}
+
+std::vector<LineF> Marker::dragAnchorLines() const
+{
+    Measure* measure = parentItem() ? toMeasure(parentItem()) : nullptr;
+
+    std::vector<LineF> lines(TextBase::dragAnchorLines());
+
+    if (!measure || !isRightMarker()) {
+        return lines;
+    }
+
+    for (LineF& l : lines) {
+        l.setP1(l.p1() + PointF(measure->width(), 0.0));
+    }
+
+    return lines;
+}
+
+String Marker::symbolString() const
+{
+    // Returns the coda/segno symbol if present
+    const static std::array REPEAT_SYMBOL_NAMES {
+        String(u"<sym>coda</sym>"),
+        String(u"<sym>codaSquare</sym>"),
+        String(u"<sym>codaJapanes</sym>"),
+        String(u"<sym>segno</sym>"),
+        String(u"<sym>segnoSerpent1</sym>"),
+        String(u"<sym>segnoSerpent2</sym>"),
+        String(u"<sym>segnoJapanese</sym>"),
+    };
+
+    for (const String& sym : REPEAT_SYMBOL_NAMES) {
+        if (xmlText().contains(sym)) {
+            return sym;
+        }
+    }
+
+    return String();
+}
+
+//---------------------------------------------------------
+//   subtypeUserName
+//---------------------------------------------------------
+
+muse::TranslatableString Marker::subtypeUserName() const
+{
+    return TConv::userName(m_markerType);
 }
 }

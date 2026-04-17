@@ -6,4 +6,4 @@
 	url = https://github.com/google/brotli.git
 [submodule "thirdparty/libsndfile"]
 	path = thirdparty/libsndfile
-	url = https://github.com/libsndfile/libsndfile.git
+	url = https://github.com/libsndfile/libsndfile

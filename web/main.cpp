@@ -2,10 +2,12 @@
 
 #include <QGuiApplication>
 #include <QFontDatabase>
+#include <QFile>
 #include <QTemporaryFile>
 #include "global/log.h"
 #include "global/defer.h"
 #include "global/io/buffer.h"
+#include "global/io/file.h"
 
 #include "modularity/ioc.h"
 #include "context/internal/globalcontext.h"
@@ -41,10 +43,13 @@
 #include "./audio/audio.h"
 
 using namespace mu;
+using namespace muse;
 using project::INotationWriter;
 
 std::set<engraving::EngravingProjectPtr> instances;
 static auto s_globalContext = std::make_shared<context::GlobalContext>();
+
+static void loadFonts();
 
 /**
  * MSCZ/MSCX file format version
@@ -60,13 +65,14 @@ void _init(int argc, char** argv) {
     setenv("QT_QPA_PLATFORM", "offscreen", 1); // https://stackoverflow.com/a/70978934
     setenv("QT_QPA_FONTDIR", "/fonts", 1);
     new QGuiApplication(argc, argv);
+    loadFonts();
 
-    modularity::ioc()->registerExport<context::IGlobalContext>("", s_globalContext);
-    modularity::ioc()->registerExport<notation::INotationConfiguration>("", new notation::NotationConfiguration());
+    modularity::globalIoc()->registerExport<context::IGlobalContext>("", s_globalContext);
+    modularity::globalIoc()->registerExport<notation::INotationConfiguration>("", new notation::NotationConfiguration());
 
     // src/framework/global/globalmodule.cpp#67
-    modularity::ioc()->registerExport<io::IFileSystem>("", new io::FileSystem());
-    modularity::ioc()->registerExport<ICryptographicHash>("", new CryptographicHash());
+    modularity::globalIoc()->registerExport<io::IFileSystem>("", new io::FileSystem());
+    modularity::globalIoc()->registerExport<ICryptographicHash>("", new CryptographicHash());
 
     // src/framework/draw/drawmodule.cpp
     auto drawM = new draw::DrawModule();
@@ -74,7 +80,7 @@ void _init(int argc, char** argv) {
 
     auto engM = new engraving::EngravingModule();
     engM->registerExports();
-    engM->onInit(framework::IApplication::RunMode::ConsoleApp);
+    engM->onInit(IApplication::RunMode::ConsoleApp);
     auto mpeM = new mpe::MpeModule();
     mpeM->registerExports();
 
@@ -83,8 +89,8 @@ void _init(int argc, char** argv) {
     engraving::loadInstrumentTemplates("/instruments.xml");
 
     // file import/export
-    modularity::ioc()->registerExport<project::INotationReadersRegister>("", new project::NotationReadersRegister());
-    modularity::ioc()->registerExport<project::INotationWritersRegister>("", new project::NotationWritersRegister());
+    modularity::globalIoc()->registerExport<project::INotationReadersRegister>("", new project::NotationReadersRegister());
+    modularity::globalIoc()->registerExport<project::INotationWritersRegister>("", new project::NotationWritersRegister());
     auto mxlM = new iex::musicxml::MusicXmlModule();
     mxlM->registerExports();
     mxlM->resolveImports();
@@ -94,13 +100,13 @@ void _init(int argc, char** argv) {
     auto midiM = new iex::midi::MidiModule();
     midiM->registerExports();
     midiM->resolveImports();
-    midiM->onInit(framework::IApplication::RunMode::ConsoleApp);
+    midiM->onInit(IApplication::RunMode::ConsoleApp);
     auto imgM = new iex::imagesexport::ImagesExportModule();
     imgM->registerExports();
     imgM->resolveImports();
-    imgM->onInit(framework::IApplication::RunMode::ConsoleApp);
+    imgM->onInit(IApplication::RunMode::ConsoleApp);
 
-    auto writers = modularity::ioc()->resolve<project::INotationWritersRegister>("");
+    auto writers = modularity::globalIoc()->resolve<project::INotationWritersRegister>("");
     writers->reg({ engraving::MSCZ }, std::make_shared<notation::MscNotationWriter>(engraving::MscIoMode::Zip));
     // writers->reg({ engraving::MSCX }, std::make_shared<notation::MscNotationWriter>(engraving::MscIoMode::Dir));
     writers->reg({ engraving::MSCS }, std::make_shared<notation::MscNotationWriter>(engraving::MscIoMode::XmlFile));
@@ -113,14 +119,59 @@ void _init(int argc, char** argv) {
  */
 bool _addFont(const char* fontPath) {
     String _fontPath = String::fromUtf8(fontPath);
-    auto fontProvider = modularity::ioc()->resolve<draw::IFontProvider>("");
-
-    if (-1 == fontProvider->addTextFont(_fontPath)) {
+    if (-1 == QFontDatabase::addApplicationFont(QString::fromUtf8(fontPath))) {
         LOGE() << String(u"Cannot load font <%1>").arg(_fontPath);
         return false;
     } else {
         return true;
     }
+}
+
+/**
+ * Loads the embedded fonts explicitely
+ * (setting QT_QPA_FONTDIR to /fonts doesn't seem to be enough)
+ */
+static void loadFonts() {
+    const char* embeddedFonts[] = {
+        "/fonts/bravura/BravuraText.woff2",
+        "/fonts/bravura/Bravura.woff2",
+        "/fonts/campania/Campania.woff2",
+        "/fonts/edwin/Edwin-BdIta.woff2",
+        "/fonts/edwin/Edwin-Bold.woff2",
+        "/fonts/edwin/Edwin-Italic.woff2",
+        "/fonts/edwin/Edwin-Roman.woff2",
+        "/fonts/finalebroadway/FinaleBroadwayText.woff2",
+        "/fonts/finalebroadway/FinaleBroadway.woff2",
+        "/fonts/finalemaestro/FinaleMaestroText.woff2",
+        "/fonts/finalemaestro/FinaleMaestro.woff2",
+        "/fonts/FreeSans.woff2",
+        "/fonts/FreeSerifBoldItalic.woff2",
+        "/fonts/FreeSerifBold.woff2",
+        "/fonts/FreeSerifItalic.woff2",
+        "/fonts/FreeSerif.woff2",
+        "/fonts/gootville/GootvilleText.woff2",
+        "/fonts/gootville/Gootville.woff2",
+        "/fonts/leland/LelandText.woff2",
+        "/fonts/leland/Leland.woff2",
+        "/fonts/mscore-BC.woff2",
+        "/fonts/mscore/MScoreText.woff2",
+        "/fonts/mscore/MScore.woff2",
+        "/fonts/mscoreTab.woff2",
+        "/fonts/musejazz/MuseJazzText.woff2",
+        "/fonts/musejazz/MuseJazz.woff2",
+        "/fonts/petaluma/PetalumaScript.woff2",
+        "/fonts/petaluma/PetalumaText.woff2",
+        "/fonts/petaluma/Petaluma.woff2",
+    };
+
+    int missedCount = 0;
+    int totalCount = (sizeof(embeddedFonts) / sizeof(embeddedFonts[0]));
+    for (const char* fontPath : embeddedFonts) {
+        if (!_addFont(fontPath))
+            missedCount++;
+    }
+
+    LOGI() << "Fonts loaded: " << totalCount - missedCount << "/" << totalCount;
 }
 
 /**
@@ -170,7 +221,7 @@ Ret _doLoad(engraving::EngravingProjectPtr proj, QString filePath, bool doLayout
 Ret _doImport(engraving::EngravingProjectPtr proj, QString filePath, bool doLayout) {
     // Find import reader
     std::string suffix = io::suffix(filePath.toStdString());
-    auto readers = modularity::ioc()->resolve<project::INotationReadersRegister>("");
+    auto readers = modularity::globalIoc()->resolve<project::INotationReadersRegister>("");
     project::INotationReaderPtr scoreReader = readers->reader(suffix);
     if (!scoreReader) {
         return make_ret(engraving::Err::FileUnknownType);
@@ -229,10 +280,9 @@ WasmRes _load(const char* format, const char* data, const uint32_t size, bool do
     };
 
     // create notation & engraving project
-    auto notationProj = std::make_shared<project::NotationProject>();
+    auto notationProj = std::make_shared<project::NotationProject>(modularity::globalCtx());
     notationProj->setupProject();
     notationProj->setPath(filePath);
-    s_globalContext->setCurrentProject(notationProj);
 
     // save smart pointer to keep the object alive
     auto proj = notationProj->m_engravingProject;
@@ -252,6 +302,9 @@ WasmRes _load(const char* format, const char* data, const uint32_t size, bool do
 
     engraving::MasterScore* score = proj->masterScore();
     notationProj->m_masterNotation->setMasterScore(score);
+
+    // Set project only after master score is attached
+    s_globalContext->setCurrentProject(notationProj);
 
     auto score_ptr = reinterpret_cast<uintptr_t>(score);
     return WasmRes(score_ptr);
@@ -311,9 +364,9 @@ WasmRes _npages(uintptr_t score_ptr, int excerptId) {
  * Export score file using one of the `NotationWriter`s
  * https://github.com/LibreScore/webmscore/blob/v4.0/src/converter/internal/compat/backendapi.cpp#L465-L491
  */
-Ret processWriter(String writerName, engraving::MasterScore * score, QIODevice & device, const INotationWriter::Options& options = INotationWriter::Options()) {
+Ret processWriter(String writerName, engraving::MasterScore * score, io::IODevice& device, const INotationWriter::Options& options = INotationWriter::Options()) {
     // Find file writer
-    auto writers = modularity::ioc()->resolve<project::INotationWritersRegister>("");
+    auto writers = modularity::globalIoc()->resolve<project::INotationWritersRegister>("");
     auto writer = writers->writer(writerName.toStdString());
     if (!writer) {
         LOGE() << "Not found writer " << writerName;
@@ -321,7 +374,7 @@ Ret processWriter(String writerName, engraving::MasterScore * score, QIODevice &
     }
 
     // FIXME: persist this `Notation` object
-    auto notation = std::make_shared<notation::Notation>(score);
+    auto notation = std::make_shared<notation::Notation>(modularity::globalCtx(), score);
 
     // Write
     Ret writeRet = writer->write(notation, device, options);
@@ -335,13 +388,19 @@ Ret processWriter(String writerName, engraving::MasterScore * score, QIODevice &
 }
 
 Ret processWriter(String writerName, engraving::MasterScore * score, QByteArray* buffer, const INotationWriter::Options& options = INotationWriter::Options()) {
-    QBuffer device(buffer);
-    device.open(QIODevice::ReadWrite);
+    ByteArray ioData;
+    io::Buffer device(&ioData);
+    device.open(io::IODevice::ReadWrite);
     DEFER {
         device.close();
     };
-    
-    return processWriter(writerName, score, device, options);
+
+    Ret ret = processWriter(writerName, score, device, options);
+    if (ret.success()) {
+        *buffer = ioData.toQByteArray();
+    }
+
+    return ret;
 }
 
 /**
@@ -520,20 +579,38 @@ WasmRes _saveAudio(uintptr_t score_ptr, const char* format, int excerptId) {
         throw QString("Invalid output format");
     }
 
-    // save audio data to a temporary file
-    QTemporaryFile tempfile("XXXXXX." + _format);  // filename template for the temporary file
+    // Audio export requires a real output path via IODevice meta("file_path").
+    QTemporaryFile tempfile("XXXXXX." + _format);
     if (!tempfile.open()) {
         throw QString("Cannot create a temporary file");
     }
+    QString filePath = tempfile.fileName();
+    tempfile.close();
 
-    Ret ret = processWriter(_format, score, tempfile);
-    int size = tempfile.size();
-    QByteArray data = tempfile.readAll();
+    DEFER {
+        // delete the temporary file
+        tempfile.remove();
+    };
 
-    LOGI() << String(u"excerpt %1, size %2").arg(excerptId).arg(size);
+    io::File outputFile(filePath.toStdString());
+    if (!outputFile.open(io::IODevice::WriteOnly)) {
+        return WasmRes::fromRet(make_ret(Ret::Code::InternalError));
+    }
+
+    outputFile.setMeta("file_path", filePath.toStdString());
+    Ret ret = processWriter(_format, score, outputFile);
+    outputFile.close();
     if (!ret.success()) {
         return WasmRes::fromRet(ret);
     }
+
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        return WasmRes::fromRet(make_ret(Ret::Code::InternalError));
+    }
+
+    QByteArray data = file.readAll();
+    LOGI() << String(u"excerpt %1, size %2 bytes").arg(excerptId, data.size());
 
     return WasmRes(data);
 }
@@ -577,8 +654,8 @@ extern "C" {
     };
 
     EMSCRIPTEN_KEEPALIVE
-    void setLogLevel(const mu::logger::Level level) {
-        mu::logger::Logger::instance()->setLevel(level);
+    void setLogLevel(const logger::Level level) {
+        logger::Logger::instance()->setLevel(level);
     };
 
     EMSCRIPTEN_KEEPALIVE

@@ -19,14 +19,14 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_FRAMEWORK_GLOBALCONFIGURATIONMOCK_H
-#define MU_FRAMEWORK_GLOBALCONFIGURATIONMOCK_H
+#ifndef MUSE_GLOBAL_GLOBALCONFIGURATIONMOCK_H
+#define MUSE_GLOBAL_GLOBALCONFIGURATIONMOCK_H
 
 #include <gmock/gmock.h>
 
 #include "iglobalconfiguration.h"
 
-namespace mu::framework {
+namespace muse {
 class GlobalConfigurationMock : public IGlobalConfiguration
 {
 public:
@@ -51,7 +51,10 @@ public:
     MOCK_METHOD(void, setMetricUnit, (bool), (override));
 
     MOCK_METHOD(std::string, museScoreUrl, (), (const, override));
+    MOCK_METHOD(std::string, museHubWebUrl, (), (const, override));
+
+    MOCK_METHOD(bool, highResolutionTimers, (), (const, override));
 };
 }
 
-#endif // MU_FRAMEWORK_GLOBALCONFIGURATIONMOCK_H
+#endif // MUSE_GLOBAL_GLOBALCONFIGURATIONMOCK_H

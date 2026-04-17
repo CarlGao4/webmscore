@@ -25,8 +25,9 @@
 
 #include "log.h"
 
-using namespace mu::ui;
-using namespace mu::accessibility;
+using namespace muse;
+using namespace muse::ui;
+using namespace muse::accessibility;
 
 NavigationControl::NavigationControl(QObject* parent)
     : AbstractNavigation(parent)
@@ -39,6 +40,11 @@ NavigationControl::~NavigationControl()
         m_panel->removeControl(this);
         setAccessibleParent(nullptr);
     }
+}
+
+void NavigationControl::componentComplete()
+{
+    AbstractNavigation::componentComplete();
 }
 
 QString NavigationControl::name() const
@@ -56,7 +62,7 @@ void NavigationControl::setIndex(const Index& index)
     AbstractNavigation::setIndex(index);
 }
 
-mu::async::Channel<INavigation::Index> NavigationControl::indexChanged() const
+async::Channel<INavigation::Index> NavigationControl::indexChanged() const
 {
     return AbstractNavigation::indexChanged();
 }
@@ -66,7 +72,7 @@ bool NavigationControl::enabled() const
     return AbstractNavigation::enabled();
 }
 
-mu::async::Channel<bool> NavigationControl::enabledChanged() const
+async::Channel<bool> NavigationControl::enabledChanged() const
 {
     return AbstractNavigation::enabledChanged();
 }
@@ -84,7 +90,7 @@ void NavigationControl::setActive(bool arg)
     }
 }
 
-mu::async::Channel<bool> NavigationControl::activeChanged() const
+async::Channel<bool> NavigationControl::activeChanged() const
 {
     return AbstractNavigation::activeChanged();
 }
@@ -99,9 +105,19 @@ QWindow* NavigationControl::window() const
     return AbstractNavigation::window();
 }
 
+QQuickItem* muse::ui::NavigationControl::visualItem() const
+{
+    return AbstractNavigation::visualItem();
+}
+
 void NavigationControl::trigger()
 {
     emit triggered();
+}
+
+async::Notification NavigationControl::triggered() const
+{
+    return m_triggeed;
 }
 
 void NavigationControl::requestActive(bool enableHighlight)
@@ -116,6 +132,11 @@ void NavigationControl::requestActiveByInteraction(bool enableHighlight)
     if (m_panel) {
         m_panel->requestActive(this, enableHighlight, INavigation::ActivationType::ByMouse);
     }
+}
+
+void NavigationControl::notifyAboutControlWasTriggered()
+{
+    m_triggeed.notify();
 }
 
 void NavigationControl::setPanel(NavigationPanel* panel)

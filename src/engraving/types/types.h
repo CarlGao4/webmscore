@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -19,28 +19,30 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
-#ifndef MU_ENGRAVING_TYPES_H
-#define MU_ENGRAVING_TYPES_H
+#pragma once
 
 #include <functional>
 #include <map>
+#include <tuple>
 #include <unordered_set>
-#include <utility>
 
-#include "types/id.h"
-#include "types/string.h"
+#include "global/types/id.h"
+#include "global/types/string.h"
+#include "global/types/translatablestring.h"
+#include "global/types/flags.h"
 
 #include "draw/types/color.h"
 #include "draw/types/geometry.h"
 #include "draw/types/painterpath.h"
 
+// IWYU pragma: begin_exports
 #include "bps.h"
 #include "dimension.h"
 #include "fraction.h"
 #include "groupnode.h"
 #include "pitchvalue.h"
 #include "symid.h"
+// IWYU pragma: end_exports
 
 namespace mu::engraving {
 using staff_idx_t = size_t;
@@ -63,40 +65,44 @@ using semitone_t = int8_t;
 ///   of elements on the canvas.
 ///   Note: keep in sync with array in TConv
 //-------------------------------------------------------------------
-enum class ElementType {
-    ///.\{
+enum class ElementType : unsigned char {
     INVALID = 0,
     BRACKET_ITEM,
     PART,
     STAFF,
     SCORE,
-    SYMBOL,
     TEXT,
+    LAYOUT_BREAK,
     MEASURE_NUMBER,
     MMREST_RANGE,
     INSTRUMENT_NAME,
-    SLUR_SEGMENT,
-    TIE_SEGMENT,
     BAR_LINE,
     STAFF_LINES,
     SYSTEM_DIVIDER,
+    SLUR_SEGMENT,
+    TIE_SEGMENT,
+    LAISSEZ_VIB_SEGMENT,
+    PARTIAL_TIE_SEGMENT,
     STEM_SLASH,
     ARPEGGIO,
     ACCIDENTAL,
     LEDGER_LINE,
-    STEM,  // list STEM before NOTE: notes in TAB might 'break' stems
-    HOOK,  // and this requires stems to be drawn before notes
-    NOTE,  // elements from CLEF to TIMESIG need to be in the order
-    CLEF,  // in which they appear in a measure
+    STEM,   // list STEM before NOTE: notes in TAB might 'break' stems
+    HOOK,   // and this requires stems to be drawn before notes
+    NOTE,   // elements from CLEF to TIMESIG need to be in the order
+    CLEF,   // in which they appear in a measure
     KEYSIG,
     AMBITUS,
     TIMESIG,
     REST,
     MMREST,
     DEAD_SLAPPED,
+    SYMBOL,
     BREATH,
     MEASURE_REPEAT,
     TIE,
+    LAISSEZ_VIB,
+    PARTIAL_TIE,
     ARTICULATION,
     ORNAMENT,
     FERMATA,
@@ -104,7 +110,6 @@ enum class ElementType {
     DYNAMIC,
     EXPRESSION,
     BEAM,
-    BEAM_SEGMENT,
     LYRICS,
     FIGURED_BASS,
     FIGURED_BASS_ITEM,
@@ -116,6 +121,7 @@ enum class ElementType {
     STAFF_TEXT,
     SYSTEM_TEXT,
     SOUND_FLAG,
+    PLAY_COUNT_TEXT,
     PLAYTECH_ANNOTATION,
     CAPO,
     STRING_TUNINGS,
@@ -123,11 +129,10 @@ enum class ElementType {
     REHEARSAL_MARK,
     INSTRUMENT_CHANGE,
     STAFFTYPE_CHANGE,
-    HARMONY,
     FRET_DIAGRAM,
+    HARMONY,
     HARP_DIAGRAM,
     BEND,
-    STRETCHED_BEND,
     TREMOLOBAR,
     VOLTA,
     HAIRPIN_SEGMENT,
@@ -145,13 +150,15 @@ enum class ElementType {
     VOLTA_SEGMENT,
     PEDAL_SEGMENT,
     LYRICSLINE_SEGMENT,
+    PARTIAL_LYRICSLINE_SEGMENT,
     GLISSANDO_SEGMENT,
-    LAYOUT_BREAK,
+    NOTELINE_SEGMENT,
+    STAFF_VISIBILITY_INDICATOR,
+    SYSTEM_LOCK_INDICATOR,
     SPACER,
     STAFF_STATE,
     NOTEHEAD,
     NOTEDOT,
-    TREMOLO,
     IMAGE,
     MEASURE,
     SELECTION,
@@ -176,38 +183,42 @@ enum class ElementType {
     TEXTLINE_BASE,
     NOTELINE,
     LYRICSLINE,
+    PARTIAL_LYRICSLINE,
     GLISSANDO,
     BRACKET,
     SEGMENT,
     SYSTEM,
-    COMPOUND,
     CHORD,
     SLUR,
-    ELEMENT,
-    ELEMENT_LIST,
-    STAFF_LIST,
-    MEASURE_LIST,
     HBOX,
     VBOX,
     TBOX,
     FBOX,
     ACTION_ICON,
-    OSSIA,
     BAGPIPE_EMBELLISHMENT,
     STICKING,
     GRACE_NOTES_GROUP,
-    FRET_CIRCLE,
     GUITAR_BEND,
     GUITAR_BEND_SEGMENT,
     GUITAR_BEND_HOLD,
     GUITAR_BEND_HOLD_SEGMENT,
     GUITAR_BEND_TEXT,
+    TREMOLO_TWOCHORD,
+    TREMOLO_SINGLECHORD,
+    TIME_TICK_ANCHOR,
+    PARENTHESIS,
+    HAMMER_ON_PULL_OFF,
+    HAMMER_ON_PULL_OFF_SEGMENT,
+    HAMMER_ON_PULL_OFF_TEXT,
+    TAPPING,
+    TAPPING_HALF_SLUR,
+    TAPPING_HALF_SLUR_SEGMENT,
+    TAPPING_TEXT,
 
     ROOT_ITEM,
     DUMMY,
 
     MAXTYPE
-    ///\}
 };
 
 constexpr size_t TOT_ELEMENT_TYPES = static_cast<size_t>(ElementType::MAXTYPE);
@@ -217,37 +228,49 @@ using ElementTypeSet = std::unordered_set<ElementType>;
 // ========================================
 // PropertyValue
 // ========================================
+// --- Common ---
+using String = muse::String;
+using StringList = muse::StringList;
+using TranslatableString = muse::TranslatableString;
+using Char = muse::Char;
+using AsciiStringView = muse::AsciiStringView;
+using real_t = muse::real_t;
+using ID = muse::ID;
 
 // --- Geometry ---
-using PointF = mu::PointF;              // P_TYPE::POINT
-using SizeF = mu::SizeF;                // P_TYPE::SIZE
-using PainterPath = mu::draw::PainterPath; // P_TYPE::PATH
-using ScaleF = mu::ScaleF;              // P_TYPE::SCALE
-using PairF = mu::PairF;                // P_TYPE::PAIR_REAL
+using Point = muse::Point;
+using PointF = muse::PointF;              // P_TYPE::POINT
+using RectF = muse::RectF;
+using LineF = muse::LineF;
+using SizeF = muse::SizeF;                // P_TYPE::SIZE
+using PainterPath = muse::draw::PainterPath; // P_TYPE::PATH
+using ScaleF = muse::ScaleF;              // P_TYPE::SCALE
+using PairF = muse::PairF;                // P_TYPE::PAIR_REAL
+using PolygonF = muse::PolygonF;
 
 // --- Draw ---
-using Color = draw::Color;              // P_TYPE::COLOR
+using Color = muse::draw::Color;        // P_TYPE::COLOR
 
-enum class OrnamentStyle : char {
+enum class OrnamentStyle : unsigned char {
     DEFAULT, BAROQUE
 };
 
 // P_TYPE::GLISS_STYLE
-enum class GlissandoStyle {
+enum class GlissandoStyle : unsigned char {
     CHROMATIC, WHITE_KEYS, BLACK_KEYS, DIATONIC, PORTAMENTO
 };
 
 // --- Layout ---
 
 // P_TYPE::ALIGN
-enum class AlignV {
+enum class AlignV : unsigned char {
     TOP,
     VCENTER,
     BOTTOM,
     BASELINE
 };
 
-enum class AlignH {
+enum class AlignH : unsigned char {
     LEFT,
     RIGHT,
     HCENTER
@@ -280,27 +303,27 @@ struct Align {
 };
 
 // P_TYPE::PLACEMENT_V
-enum class PlacementV {
+enum class PlacementV : unsigned char {
     ABOVE, BELOW
 };
 
 // P_TYPE::PLACEMENT_H
-enum class PlacementH {
+enum class PlacementH : unsigned char {
     LEFT, CENTER, RIGHT
 };
 
 // P_TYPE::TEXT_PLACE
-enum class TextPlace : char {
+enum class TextPlace : unsigned char {
     AUTO, ABOVE, BELOW, LEFT
 };
 
 // P_TYPE::DIRECTION
-enum class DirectionV {
+enum class DirectionV : unsigned char {
     AUTO, UP, DOWN
 };
 
 // P_TYPE::DIRECTION_H
-enum class DirectionH : char {
+enum class DirectionH : unsigned char {
     AUTO, LEFT, RIGHT
 };
 
@@ -308,6 +331,25 @@ enum class DirectionH : char {
 enum class Orientation : signed char {
     VERTICAL,
     HORIZONTAL
+};
+
+enum class AutoOnOff : unsigned char {
+    AUTO,
+    ON,
+    OFF
+};
+
+enum class AutoCustomHide : unsigned char {
+    AUTO,
+    CUSTOM,
+    HIDE
+};
+
+//! Note: from lowest to highest priority
+enum class VoiceAssignment : unsigned char {
+    ALL_VOICE_IN_INSTRUMENT,
+    ALL_VOICE_IN_STAFF,
+    CURRENT_VOICE_ONLY
 };
 
 // P_TYPE::BEAM_MODE
@@ -349,12 +391,12 @@ struct DurationTypeWithDots
 // --- Types ---
 
 // P_TYPE::LAYOUTBREAK_TYPE
-enum class LayoutBreakType {
+enum class LayoutBreakType : unsigned char {
     PAGE, LINE, SECTION, NOBREAK
 };
 
 // P_TYPE::VELO_TYPE
-enum class VeloType : char {
+enum class VeloType : unsigned char {
     OFFSET_VAL, USER_VAL
 };
 
@@ -389,6 +431,13 @@ constexpr bool operator&(BarLineType t1, BarLineType t2)
 {
     return static_cast<int>(t1) & static_cast<int>(t2);
 }
+
+enum class MeasureNumberPlacement {
+    ABOVE_SYSTEM,
+    BELOW_SYSTEM,
+    ON_SYSTEM_OBJECT_STAVES,
+    ON_ALL_STAVES
+};
 
 // P_TYPE::NOTEHEAD_TYPE
 enum class NoteHeadType : signed char {
@@ -546,18 +595,19 @@ enum class ClefType : signed char {
     TAB4_SERIF,
     // new clefs to be added between here
     C4_8VB,
+    G8_VB_C,
     // and here in oder to not break TAB clef style
     MAX
 };
 
-enum class ClefToBarlinePosition : char {
+enum class ClefToBarlinePosition : unsigned char {
     AUTO,
     BEFORE,
     AFTER
 };
 
 // P_TYPE::DYNAMIC_TYPE
-enum class DynamicType : char {
+enum class DynamicType : unsigned char {
     OTHER,
     PPPPPP,
     PPPPP,
@@ -579,6 +629,8 @@ enum class DynamicType : char {
     SFZ,
     SFF,
     SFFZ,
+    SFFF,
+    SFFFZ,
     SFP,
     SFPP,
     RFZ,
@@ -592,23 +644,18 @@ enum class DynamicType : char {
     LAST
 };
 
-// P_TYPE::DYNAMIC_RANGE
-enum class DynamicRange : char {
-    STAFF, PART, SYSTEM
-};
-
 // P_TYPE::DYNAMIC_SPEED
-enum class DynamicSpeed : char {
+enum class DynamicSpeed : unsigned char {
     SLOW, NORMAL, FAST
 };
 
 // P_TYPE::LINE_TYPE
-enum class LineType : char {
+enum class LineType : unsigned char {
     SOLID, DASHED, DOTTED
 };
 
 // P_TYPE::HOOK_TYPE
-enum class HookType : char {
+enum class HookType : unsigned char {
     NONE, HOOK_90, HOOK_45, HOOK_90T
 };
 
@@ -632,7 +679,7 @@ enum class ArpeggioType : unsigned char {
     NORMAL, UP, DOWN, BRACKET, UP_STRAIGHT, DOWN_STRAIGHT
 };
 
-enum class IntervalStep {
+enum class IntervalStep : unsigned char {
     UNISON,
     SECOND,
     THIRD,
@@ -643,13 +690,19 @@ enum class IntervalStep {
     OCTAVE
 };
 
-enum class IntervalType {
+enum class IntervalType : unsigned char {
     AUTO,
     AUGMENTED,
     MAJOR,
     PERFECT,
     MINOR,
     DIMINISHED
+};
+
+enum class InstrumentLabelVisibility : unsigned char {
+    LONG,
+    SHORT,
+    HIDE
 };
 
 struct OrnamentInterval
@@ -672,7 +725,7 @@ struct OrnamentInterval
             IntervalStep::FIFTH,
             IntervalStep::OCTAVE
         };
-        return mu::contains(perfectSteps, step);
+        return muse::contains(perfectSteps, step);
     }
 
     bool isPerfect() const
@@ -683,10 +736,62 @@ struct OrnamentInterval
 
 static const OrnamentInterval DEFAULT_ORNAMENT_INTERVAL = OrnamentInterval(IntervalStep::SECOND, IntervalType::AUTO);
 
-enum class OrnamentShowAccidental {
+enum class OrnamentShowAccidental : unsigned char {
     DEFAULT,
     ANY_ALTERATION,
     ALWAYS,
+};
+
+enum class PartialSpannerDirection : signed char {
+    NONE = -1,
+    INCOMING,
+    OUTGOING,
+    BOTH
+};
+
+enum ChordStylePreset : unsigned char {
+    STANDARD,
+    JAZZ,
+    LEGACY,
+    CUSTOM
+};
+
+// P_TYPE::PARENTHESES_MODE
+enum class ParenthesesMode : unsigned char {
+    NONE = 0x0,
+    LEFT = 0x1,
+    RIGHT = 0x2,
+    BOTH = 0x3,
+};
+constexpr bool operator&(const ParenthesesMode& t1, const ParenthesesMode& t2)
+{
+    return static_cast<int>(t1) & static_cast<int>(t2);
+}
+
+constexpr bool operator|(const ParenthesesMode& t1, const ParenthesesMode& t2)
+{
+    return static_cast<int>(t1) | static_cast<int>(t2);
+}
+
+constexpr void operator|=(ParenthesesMode& t1, const ParenthesesMode& t2)
+{
+    int t1i = static_cast<int>(t1);
+    t1i |= static_cast<int>(t2);
+    t1 = ParenthesesMode(t1i);
+}
+
+constexpr void operator&=(ParenthesesMode& t1, const ParenthesesMode& t2)
+{
+    int t1i = static_cast<int>(t1);
+    t1i &= static_cast<int>(t2);
+    t1 = ParenthesesMode(t1i);
+}
+
+enum RepeatPlayCountPreset : unsigned char {
+    X_N,
+    N_X,
+    PLAY_N_TIMES,
+    N_REPEATS
 };
 
 //-------------------------------------------------------------------
@@ -696,7 +801,7 @@ enum class OrnamentShowAccidental {
 ///   Must be in sync with textStyles (in textstyle.cpp)
 //-------------------------------------------------------------------
 // P_TYPE::TEXT_STYLE
-enum class TextStyleType {
+enum class TextStyleType : unsigned char {
     DEFAULT,
 
     // Page-oriented styles
@@ -712,15 +817,19 @@ enum class TextStyleType {
     INSTRUMENT_CHANGE,
     HEADER,
     FOOTER,
+    COPYRIGHT,
+    PAGE_NUMBER,
 
     // Measure-oriented styles
     MEASURE_NUMBER,
+    MEASURE_NUMBER_ALTERNATE,
     MMREST_RANGE,
 
     // System-level styles
     TEMPO,
     TEMPO_CHANGE,
     METRONOME,
+    REPEAT_PLAY_COUNT,
     REPEAT_LEFT,       // align to start of measure
     REPEAT_RIGHT,      // align to end of measure
     REHEARSAL_MARK,
@@ -740,17 +849,23 @@ enum class TextStyleType {
 
     // Note oriented styles
     TUPLET,
+    ARTICULATION,
     STICKING,
     FINGERING,
+    TAB_FRET_NUMBER,
     LH_GUITAR_FINGERING,
     RH_GUITAR_FINGERING,
+    HAMMER_ON_PULL_OFF,
     STRING_NUMBER,
     STRING_TUNINGS,
+    FRET_DIAGRAM_FINGERING,
+    FRET_DIAGRAM_FRET_NUMBER,
     HARP_PEDAL_DIAGRAM,
     HARP_PEDAL_TEXT_DIAGRAM,
 
     // Line-oriented styles
     TEXTLINE,
+    NOTELINE,
     VOLTA,
     OTTAVA,
     GLISSANDO,
@@ -777,14 +892,47 @@ enum class TextStyleType {
     IGNORED_TYPES         // used for types no longer relevant (mainly Figured bass text type)
 };
 
-enum class AnnotationCategory {
+//---------------------------------------------------------
+//   FontStyle
+//---------------------------------------------------------
+
+enum class FontStyle : signed char {
+    Undefined = -1,
+    Normal = 0,
+    Bold = 1 << 0,
+    Italic = 1 << 1,
+    Underline = 1 << 2,
+    Strike = 1 << 3
+};
+
+constexpr FontStyle operator+(FontStyle a1, FontStyle a2)
+{
+    return static_cast<FontStyle>(static_cast<char>(a1) | static_cast<char>(a2));
+}
+
+constexpr FontStyle operator|(FontStyle a1, FontStyle a2)
+{
+    return static_cast<FontStyle>(static_cast<char>(a1) | static_cast<char>(a2));
+}
+
+constexpr FontStyle operator-(FontStyle a1, FontStyle a2)
+{
+    return static_cast<FontStyle>(static_cast<char>(a1) & ~static_cast<char>(a2));
+}
+
+constexpr bool operator&(FontStyle a1, FontStyle a2)
+{
+    return static_cast<bool>(static_cast<char>(a1) & static_cast<char>(a2));
+}
+
+enum class AnnotationCategory : signed char {
     Undefined = -1,
     TempoAnnotation,
     PlayingAnnotation,
     Other,
 };
 
-enum class PlayingTechniqueType {
+enum class PlayingTechniqueType : signed char {
     Undefined = -1,
     Natural,
     Pizzicato,
@@ -802,9 +950,18 @@ enum class PlayingTechniqueType {
     Overdrive,
     Harmonics,
     JazzTone,
+    // Handbells
+    HandbellsSwing,
+    HandbellsSwingUp,
+    HandbellsSwingDown,
+    HandbellsEcho1,
+    HandbellsEcho2,
+    HandbellsDamp,
+    HandbellsLV,
+    HandbellsR,
 };
 
-enum class GradualTempoChangeType {
+enum class GradualTempoChangeType : signed char {
     Undefined = -1,
     Accelerando,
     Allargando,
@@ -834,7 +991,7 @@ enum class ChangeDirection : signed char {
 };
 
 // P_TYPE::ACCIDENTAL_ROLE
-enum class AccidentalRole : char {
+enum class AccidentalRole : unsigned char {
     AUTO,                 // layout created accidental
     USER                  // user created accidental
 };
@@ -851,7 +1008,21 @@ enum class AccidentalVal : signed char {
     MAX     = SHARP3
 };
 
-enum class FermataType {
+// Positions of naturals in key sig. changes
+enum class KeySigNatural : char {
+    NONE   = 0,      // no naturals, except for change to CMaj/Amin
+    BEFORE = 1,      // naturals before accidentals
+    AFTER  = 2       // naturals after accidentals (but always before if going sharps <=> flats)
+};
+
+// For barlines before key sig. and time sig. changes
+enum class CourtesyBarlineMode : char {
+    ALWAYS_SINGLE = 0,
+    ALWAYS_DOUBLE = 1,
+    DOUBLE_BEFORE_COURTESY = 2,
+};
+
+enum class FermataType : signed char {
     Undefined = -1,
     VeryShort,
     Short,
@@ -862,12 +1033,12 @@ enum class FermataType {
     VeryLong
 };
 
-enum class ChordLineType : char {
+enum class ChordLineType : unsigned char {
     NOTYPE, FALL, DOIT,
     PLOP, SCOOP
 };
 
-enum class SlurStyleType {
+enum class SlurStyleType : signed char {
     Undefined = -1,
     Solid,
     Dotted,
@@ -875,8 +1046,30 @@ enum class SlurStyleType {
     WideDashed
 };
 
+enum class TappingHand {
+    INVALID = -1,
+    LEFT,
+    RIGHT,
+};
+
+enum class LHTappingSymbol : unsigned char {
+    DOT,
+    CIRCLED_T,
+};
+
+enum class RHTappingSymbol : unsigned char {
+    T,
+    PLUS,
+};
+
+enum class LHTappingShowItems : unsigned char {
+    HALF_SLUR,
+    SYMBOL,
+    BOTH,
+};
+
 struct InstrumentTrackId {
-    ID partId = 0;
+    muse::ID partId = 0;
     String instrumentId;
 
     bool operator ==(const InstrumentTrackId& other) const
@@ -891,11 +1084,7 @@ struct InstrumentTrackId {
 
     bool operator <(const InstrumentTrackId& other) const noexcept
     {
-        if (partId < other.partId) {
-            return true;
-        }
-
-        return instrumentId < other.instrumentId;
+        return std::tie(partId, instrumentId) < std::tie(other.partId, other.instrumentId);
     }
 
     bool isValid() const
@@ -911,6 +1100,20 @@ enum class TremoloType : signed char {
     C8, C16, C32, C64       // two note tremolo (change)
 };
 
+inline bool isTremoloTwoChord(TremoloType type)
+{
+    return type >= TremoloType::C8;
+}
+
+// only applicable to minim two-note tremolo in non-TAB staves
+enum class TremoloStyle : signed char {
+    DEFAULT = 0, TRADITIONAL, TRADITIONAL_ALTERNATE
+};
+
+enum class TremoloChordType : unsigned char {
+    TremoloNone, TremoloSingle, TremoloFirstChord, TremoloSecondChord
+};
+
 enum class BracketType : signed char {
     NORMAL, BRACE, SQUARE, LINE, NO_BRACKET = -1
 };
@@ -918,15 +1121,15 @@ enum class BracketType : signed char {
 using InstrumentTrackIdList = std::vector<InstrumentTrackId>;
 using InstrumentTrackIdSet = std::unordered_set<InstrumentTrackId>;
 
-enum EmbellishmentType {};
+enum EmbellishmentType : unsigned char {};
 
-enum DrumNum {};
+enum DrumNum : unsigned char {};
 
-enum class GlissandoType {
+enum class GlissandoType : unsigned char {
     STRAIGHT, WAVY
 };
 
-enum class JumpType : char {
+enum class JumpType : unsigned char {
     DC,
     DC_AL_FINE,
     DC_AL_CODA,
@@ -942,7 +1145,7 @@ enum class JumpType : char {
     USER
 };
 
-enum class MarkerType : char {
+enum class MarkerType : unsigned char {
     SEGNO,
     VARSEGNO,
     CODA,
@@ -956,45 +1159,91 @@ enum class MarkerType : char {
     USER
 };
 
-enum class StaffGroup : char {
+enum class StaffGroup : unsigned char {
     STANDARD, PERCUSSION, TAB
 };
 constexpr int STAFF_GROUP_MAX = int(StaffGroup::TAB) + 1; // out of enum to avoid compiler complains about not handled switch cases
 
-enum class TrillType : char {
+enum class TrillType : unsigned char {
     TRILL_LINE, UPPRALL_LINE, DOWNPRALL_LINE, PRALLPRALL_LINE,
 };
 
-enum class VibratoType : char {
+enum class VibratoType : unsigned char {
     GUITAR_VIBRATO, GUITAR_VIBRATO_WIDE, VIBRATO_SAWTOOTH, VIBRATO_SAWTOOTH_WIDE
 };
 
-enum class ArticulationTextType {
+enum class ArticulationTextType : unsigned char {
     NO_TEXT,
-    TAP,
+    // Guitar
     SLAP,
-    POP
+    POP,
+    // Handbells
+    TD,
+    BD,
+    RT,
+    PL,
+    SB,
+    VIB,
 };
 
-enum class LyricsSyllabic : char {
+enum class LyricsSyllabic : unsigned char {
     SINGLE, BEGIN, END, MIDDLE
 };
 
-enum class SpannerSegmentType {
+enum class LyricsDashSystemStart : unsigned char {
+    STANDARD,
+    UNDER_HEADER,
+    UNDER_FIRST_NOTE
+};
+
+enum class NoteLineEndPlacement : unsigned char {
+    LEFT_EDGE,
+    OFFSET_ENDS,
+};
+
+enum class SpannerSegmentType : unsigned char {
     SINGLE, BEGIN, MIDDLE, END
 };
 
-enum class TiePlacement {
+enum class TiePlacement : unsigned char {
     AUTO,
     INSIDE,
     OUTSIDE,
+};
+
+enum class TieDotsPlacement : unsigned char {
+    AUTO,
+    BEFORE_DOTS,
+    AFTER_DOTS
+};
+
+enum class TimeSigPlacement : unsigned char {
+    NORMAL,
+    ABOVE_STAVES,
+    ACROSS_STAVES
+};
+
+enum class TimeSigStyle : unsigned char {
+    NORMAL,
+    NARROW,
+    LARGE
+};
+
+enum class TimeSigVSMargin : unsigned char {
+    HANG_INTO_MARGIN,
+    RIGHT_ALIGN_TO_BARLINE,
+    CREATE_SPACE,
+};
+
+enum class NoteSpellingType : unsigned char {
+    STANDARD = 0, GERMAN, GERMAN_PURE, SOLFEGGIO, FRENCH
 };
 
 //---------------------------------------------------------
 //   Key
 //---------------------------------------------------------
 
-enum class Key {
+enum class Key : signed char {
     C_B = -7,
     G_B,
     D_B,
@@ -1047,7 +1296,14 @@ struct PartAudioSettingsCompat {
 };
 
 struct SettingsCompat {
-    std::map<ID /*partid*/, PartAudioSettingsCompat> audioSettings;
+    std::map<muse::ID /*partid*/, PartAudioSettingsCompat> audioSettings;
+};
+
+struct MeasureBeat {
+    int measureIndex = 0;
+    int maxMeasureIndex = 0;
+    float beat = 0.f;
+    int maxBeatIndex = 0;
 };
 
 //---------------------------------------------------------
@@ -1057,7 +1313,7 @@ struct SettingsCompat {
 //    recreates all.
 //---------------------------------------------------------
 
-enum class UpdateMode {
+enum class UpdateMode : unsigned char {
     DoNothing,
     Update,             // do screen refresh of RectF "refresh"
     UpdateAll,          // do complete screen refresh
@@ -1068,14 +1324,13 @@ enum class UpdateMode {
 //   LayoutFlag bits
 //---------------------------------------------------------
 
-enum class LayoutFlag : char {
+enum class LayoutFlag : unsigned char {
     NO_FLAGS       = 0,
-    FIX_PITCH_VELO = 1,
     PLAY_EVENTS    = 2,
     REBUILD_MIDI_MAPPING = 4,
 };
 
-typedef Flags<LayoutFlag> LayoutFlags;
+typedef muse::Flags<LayoutFlag> LayoutFlags;
 } // mu::engraving
 
 template<>
@@ -1084,7 +1339,7 @@ struct std::hash<mu::engraving::InstrumentTrackId>
     std::size_t operator()(const mu::engraving::InstrumentTrackId& s) const noexcept
     {
         std::size_t h1 = std::hash<int> {}(static_cast<int>(s.partId.toUint64()));
-        std::size_t h2 = std::hash<mu::String> {}(s.instrumentId);
+        std::size_t h2 = std::hash<muse::String> {}(s.instrumentId);
         return h1 ^ (h2 << 1);
     }
 };
@@ -1096,5 +1351,3 @@ Q_DECLARE_METATYPE(mu::engraving::MarkerType)
 Q_DECLARE_METATYPE(mu::engraving::TrillType)
 Q_DECLARE_METATYPE(mu::engraving::VibratoType)
 #endif
-
-#endif // MU_ENGRAVING_TYPES_H

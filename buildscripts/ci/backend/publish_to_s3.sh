@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
-# MuseScore-CLA-applies
+# MuseScore-Studio-CLA-applies
 #
-# MuseScore
+# MuseScore Studio
 # Music Composition & Notation
 #
-# Copyright (C) 2021 MuseScore BVBA and others
+# Copyright (C) 2021 MuseScore Limited
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 3 as
@@ -35,7 +35,7 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
-sudo bash ./build/ci/tools/s3_install.sh --s3_key ${S3_KEY} --s3_secret ${S3_SECRET}
+bash ./buildscripts/ci/tools/s3_install.sh --s3_key ${S3_KEY} --s3_secret ${S3_SECRET}
 
 if [ -z "$ARTIFACT_PATH" ]; then 
     ARTIFACT_NAME=$(cat $ARTIFACTS_DIR/env/artifact_name.env)
@@ -47,3 +47,5 @@ ARTIFACT_NAME=$(basename $ARTIFACT_PATH)
 echo "=== Publish to S3 ==="
 
 s3cmd put --acl-public --guess-mime-type "$ARTIFACT_PATH" "$S3_URL/$ARTIFACT_NAME"
+
+echo "=== Published successfully ==="

@@ -19,20 +19,22 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_UI_NAVIGATIONCONTROL_H
-#define MU_UI_NAVIGATIONCONTROL_H
+#ifndef MUSE_UI_NAVIGATIONCONTROL_H
+#define MUSE_UI_NAVIGATIONCONTROL_H
 
 #include <QObject>
 #include <QQuickItem>
 
 #include "abstractnavigation.h"
 
-namespace mu::ui {
+Q_MOC_INCLUDE("ui/view/navigationpanel.h")
+
+namespace muse::ui {
 class NavigationPanel;
 class NavigationControl : public AbstractNavigation, public INavigationControl
 {
     Q_OBJECT
-    Q_PROPERTY(mu::ui::NavigationPanel * panel READ panel_property WRITE setPanel NOTIFY panelChanged)
+    Q_PROPERTY(muse::ui::NavigationPanel * panel READ panel_property WRITE setPanel NOTIFY panelChanged)
 
 public:
     explicit NavigationControl(QObject* parent = nullptr);
@@ -57,11 +59,17 @@ public:
     void onEvent(EventPtr e) override;
 
     QWindow* window() const override;
+    QQuickItem* visualItem() const override;
 
     void trigger() override;
+    async::Notification triggered() const override;
 
     Q_INVOKABLE void requestActive(bool enableHighlight = false) override;
     Q_INVOKABLE void requestActiveByInteraction(bool enableHighlight = false);
+
+    Q_INVOKABLE void notifyAboutControlWasTriggered();
+
+    void componentComplete() override;
 
 public slots:
     void setPanel(NavigationPanel* panel);
@@ -75,7 +83,9 @@ private slots:
 
 private:
     NavigationPanel* m_panel = nullptr;
+
+    async::Notification m_triggeed;
 };
 }
 
-#endif // MU_UI_NAVIGATIONCONTROL_H
+#endif // MUSE_UI_NAVIGATIONCONTROL_H

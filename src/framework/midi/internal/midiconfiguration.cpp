@@ -25,8 +25,8 @@
 
 #include "settings.h"
 
-using namespace mu::midi;
-using namespace mu::framework;
+using namespace muse;
+using namespace muse::midi;
 
 static const std::string module_name("midi");
 
@@ -38,8 +38,11 @@ static const Settings::Key USE_MIDI20_OUTPUT_KEY(module_name, "io/midi/useMIDI20
 void MidiConfiguration::init()
 {
     settings()->setDefaultValue(USE_REMOTE_CONTROL_KEY, Val(true));
+    settings()->valueChanged(USE_REMOTE_CONTROL_KEY).onReceive(this, [this](const Val& val) {
+        m_useRemoteControlChanged.send(val.toBool());
+    });
 
-    settings()->setDefaultValue(MIDI_INPUT_DEVICE_ID, Val(""));
+    settings()->setDefaultValue(MIDI_INPUT_DEVICE_ID, Val("")); // "" makes MuseScore select the first available device
     settings()->valueChanged(MIDI_INPUT_DEVICE_ID).onReceive(nullptr, [this](const Val&) {
         m_midiInputDeviceIdChanged.notify();
     });
@@ -50,6 +53,14 @@ void MidiConfiguration::init()
     });
 
     settings()->setDefaultValue(USE_MIDI20_OUTPUT_KEY, Val(true));
+    settings()->valueChanged(USE_MIDI20_OUTPUT_KEY).onReceive(this, [this](const Val& val) {
+        m_useMIDI20OutputChanged.send(val.toBool());
+    });
+}
+
+bool MidiConfiguration::midiPortIsAvalaible() const
+{
+    return true;
 }
 
 bool MidiConfiguration::useRemoteControl() const
@@ -62,6 +73,11 @@ void MidiConfiguration::setUseRemoteControl(bool value)
     settings()->setSharedValue(USE_REMOTE_CONTROL_KEY, Val(value));
 }
 
+async::Channel<bool> MidiConfiguration::useRemoteControlChanged() const
+{
+    return m_useRemoteControlChanged;
+}
+
 MidiDeviceID MidiConfiguration::midiInputDeviceId() const
 {
     return settings()->value(MIDI_INPUT_DEVICE_ID).toString();
@@ -72,7 +88,7 @@ void MidiConfiguration::setMidiInputDeviceId(const MidiDeviceID& deviceId)
     settings()->setSharedValue(MIDI_INPUT_DEVICE_ID, Val(deviceId));
 }
 
-mu::async::Notification MidiConfiguration::midiInputDeviceIdChanged() const
+async::Notification MidiConfiguration::midiInputDeviceIdChanged() const
 {
     return m_midiInputDeviceIdChanged;
 }
@@ -87,7 +103,7 @@ void MidiConfiguration::setMidiOutputDeviceId(const MidiDeviceID& deviceId)
     settings()->setSharedValue(MIDI_OUTPUT_DEVICE_ID, Val(deviceId));
 }
 
-mu::async::Notification MidiConfiguration::midiOutputDeviceIdChanged() const
+async::Notification MidiConfiguration::midiOutputDeviceIdChanged() const
 {
     return m_midiOutputDeviceIdChanged;
 }
@@ -100,4 +116,9 @@ bool MidiConfiguration::useMIDI20Output() const
 void MidiConfiguration::setUseMIDI20Output(bool use)
 {
     settings()->setSharedValue(USE_MIDI20_OUTPUT_KEY, Val(use));
+}
+
+async::Channel<bool> MidiConfiguration::useMIDI20OutputChanged() const
+{
+    return m_useMIDI20OutputChanged;
 }

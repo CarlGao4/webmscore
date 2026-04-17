@@ -19,14 +19,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
-#ifndef MU_VST_VSTERRORS_H
-#define MU_VST_VSTERRORS_H
+#pragma once
 
 #include "types/ret.h"
-#include "translation.h"
 
-namespace mu::vst {
+namespace muse::vst {
 enum class Err {
     Undefined       = static_cast<int>(Ret::Code::Undefined),
     UnknownError    = static_cast<int>(Ret::Code::VstFirst),
@@ -57,5 +54,3 @@ inline Ret make_ret(Err e)
     return Ret(retCode);
 }
 }
-
-#endif // MU_VST_VSTERRORS_H

@@ -20,12 +20,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_DRAW_MATRIX_H
-#define MU_DRAW_MATRIX_H
+#ifndef MUSE_DRAW_MATRIX_H
+#define MUSE_DRAW_MATRIX_H
 
 #include "global/realfn.h"
 
-namespace mu::draw {
+namespace muse::draw {
 class Matrix
 {
 public:
@@ -44,7 +44,7 @@ public:
     Matrix inverted(bool* invertible) const
     {
         double dtr = determinant();
-        if (dtr == 0.0) {
+        if (muse::RealIsNull(dtr)) {
             if (invertible) {
                 *invertible = false;
             }
@@ -93,4 +93,4 @@ private:
 };
 }
 
-#endif // MU_DRAW_MATRIX_H
+#endif // MUSE_DRAW_MATRIX_H

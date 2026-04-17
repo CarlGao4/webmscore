@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2023 MuseScore BVBA and others
+ * Copyright (C) 2023 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -30,9 +30,9 @@ const RecentFilesList& RecentFilesControllerStub::recentFilesList() const
     return l;
 }
 
-async::Notification RecentFilesControllerStub::recentFilesListChanged() const
+muse::async::Notification RecentFilesControllerStub::recentFilesListChanged() const
 {
-    static async::Notification n;
+    static muse::async::Notification n;
     return n;
 }
 
@@ -40,7 +40,7 @@ void RecentFilesControllerStub::prependRecentFile(const RecentFile&)
 {
 }
 
-void RecentFilesControllerStub::moveRecentFile(const io::path_t&, const RecentFile&)
+void RecentFilesControllerStub::moveRecentFile(const muse::io::path_t&, const RecentFile&)
 {
 }
 
@@ -48,9 +48,9 @@ void RecentFilesControllerStub::clearRecentFiles()
 {
 }
 
-async::Promise<QPixmap> RecentFilesControllerStub::thumbnail(const RecentFile&) const
+muse::async::Promise<QPixmap> RecentFilesControllerStub::thumbnail(const RecentFile&) const
 {
-    return async::Promise<QPixmap>([](auto /*resolve*/, auto reject) {
+    return muse::async::Promise<QPixmap>([](auto /*resolve*/, auto reject) {
         return reject(int(Ret::Code::UnknownError), "stub");
     });
 }

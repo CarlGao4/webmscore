@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -33,9 +33,11 @@ public:
     virtual ~INotationSelectionRange() = default;
 
     virtual engraving::staff_idx_t startStaffIndex() const = 0;
+    virtual engraving::Segment* rangeStartSegment() const = 0;
     virtual Fraction startTick() const = 0;
 
     virtual engraving::staff_idx_t endStaffIndex() const = 0;
+    virtual engraving::Segment* rangeEndSegment() const = 0;
     virtual Fraction endTick() const = 0;
 
     struct MeasureRange {
@@ -47,9 +49,11 @@ public:
 
     virtual std::vector<const Part*> selectedParts() const = 0;
 
-    virtual std::vector<RectF> boundingArea() const = 0;
-    virtual bool containsPoint(const PointF& point) const = 0;
-    virtual bool containsItem(const engraving::EngravingItem* item) const = 0;
+    virtual std::vector<muse::RectF> boundingArea() const = 0;
+    virtual bool containsPoint(const muse::PointF& point) const = 0;
+    virtual bool containsItem(const EngravingItem* item, engraving::staff_idx_t staffIdx = muse::nidx) const = 0;
+
+    virtual bool containsMultiNoteChords() const = 0;
 };
 
 using INotationSelectionRangePtr = std::shared_ptr<INotationSelectionRange>;

@@ -28,10 +28,10 @@
 #include "log.h"
 #include "translation.h"
 
-using namespace mu::shortcuts;
-using namespace mu::midi;
-using namespace mu::ui;
-using namespace mu::actions;
+using namespace muse::shortcuts;
+using namespace muse::midi;
+using namespace muse::ui;
+using namespace muse::actions;
 
 static const QString TITLE_KEY("title");
 static const QString ICON_KEY("icon");
@@ -56,6 +56,7 @@ inline ActionCodeList allMidiActions()
         "pad-note-32",
         "pad-note-64",
         "undo",
+        "rest",
         "pad-rest",
         "tie",
         "pad-dot",
@@ -65,7 +66,7 @@ inline ActionCodeList allMidiActions()
 }
 
 MidiDeviceMappingModel::MidiDeviceMappingModel(QObject* parent)
-    : QAbstractListModel(parent)
+    : QAbstractListModel(parent), Injectable(muse::iocCtxForQmlObject(this))
 {
 }
 
@@ -98,7 +99,7 @@ QVariantMap MidiDeviceMappingModel::midiMappingToObject(const MidiControlsMappin
     obj[TITLE_KEY] = !action.description.isEmpty() ? action.description.qTranslated() : action.title.qTranslatedWithoutMnemonic();
     obj[ICON_KEY] = static_cast<int>(action.iconCode);
     obj[ENABLED_KEY] = midiMapping.isValid();
-    obj[STATUS_KEY] = midiMapping.isValid() ? midiMapping.event.name().toQString() : qtrc("shortcuts", "Inactive");
+    obj[STATUS_KEY] = midiMapping.isValid() ? midiMapping.event.name().toQString() : muse::qtrc("shortcuts", "Inactive");
     obj[MAPPED_TYPE_KEY] = static_cast<int>(midiMapping.event.type);
     obj[MAPPED_VALUE_KEY] = midiMapping.event.value;
 
@@ -124,6 +125,10 @@ QHash<int, QByteArray> MidiDeviceMappingModel::roleNames() const
 
 void MidiDeviceMappingModel::load()
 {
+    midiConfiguration()->useRemoteControlChanged().onReceive(this, [this](bool val) {
+        emit useRemoteControlChanged(val);
+    });
+
     beginResetModel();
     m_midiMappings.clear();
 
@@ -140,7 +145,7 @@ void MidiDeviceMappingModel::load()
     };
 
     for (const ActionCode& actionCode : allMidiActions()) {
-        UiAction action = uiActionsRegister()->action(actionCode);
+        const UiAction& action = uiActionsRegister()->action(actionCode);
 
         if (action.isValid()) {
             MidiControlsMapping midiMapping(actionCode);

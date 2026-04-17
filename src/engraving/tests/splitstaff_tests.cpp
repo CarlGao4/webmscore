@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -43,7 +43,7 @@ void Engraving_SplitStaffTests::splitstaff(int idx, int staffIdx)
     MasterScore* score = ScoreRW::readScore(SPLITSTAFF_DATA_DIR + String(u"splitstaff0%1.mscx").arg(idx));
     EXPECT_TRUE(score);
 
-    score->startCmd();
+    score->startCmd(TranslatableString::untranslatable("Engraving split staff tests"));
     score->splitStaff(staffIdx, 60);
     score->endCmd();
 

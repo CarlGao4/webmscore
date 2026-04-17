@@ -19,13 +19,14 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_FRAMEWORK_DATAFORMATTER_H
-#define MU_FRAMEWORK_DATAFORMATTER_H
+#ifndef MUSE_GLOBAL_DATAFORMATTER_H
+#define MUSE_GLOBAL_DATAFORMATTER_H
 
 #include "types/string.h"
-#include "types/datetime.h"
 
-namespace mu {
+namespace muse {
+class Date;
+
 class DataFormatter
 {
 public:
@@ -36,4 +37,4 @@ public:
 };
 }
 
-#endif // MU_FRAMEWORK_DATAFORMATTER_H
+#endif // MUSE_GLOBAL_DATAFORMATTER_H

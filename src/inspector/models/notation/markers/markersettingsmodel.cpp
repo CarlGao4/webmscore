@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -20,6 +20,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "markersettingsmodel.h"
+#include "engraving/types/typesconv.h"
 
 #include "translation.h"
 
@@ -29,8 +30,8 @@ MarkerSettingsModel::MarkerSettingsModel(QObject* parent, IElementRepositoryServ
     : AbstractInspectorModel(parent, repository)
 {
     setModelType(InspectorModelType::TYPE_MARKER);
-    setTitle(qtrc("inspector", "Marker"));
-    setIcon(ui::IconCode::Code::MARKER);
+    setTitle(muse::qtrc("inspector", "Marker"));
+    setIcon(muse::ui::IconCode::Code::MARKER);
     createProperties();
 }
 
@@ -38,6 +39,8 @@ void MarkerSettingsModel::createProperties()
 {
     m_type = buildPropertyItem(mu::engraving::Pid::MARKER_TYPE);
     m_label = buildPropertyItem(mu::engraving::Pid::LABEL);
+    m_position = buildPropertyItem(mu::engraving::Pid::POSITION);
+    m_centerOnSymbol = buildPropertyItem(mu::engraving::Pid::MARKER_CENTER_ON_SYMBOL);
 }
 
 void MarkerSettingsModel::requestElements()
@@ -49,12 +52,16 @@ void MarkerSettingsModel::loadProperties()
 {
     loadPropertyItem(m_type);
     loadPropertyItem(m_label);
+    loadPropertyItem(m_position);
+    loadPropertyItem(m_centerOnSymbol);
 }
 
 void MarkerSettingsModel::resetProperties()
 {
     m_type->resetToDefault();
     m_label->resetToDefault();
+    m_position->resetToDefault();
+    m_centerOnSymbol->resetToDefault();
 }
 
 PropertyItem* MarkerSettingsModel::type() const
@@ -65,4 +72,27 @@ PropertyItem* MarkerSettingsModel::type() const
 PropertyItem* MarkerSettingsModel::label() const
 {
     return m_label;
+}
+
+PropertyItem* MarkerSettingsModel::position() const
+{
+    return m_position;
+}
+
+PropertyItem* MarkerSettingsModel::centerOnSymbol() const
+{
+    return m_centerOnSymbol;
+}
+
+QString MarkerSettingsModel::markerTypeName() const
+{
+    if (!type()) {
+        return "";
+    }
+
+    if (type()->isUndefined()) {
+        return "--";
+    }
+
+    return engraving::TConv::translatedUserName(type()->value().value<engraving::MarkerType>());
 }

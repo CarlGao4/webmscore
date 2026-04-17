@@ -21,18 +21,22 @@
  */
 
 #include "settings.h"
-#include "log.h"
 
 #include <QDateTime>
 #include <QSettings>
 #include <QStandardPaths>
 #include <QDir>
 
+#ifdef MUSE_MODULE_MULTIINSTANCES
 #include "multiinstances/resourcelockguard.h"
+#endif
 
-using namespace mu;
-using namespace mu::framework;
-using namespace mu::async;
+#include "muse_framework_config.h"
+
+#include "log.h"
+
+using namespace muse;
+using namespace muse::async;
 
 static const std::string SETTINGS_RESOURCE_NAME("SETTINGS");
 
@@ -88,11 +92,23 @@ void Settings::load()
     m_items = readItems();
 }
 
-void Settings::reset(bool keepDefaultSettings, bool notifyAboutChanges)
+void Settings::reset(bool keepDefaultSettings, bool notifyAboutChanges, bool notifyOtherInstances)
 {
     m_settings->clear();
 
     m_isTransactionStarted = false;
+
+    std::vector<Settings::Key> locallyAddedKeys;
+    for (auto it = m_localSettings.begin(); it != m_localSettings.end(); ++it) {
+        auto item = m_items.find(it->first);
+        if (item == m_items.end()) {
+            locallyAddedKeys.push_back(it->first);
+        } else {
+            // UI currently has the values from m_localSettings but we've turned off the transaction.
+            item->second.value = it->second.value;
+        }
+    }
+
     m_localSettings.clear();
 
     if (!keepDefaultSettings) {
@@ -105,11 +121,27 @@ void Settings::reset(bool keepDefaultSettings, bool notifyAboutChanges)
     }
 
     for (auto it = m_items.begin(); it != m_items.end(); ++it) {
+        if (it->second.value == it->second.defaultValue) {
+            continue;
+        }
+
         it->second.value = it->second.defaultValue;
 
         Channel<Val>& channel = findChannel(it->first);
         channel.send(it->second.value);
     }
+
+    for (auto it = locallyAddedKeys.cbegin(); it != locallyAddedKeys.cend(); ++it) {
+        Channel<Val>& channel = findChannel(*it);
+        channel.send(Val());
+    }
+
+    UNUSED(notifyOtherInstances);
+#ifdef MUSE_MODULE_MULTIINSTANCES
+    if (notifyOtherInstances && multiInstancesProvider()) {
+        multiInstancesProvider()->settingsReset();
+    }
+#endif
 }
 
 static Val compat_QVariantToVal(const QVariant& var)
@@ -118,10 +150,10 @@ static Val compat_QVariantToVal(const QVariant& var)
         return Val();
     }
 
-    switch (var.type()) {
-    case QVariant::ByteArray: return Val(var.toByteArray().toStdString());
-    case QVariant::DateTime: return Val(var.toDateTime().toString(Qt::ISODate));
-    case QVariant::StringList: {
+    switch (var.typeId()) {
+    case QMetaType::QByteArray: return Val(var.toByteArray().toStdString());
+    case QMetaType::QDateTime: return Val(var.toDateTime().toString(Qt::ISODate));
+    case QMetaType::QStringList: {
         QStringList sl = var.toStringList();
         ValList vl;
         for (const QString& s : sl) {
@@ -139,9 +171,9 @@ static Val compat_QVariantToVal(const QVariant& var)
 Settings::Items Settings::readItems() const
 {
     Items result;
-
-    mi::ReadResourceLockGuard resource_lock(multiInstancesProvider(), SETTINGS_RESOURCE_NAME);
-
+#ifdef MUSE_MODULE_MULTIINSTANCES
+    muse::mi::ReadResourceLockGuard resource_lock(multiInstancesProvider.get(), SETTINGS_RESOURCE_NAME);
+#endif
     for (const QString& key : m_settings->allKeys()) {
         Item item;
         item.key = Key(std::string(), key.toStdString());
@@ -171,10 +203,11 @@ std::string Settings::description(const Key& key) const
 void Settings::setSharedValue(const Key& key, const Val& value)
 {
     setLocalValue(key, value);
-
+#ifdef MUSE_MODULE_MULTIINSTANCES
     if (multiInstancesProvider()) {
         multiInstancesProvider()->settingsSetValue(key.key, value);
     }
+#endif
 }
 
 void Settings::setLocalValue(const Key& key, const Val& value)
@@ -204,8 +237,9 @@ void Settings::setLocalValue(const Key& key, const Val& value)
 
 void Settings::writeValue(const Key& key, const Val& value)
 {
-    mi::WriteResourceLockGuard resource_lock(multiInstancesProvider(), SETTINGS_RESOURCE_NAME);
-
+#ifdef MUSE_MODULE_MULTIINSTANCES
+    muse::mi::WriteResourceLockGuard resource_lock(multiInstancesProvider.get(), SETTINGS_RESOURCE_NAME);
+#endif
     // TODO: implement writing/reading first part of key (module name)
     m_settings->setValue(QString::fromStdString(key.key), value.toQVariant());
 }
@@ -215,7 +249,7 @@ QString Settings::dataPath() const
 #ifdef WIN_PORTABLE
     return QDir::cleanPath(QString("%1/../../../Data/settings").arg(QCoreApplication::applicationDirPath()));
 #else
-    return QStandardPaths::writableLocation(QStandardPaths::DataLocation);
+    return QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
 #endif
 }
 
@@ -274,9 +308,12 @@ void Settings::beginTransaction(bool notifyToOtherInstances)
     m_localSettings = m_items;
     m_isTransactionStarted = true;
 
+    UNUSED(notifyToOtherInstances)
+#ifdef MUSE_MODULE_MULTIINSTANCES
     if (notifyToOtherInstances && multiInstancesProvider()) {
         multiInstancesProvider()->settingsBeginTransaction();
     }
+#endif
 }
 
 void Settings::commitTransaction(bool notifyToOtherInstances)
@@ -300,9 +337,12 @@ void Settings::commitTransaction(bool notifyToOtherInstances)
 
     m_localSettings.clear();
 
+    UNUSED(notifyToOtherInstances)
+#ifdef MUSE_MODULE_MULTIINSTANCES
     if (notifyToOtherInstances && multiInstancesProvider()) {
         multiInstancesProvider()->settingsCommitTransaction();
     }
+#endif
 }
 
 void Settings::rollbackTransaction(bool notifyToOtherInstances)
@@ -321,9 +361,12 @@ void Settings::rollbackTransaction(bool notifyToOtherInstances)
 
     m_localSettings.clear();
 
+    UNUSED(notifyToOtherInstances)
+#ifdef MUSE_MODULE_MULTIINSTANCES
     if (notifyToOtherInstances && multiInstancesProvider()) {
         multiInstancesProvider()->settingsRollbackTransaction();
     }
+#endif
 }
 
 Settings::Item& Settings::findItem(const Key& key) const

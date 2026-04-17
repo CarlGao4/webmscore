@@ -1,23 +1,26 @@
-#=============================================================================
-#  Mscore
-#  Linux Music Score Editor
+# SPDX-License-Identifier: GPL-3.0-only
+# MuseScore-Studio-CLA-applies
 #
-#  Copyright (C) 2009 by Werner Schweer and others
+# MuseScore Studio
+# Music Composition & Notation
 #
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License version 2.
+# Copyright (C) 2024 MuseScore Limited
 #
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 3 as
+# published by the Free Software Foundation.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with this program; if not, write to the Free Software
-#  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-#=============================================================================
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>. 
 
-set(MODULE rtf2html)
+declare_thirdparty_module(rtf2html)
+
+set(MODULE_USE_QT ON)
 
 set(MODULE_SRC
     common.h
@@ -33,6 +36,9 @@ set(MODULE_SRC
     rtf_tools.h
     )
 
-include(${PROJECT_SOURCE_DIR}/build/module.cmake)
+set(MODULE_LINK Qt::Core)
+
+setup_module()
 
 target_no_warning(${MODULE} -Wno-conversion)
+target_no_warning(${MODULE} -Wno-deprecated-declarations)

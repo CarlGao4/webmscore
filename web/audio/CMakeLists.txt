@@ -1,7 +1,19 @@
 
-set(MODULE MainAudio)
+declare_module(MainAudio)
 
-set(MUE_ENABLE_AUDIO_EXPORT ON)
+set(MUE_BUILD_IMPEXP_BB_MODULE ON)
+set(MUE_BUILD_IMPEXP_BWW_MODULE ON)
+set(MUE_BUILD_IMPEXP_CAPELLA_MODULE ON)
+set(MUE_BUILD_IMPEXP_MIDI_MODULE ON)
+set(MUE_BUILD_IMPEXP_MUSEDATA_MODULE ON)
+set(MUE_BUILD_IMPEXP_MUSICXML_MODULE ON)
+set(MUE_BUILD_IMPEXP_OVE_MODULE ON)
+set(MUE_BUILD_IMPEXP_AUDIOEXPORT_MODULE ON)
+set(MUE_BUILD_IMPEXP_IMAGESEXPORT_MODULE ON)
+set(MUE_BUILD_IMPEXP_GUITARPRO_MODULE ON)
+set(MUE_BUILD_IMPEXP_MEI_MODULE ON)
+set(MUE_BUILD_IMPEXP_VIDEOEXPORT_MODULE OFF)
+set(MUE_BUILD_IMPEXP_TABLEDIT_MODULE ON)
 
 set(MODULE_SRC
     audio.cpp
@@ -25,8 +37,8 @@ add_subdirectory(${MU_ROOT}/src/framework/audio          audio)
 add_subdirectory(${MU_ROOT}/src/importexport/audioexport audioexport)
 
 set(MODULE_LINK
-    audio
+    muse_audio
     iex_audioexport
 )
 
-include(SetupModule)
+setup_module()

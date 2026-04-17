@@ -45,24 +45,24 @@ using ::testing::_;
 using ::testing::SaveArgPointee;
 using ::testing::DoAll;
 
-using namespace mu;
-using namespace mu::ui;
+using namespace muse;
+using namespace muse::ui;
 
 class Ui_NavigationControllerTests : public ::testing::Test
 {
 public:
     void SetUp() override
     {
-        m_controller = std::make_shared<NavigationController>();
+        m_controller = std::make_shared<NavigationController>(nullptr);
 
         m_dispatcher = std::make_shared<actions::ActionsDispatcher>();
-        m_controller->setdispatcher(m_dispatcher);
+        m_controller->dispatcher.set(m_dispatcher);
 
         m_mainWindow = std::make_shared<ui::MainWindowMock>();
         ON_CALL(*m_mainWindow, qWindow()).WillByDefault(Return(&m_window));
-        m_controller->setmainWindow(m_mainWindow);
+        m_controller->mainWindow.set(m_mainWindow);
 
-        m_applicationMock = std::make_shared<framework::ApplicationMock>();
+        m_applicationMock = std::make_shared<muse::ApplicationMock>();
         ON_CALL(*m_applicationMock, focusWindow()).WillByDefault(Return(&m_window));
 
         m_controller->init();
@@ -126,7 +126,7 @@ public:
 
         setComponentWindow(navCtrl, &m_window);
 
-        navCtrl->setnavigationController(m_controller);
+        navCtrl->navigationController.set(m_controller);
 
         c->control = navCtrl;
 
@@ -162,7 +162,7 @@ public:
 
         setComponentWindow(navPanel, &m_window);
 
-        navPanel->setnavigationController(m_controller);
+        navPanel->navigationController.set(m_controller);
 
         p->panel = navPanel;
 
@@ -195,9 +195,9 @@ public:
         navSection->setOrder(idx.order());
 
         setComponentWindow(navSection, &m_window);
-        navSection->setapplication(m_applicationMock);
+        navSection->application.set(m_applicationMock);
 
-        navSection->setnavigationController(m_controller);
+        navSection->navigationController.set(m_controller);
 
         s->section = navSection;
 
@@ -229,7 +229,7 @@ public:
     std::shared_ptr<NavigationController> m_controller;
     std::shared_ptr<actions::IActionsDispatcher> m_dispatcher;
     std::shared_ptr<MainWindowMock> m_mainWindow;
-    std::shared_ptr<framework::ApplicationMock> m_applicationMock;
+    std::shared_ptr<muse::ApplicationMock> m_applicationMock;
 
     QQuickWindow m_window;
 
@@ -375,7 +375,7 @@ TEST_F(Ui_NavigationControllerTests, FirstActiveOnPrevSectionExclusive)
     sect2->section->setType(NavigationSection::Exclusive);
     sect2->section->requestActive();
 
-    //! [WHEN] Send action `nav-next-section` (usually F6)
+    //! [WHEN] Send action `nav-prev-section` (usually Shift+F6)
     m_dispatcher->dispatch("nav-prev-section");
 
     //! [THEN] The second section, the first panel, the first control must be activated
@@ -401,7 +401,7 @@ TEST_F(Ui_NavigationControllerTests, FirstActiveOnNextPanel)
     m_controller->reg(sect1->section);
     m_controller->reg(sect2->section);
 
-    //! DO Send action `nav-next-section` (usually Tab)
+    //! DO Send action `nav-next-panel` (usually Tab)
     m_dispatcher->dispatch("nav-next-panel");
 
     //! [THEN] The first section, the first panel, the first control must be activated
@@ -427,7 +427,7 @@ TEST_F(Ui_NavigationControllerTests, FirstActiveOnPrevSection)
     m_controller->reg(sect1->section);
     m_controller->reg(sect2->section);
 
-    //! [WHEN] Send action `nav-next-section` (usually Shift+F6)
+    //! [WHEN] Send action `nav-prev-section` (usually Shift+F6)
     m_dispatcher->dispatch("nav-prev-section");
 
     //! [THEN] The last section, the first panel, the first control must be activated.
@@ -453,7 +453,7 @@ TEST_F(Ui_NavigationControllerTests, FirstActiveOnPrevPanel)
     m_controller->reg(sect1->section);
     m_controller->reg(sect2->section);
 
-    //! [WHEN] Send action `nav-next-section` (usually Shift+Tab)
+    //! [WHEN] Send action `nav-prev-panel` (usually Shift+Tab)
     m_dispatcher->dispatch("nav-prev-panel");
 
     //! [THEN] The second section, the first panel, the first control must be activated

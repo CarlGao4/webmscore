@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -33,6 +33,10 @@ class AccidentalSettingsModel : public AbstractInspectorModel
     Q_PROPERTY(PropertyItem * isSmall READ isSmall CONSTANT)
     Q_PROPERTY(bool isSmallAvailable READ isSmallAvailable NOTIFY isSmallAvailableChanged)
 
+    Q_PROPERTY(PropertyItem * stackingOrderOffset READ stackingOrderOffset CONSTANT)
+    Q_PROPERTY(bool isStackingOrderAvailable READ isStackingOrderAvailable NOTIFY isStackingOrderAvailableChanged)
+    Q_PROPERTY(bool isStackingOrderEnabled READ isStackingOrderEnabled NOTIFY isStackingOrderEnabledChanged)
+
 public:
     explicit AccidentalSettingsModel(QObject* parent, IElementRepositoryService* repository);
 
@@ -43,20 +47,33 @@ public:
 
     PropertyItem* bracketType() const;
     PropertyItem* isSmall() const;
+    PropertyItem* stackingOrderOffset() const;
+    bool isStackingOrderAvailable() const;
+    bool isStackingOrderEnabled() const;
 
     bool isSmallAvailable() const;
 
 signals:
     void isSmallAvailableChanged(bool available);
+    void isStackingOrderAvailableChanged(bool available);
+    void isStackingOrderEnabledChanged(bool enabled);
+
+private:
+    void updateIsSmallAvailable();
+    void setIsSmallAvailable(bool available);
+
+    void updateIsStackingOrderAvailableAndEnabled();
+    void setIsStackingOrderAvailable(bool available);
+    void setIsStackingOrderEnabled(bool enabled);
 
 private:
     PropertyItem* m_bracketType = nullptr;
     PropertyItem* m_isSmall = nullptr;
     bool m_isSmallAvailable = true;
 
-private:
-    void updateIsSmallAvailable();
-    void setIsSmallAvailable(bool available);
+    PropertyItem* m_stackingOrderOffset = nullptr;
+    bool m_isStackinOrderAvailable = false;
+    bool m_isStackingOrderEnabled = false;
 };
 }
 

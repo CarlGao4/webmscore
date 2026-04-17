@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -46,7 +46,8 @@
 #include "log.h"
 
 using namespace mu::notation;
-using namespace mu::ui;
+using namespace muse;
+using namespace muse::ui;
 using namespace mu::engraving;
 
 static const QChar GO_UP_ICON = iconCodeToChar(IconCode::Code::ARROW_UP);
@@ -54,7 +55,7 @@ static const QChar GO_DOWN_ICON = iconCodeToChar(IconCode::Code::ARROW_DOWN);
 static const QChar EDIT_ICON = iconCodeToChar(IconCode::Code::EDIT);
 
 EditStaff::EditStaff(QWidget* parent)
-    : QDialog(parent)
+    : QDialog(parent), muse::Injectable(muse::iocCtxForQWidget(this))
 {
     setObjectName("EditStaff");
     setupUi(this);
@@ -81,20 +82,15 @@ EditStaff::EditStaff(QWidget* parent)
     connect(showTimesig,      &QCheckBox::clicked, this, &EditStaff::showTimeSigChanged);
     connect(showBarlines,     &QCheckBox::clicked, this, &EditStaff::showBarlinesChanged);
     connect(invisible,        &QCheckBox::clicked, this, &EditStaff::invisibleChanged);
-    connect(isSmallCheckbox,  &QCheckBox::clicked, this, &EditStaff::isSmallChanged);
 
     connect(color, &Awl::ColorLabel::colorChanged, this, &EditStaff::colorChanged);
 
-    connect(mag, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-            this, &EditStaff::magChanged);
+    connect(mag, &QDoubleSpinBox::valueChanged, this, &EditStaff::magChanged);
 
-    connect(iList, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &EditStaff::transpositionChanged);
+    connect(iList, &QComboBox::currentIndexChanged, this, &EditStaff::transpositionChanged);
 
-    connect(lines, QOverload<int>::of(&QSpinBox::valueChanged),
-            this, &EditStaff::numOfLinesChanged);
-    connect(lineDistance, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-            this, &EditStaff::lineDistanceChanged);
+    connect(lines, &QSpinBox::valueChanged, this, &EditStaff::numOfLinesChanged);
+    connect(lineDistance, &QDoubleSpinBox::valueChanged, this, &EditStaff::lineDistanceChanged);
 
     WidgetUtils::setWidgetIcon(nextButton, IconCode::Code::ARROW_DOWN);
     WidgetUtils::setWidgetIcon(previousButton, IconCode::Code::ARROW_UP);
@@ -103,20 +99,8 @@ EditStaff::EditStaff(QWidget* parent)
     WidgetUtils::setWidgetIcon(minPitchPSelect, IconCode::Code::EDIT);
     WidgetUtils::setWidgetIcon(maxPitchPSelect, IconCode::Code::EDIT);
 
-    WidgetStateStore::restoreGeometry(this);
-
     //! NOTE: It is necessary for the correct start of navigation in the dialog
     setFocus();
-}
-
-EditStaff::EditStaff(const EditStaff& other)
-    : QDialog(other.parentWidget())
-{
-}
-
-int EditStaff::metaTypeId()
-{
-    return QMetaType::type("EditStaff");
 }
 
 void EditStaff::setStaff(Staff* s, const Fraction& tick)
@@ -132,9 +116,8 @@ void EditStaff::setStaff(Staff* s, const Fraction& tick)
     }
 
     Part* part = m_orgStaff->part();
-    mu::engraving::Score* score = part->score();
 
-    auto it = mu::findLessOrEqual(part->instruments(), tick.ticks());
+    auto it = muse::findLessOrEqual(part->instruments(), tick.ticks());
     if (it == part->instruments().cend()) {
         return;
     }
@@ -153,7 +136,7 @@ void EditStaff::setStaff(Staff* s, const Fraction& tick)
     m_staff->setPart(part);
     m_staff->setCutaway(m_orgStaff->cutaway());
     m_staff->setHideWhenEmpty(m_orgStaff->hideWhenEmpty());
-    m_staff->setShowIfEmpty(m_orgStaff->showIfEmpty());
+    m_staff->setShowIfEntireSystemEmpty(m_orgStaff->showIfEntireSystemEmpty());
     m_staff->setHideSystemBarLine(m_orgStaff->hideSystemBarLine());
     m_staff->setMergeMatchingRests(m_orgStaff->mergeMatchingRests());
     m_staff->setReflectTranspositionInLinkedTab(m_orgStaff->reflectTranspositionInLinkedTab());
@@ -173,22 +156,24 @@ void EditStaff::setStaff(Staff* s, const Fraction& tick)
     }
 
     // set dlg controls
-    spinExtraDistance->setValue(s->userDist() / score->style().spatium());
+    spinExtraDistance->setValue(s->userDist().val());
     invisible->setChecked(stt->invisible());
-    isSmallCheckbox->setChecked(stt->isSmall());
     color->setColor(stt->color().toQColor());
     mag->setValue(stt->userMag() * 100.0);
 
-    cutaway->setChecked(m_staff->cutaway());
-    hideMode->setCurrentIndex(int(m_staff->hideWhenEmpty()));
-    showIfEmpty->setChecked(m_staff->showIfEmpty());
     hideSystemBarLine->setChecked(m_staff->hideSystemBarLine());
-    mergeMatchingRests->setChecked(m_staff->mergeMatchingRests());
+    mergeMatchingRests->setCurrentIndex(static_cast<int>(m_staff->mergeMatchingRests()));
     noReflectTranspositionInLinkedTab->setChecked(!m_staff->reflectTranspositionInLinkedTab());
 
     updateStaffType(*stt);
     updateInstrument();
     updateNextPreviousButtons();
+}
+
+void EditStaff::showEvent(QShowEvent* event)
+{
+    WidgetStateStore::restoreGeometry(this);
+    QDialog::showEvent(event);
 }
 
 void EditStaff::hideEvent(QHideEvent* ev)
@@ -205,7 +190,6 @@ void EditStaff::updateStaffType(const mu::engraving::StaffType& staffType)
     showTimesig->setChecked(staffType.genTimesig());
     showBarlines->setChecked(staffType.showBarlines());
     invisible->setChecked(staffType.invisible());
-    isSmallCheckbox->setChecked(staffType.isSmall());
     staffGroupName->setText(staffType.translatedGroupName());
 }
 
@@ -219,7 +203,7 @@ void EditStaff::updateInstrument()
     if (templ) {
         instrumentName->setText(formatInstrumentTitle(templ->trackName, templ->trait));
     } else {
-        instrumentName->setText(qtrc("notation/editstaff", "Unknown"));
+        instrumentName->setText(muse::qtrc("notation/editstaff", "Unknown"));
     }
 
     m_minPitchA = m_instrument.minPitchA();
@@ -282,6 +266,7 @@ void EditStaff::updateNextPreviousButtons()
 
 void EditStaff::gotoNextStaff()
 {
+    apply();
     staff_idx_t nextStaffIndex = m_orgStaff->idx() + 1;
     Staff* nextStaff = m_orgStaff->score()->staff(nextStaffIndex);
 
@@ -292,6 +277,7 @@ void EditStaff::gotoNextStaff()
 
 void EditStaff::gotoPreviousStaff()
 {
+    apply();
     staff_idx_t previousStaffIndex = m_orgStaff->idx() - 1;
     Staff* prevStaff = m_orgStaff->score()->staff(previousStaffIndex);
 
@@ -326,7 +312,7 @@ void EditStaff::bboxClicked(QAbstractButton* button)
 
 void EditStaff::apply()
 {
-    size_t index = m_staff->score()->undoStack()->getCurIdx();
+    size_t index = m_staff->score()->undoStack()->currentIndex();
     applyStaffProperties();
     applyPartProperties();
     m_staff->score()->undoStack()->mergeCommands(index);
@@ -404,11 +390,6 @@ void EditStaff::showBarlinesChanged()
 void EditStaff::invisibleChanged()
 {
     m_staff->staffType(Fraction(0, 1))->setInvisible(invisible->isChecked());
-}
-
-void EditStaff::isSmallChanged()
-{
-    m_staff->staffType(Fraction(0, 1))->setSmall(isSmallCheckbox->isChecked());
 }
 
 void EditStaff::colorChanged()
@@ -513,12 +494,9 @@ void EditStaff::applyStaffProperties()
     StaffConfig config;
     config.visible = m_orgStaff->visible();
 
-    config.userDistance = spinExtraDistance->value() * m_orgStaff->style().spatium();
-    config.cutaway = cutaway->isChecked();
-    config.showIfEmpty = showIfEmpty->isChecked();
+    config.userDistance = Spatium(spinExtraDistance->value());
     config.hideSystemBarline = hideSystemBarLine->isChecked();
-    config.mergeMatchingRests = mergeMatchingRests->isChecked();
-    config.hideMode = Staff::HideMode(hideMode->currentIndex());
+    config.mergeMatchingRests = static_cast<AutoOnOff>(mergeMatchingRests->currentIndex());
     config.clefTypeList = m_instrument.clefType(m_orgStaff->rstaff());
     config.staffType = *m_staff->staffType(mu::engraving::Fraction(0, 1));
     config.reflectTranspositionInLinkedTab = !noReflectTranspositionInLinkedTab->isChecked();
@@ -533,8 +511,8 @@ void EditStaff::applyPartProperties()
     String _sn = shortName->toPlainText();
     String _ln = longName->toPlainText();
     if (!mu::engraving::Text::validateText(_sn) || !mu::engraving::Text::validateText(_ln)) {
-        interactive()->warning(trc("notation/staffpartproperties", "Invalid instrument name"),
-                               trc("notation/staffpartproperties", "The instrument name is invalid."));
+        interactive()->warning(muse::trc("notation/staffpartproperties", "Invalid instrument name"),
+                               muse::trc("notation/staffpartproperties", "The instrument name is invalid."));
         return;
     }
     QString sn = _sn;
@@ -590,14 +568,19 @@ void EditStaff::applyPartProperties()
 
 void EditStaff::showReplaceInstrumentDialog()
 {
-    RetVal<Instrument> selectedInstrument = selectInstrumentsScenario()->selectInstrument(m_instrumentKey);
-    if (!selectedInstrument.ret) {
-        LOGE() << selectedInstrument.ret.toString();
-        return;
-    }
+    async::Promise<InstrumentTemplate> templ = selectInstrumentsScenario()->selectInstrument(m_instrumentKey);
+    templ.onResolve(this, [this](const InstrumentTemplate& val) {
+        const StaffType* staffType = val.staffTypePreset;
+        if (!staffType) {
+            staffType = StaffType::getDefaultPreset(StaffGroup::STANDARD);
+        }
 
-    m_instrument = selectedInstrument.val;
-    updateInstrument();
+        m_instrument = Instrument::fromTemplate(&val);
+        m_staff->setStaffType(Fraction(0, 1), *staffType);
+
+        updateInstrument();
+        updateStaffType(*staffType);
+    });
 }
 
 void EditStaff::editStringDataClicked()
@@ -663,7 +646,7 @@ void EditStaff::editStringDataClicked()
 
 QString EditStaff::midiCodeToStr(int midiCode)
 {
-    return QString::fromStdString(mu::pitchToString(midiCode));
+    return QString::fromStdString(muse::pitchToString(midiCode));
 }
 
 void EditStaff::showStaffTypeDialog()

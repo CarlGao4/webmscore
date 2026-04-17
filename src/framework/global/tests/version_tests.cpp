@@ -21,9 +21,10 @@
  */
 #include <gtest/gtest.h>
 
+#include "types/string.h"
 #include "types/version.h"
 
-using namespace mu::framework;
+using namespace muse;
 
 class Global_Types_VersionTests : public ::testing::Test
 {

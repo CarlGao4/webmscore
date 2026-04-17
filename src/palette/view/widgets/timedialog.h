@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -46,7 +46,6 @@ class TimeDialog : public QWidget, Ui::TimeDialogBase
 
 public:
     TimeDialog(QWidget* parent = 0);
-    TimeDialog(const TimeDialog& dialog);
 
     bool dirty() const;
     bool showTimePalette() const;
@@ -54,7 +53,7 @@ public:
 
 private slots:
     void addClicked();
-    void zChanged(int);
+    void zChanged();
     void nChanged(int);
     void paletteChanged(int idx);
     void textChanged();

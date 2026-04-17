@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2023 MuseScore BVBA and others
+ * Copyright (C) 2023 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -43,7 +43,7 @@ public:
         doLayoutItem(item);
     }
 
-    void drawItem(const EngravingItem* item, draw::Painter* p)
+    void drawItem(const EngravingItem* item, muse::draw::Painter* p)
     {
         doDrawItem(item, p);
     }
@@ -51,7 +51,7 @@ public:
 protected:
 
     virtual void doLayoutItem(EngravingItem* item) = 0;
-    virtual void doDrawItem(const EngravingItem* item, draw::Painter* p) = 0;
+    virtual void doDrawItem(const EngravingItem* item, muse::draw::Painter* p) = 0;
 };
 }
 

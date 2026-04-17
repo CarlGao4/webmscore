@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -61,9 +61,7 @@
 #include "engraving/dom/text.h"
 #include "engraving/dom/tie.h"
 #include "engraving/dom/timesig.h"
-#include "engraving/dom/tremolo.h"
 #include "engraving/dom/tuplet.h"
-#include "engraving/dom/types.h"
 #include "engraving/dom/utils.h"
 #include "engraving/dom/volta.h"
 
@@ -1018,8 +1016,8 @@ int Braille::computeInterval(Note* note1, Note* note2, bool ignoreOctave)
     }
 
     int interval = notes.indexOf(note2PitchName) + 1;
-    if (!ignoreOctave && abs(note1->epitch() - note2->epitch()) >= 12) {
-        interval += (abs(note1->epitch() - note2->epitch()) / 12) * 8 - 1;
+    if (!ignoreOctave && std::abs(note1->epitch() - note2->epitch()) >= 12) {
+        interval += (std::abs(note1->epitch() - note2->epitch()) / 12) * 8 - 1;
     }
 
     return interval;
@@ -1409,7 +1407,9 @@ void Braille::brailleMeasureItems(BrailleEngravingItemList* beiz, Measure* measu
 
     //Render the barline
     BarLine* bl = lastBarline(measure, staffCount * VOICES);
-    beiz->addEngravingItem(bl, brailleBarline(bl));
+    if (bl) {
+        beiz->addEngravingItem(bl, brailleBarline(bl));
+    }
 
     //Render repeats and jumps that are on the right
     for (EngravingItem* el : measure->el()) {
@@ -1893,7 +1893,7 @@ QString Braille::brailleChordInterval(Note* rootNote, const std::vector<Note*>& 
     if (interval == 1 && rootNote->octave() == note->octave()) {
         noteOctaveBraille = brailleOctave(note->octave());
     }
-    size_t noteIdx = mu::indexOf(notes, note);
+    size_t noteIdx = muse::indexOf(notes, note);
     int intervalWithPreviousNoteInChord = computeInterval(notes.at(noteIdx - 1), note, false);
     // (b) it is the first or only interval and is more than an octave from the written note,
     if (noteIdx == 1 && intervalWithPreviousNoteInChord > 8) {
@@ -2805,11 +2805,11 @@ QString Braille::brailleTimeSig(TimeSig* timeSig)
 
 QString Braille::brailleTremolo(Chord* chord)
 {
-    if (!chord->tremolo() || chord != chord->tremolo()->chord1()) {
+    if (chord->tremoloChordType() == TremoloChordType::TremoloSecondChord) {
         return QString();
     }
 
-    switch (chord->tremolo()->tremoloType()) {
+    switch (chord->tremoloType()) {
     case TremoloType::R8:  return BRAILLE_TREMOLO_8THS;
     case TremoloType::R16: return BRAILLE_TREMOLO_16THS;
     case TremoloType::R32: return BRAILLE_TREMOLO_32NDS;
@@ -2841,9 +2841,10 @@ QString Braille::brailleVolta(Measure* measure, Volta* volta, int staffCount)
 
     // 17.1.1. Page 121. Music Braille Code 2015.
     resetOctave(staffCount);
-    QStringList voltaNumbers = volta->text().toQString().split(QRegularExpression("(,|\\.| )"));
+    static const QRegularExpression regex("(,|\\.| )");
+    const QStringList voltaNumbers = volta->text().toQString().split(regex);
     QString result = QString();
-    for (QString voltaNumber : voltaNumbers) {
+    for (const QString& voltaNumber : voltaNumbers) {
         if (voltaNumber.isEmpty()) {
             continue;
         }
@@ -2887,12 +2888,12 @@ QString Braille::brailleHairpinBefore(ChordRest* chordRest, const std::vector<Ha
             result += beginTextBraille + BRAILLE_HAIRPIN_DIV_START;
             resetOctave(hairpin->staffIdx());
             break;
-        case HairpinType::DECRESC_HAIRPIN:
+        case HairpinType::DIM_HAIRPIN:
             result += beginTextBraille + BRAILLE_HAIRPIN_CONV_START;
             resetOctave(hairpin->staffIdx());
             break;
         case HairpinType::CRESC_LINE:
-        case HairpinType::DECRESC_LINE:
+        case HairpinType::DIM_LINE:
             result += beginTextBraille + BRAILLE_LINE_CONT_START_1;
             resetOctave(hairpin->staffIdx());
             break;
@@ -2924,12 +2925,12 @@ QString Braille::brailleHairpinAfter(ChordRest* chordRest, const std::vector<Hai
             result += BRAILLE_HAIRPIN_DIV_END;
             resetOctave(hairpin->staffIdx());
             break;
-        case HairpinType::DECRESC_HAIRPIN:
+        case HairpinType::DIM_HAIRPIN:
             result += BRAILLE_HAIRPIN_CONV_END;
             resetOctave(hairpin->staffIdx());
             break;
         case HairpinType::CRESC_LINE:
-        case HairpinType::DECRESC_LINE:
+        case HairpinType::DIM_LINE:
             result += BRAILLE_LINE_CONT_END_1;
             resetOctave(hairpin->staffIdx());
             break;

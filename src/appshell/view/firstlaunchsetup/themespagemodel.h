@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -30,7 +30,7 @@
 #include "ui/iuiconfiguration.h"
 
 namespace mu::appshell {
-class ThemesPageModel : public QObject, public async::Asyncable
+class ThemesPageModel : public QObject, public muse::Injectable, public muse::async::Asyncable
 {
     Q_OBJECT
 
@@ -45,7 +45,7 @@ class ThemesPageModel : public QObject, public async::Asyncable
     Q_PROPERTY(QString currentThemeCode READ currentThemeCode WRITE setCurrentThemeCode NOTIFY themesChanged)
     Q_PROPERTY(int currentAccentColorIndex READ currentAccentColorIndex WRITE setCurrentAccentColorIndex NOTIFY themesChanged)
 
-    INJECT(ui::IUiConfiguration, uiConfiguration)
+    muse::Inject<muse::ui::IUiConfiguration> uiConfiguration = { this };
 
 public:
     explicit ThemesPageModel(QObject* parent = nullptr);
@@ -75,8 +75,8 @@ signals:
     void themesChanged();
 
 private:
-    ui::ThemeInfo currentTheme() const;
-    ui::ThemeList allThemes() const;
+    muse::ui::ThemeInfo currentTheme() const;
+    muse::ui::ThemeList allThemes() const;
 };
 }
 

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -23,14 +23,15 @@
 #ifndef MU_ENGRAVING_EXCERPT_H
 #define MU_ENGRAVING_EXCERPT_H
 
-#include "types/fraction.h"
-#include "types/types.h"
+#include "../types/fraction.h"
+#include "../types/types.h"
 #include "types/string.h"
 
 #include "async/notification.h"
 
 namespace mu::engraving {
 class MasterScore;
+class Measure;
 class Part;
 class Score;
 class Staff;
@@ -58,14 +59,15 @@ public:
 
     const String& name() const;
     void setName(const String& name, bool saveAndNotify = true);
-    async::Notification nameChanged() const;
+    muse::async::Notification nameChanged() const;
 
     // The name used to store this excerpt in the msc file/folder.
     // When reading/writing, the engraving module sets this value, so that other
     // modules can also read/write data about this excerpt using the correct name.
+    bool hasFileName() const;
     const String& fileName() const;
     void setFileName(const String& fileName);
-    void updateFileName(size_t index = mu::nidx);
+    void updateFileName(size_t index = muse::nidx);
 
     std::vector<Part*>& parts() { return m_parts; }
     const std::vector<Part*>& parts() const { return m_parts; }
@@ -92,9 +94,12 @@ public:
     static void cloneStaff(Staff* ostaff, Staff* nstaff, bool cloneSpanners = true);
     static void cloneStaff2(Staff* ostaff, Staff* nstaff, const Fraction& startTick, const Fraction& endTick);
     static void cloneSpanner(Spanner* s, Score* score, track_idx_t dstTrack, track_idx_t dstTrack2);
+    static void createLinkedTabs(MasterScore* score);
 
 private:
     friend class MasterScore;
+
+    static void promoteGapRestsToRealRests(const Measure* measure, staff_idx_t staffIdx);
 
     void setInited(bool inited);
     void writeNameToMetaTags();
@@ -105,7 +110,7 @@ private:
     Score* m_excerptScore = nullptr;
     String m_name;
     String m_fileName;
-    async::Notification m_nameChanged;
+    muse::async::Notification m_nameChanged;
     std::vector<Part*> m_parts;
     TracksMap m_tracksMapping;
     bool m_inited = false;

@@ -19,8 +19,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_FRAMEWORK_TRANSLATABLESTRING_H
-#define MU_FRAMEWORK_TRANSLATABLESTRING_H
+#ifndef MUSE_GLOBAL_TRANSLATABLESTRING_H
+#define MUSE_GLOBAL_TRANSLATABLESTRING_H
 
 #include "translation.h"
 
@@ -30,7 +30,7 @@
 #include <QString>
 #endif
 
-namespace mu {
+namespace muse {
 //! Note: in order to make the string visible for `lupdate`,
 //! you must write TranslatableString(...) explicitly.
 class TranslatableString
@@ -39,21 +39,22 @@ public:
     const char* context = nullptr;
     String str;
     const char* disambiguation = nullptr;
+    int defaultN = -1;
 
     TranslatableString() = default;
-    TranslatableString(const char* context, const char* str, const char* disambiguation = nullptr)
-        : context(context), str(String::fromUtf8(str)), disambiguation(disambiguation) {}
-    TranslatableString(const char* context, const String& str, const char* disambiguation = nullptr)
-        : context(context), str(str), disambiguation(disambiguation) {}
+    TranslatableString(const char* context, const char* str, const char* disambiguation = nullptr, int n = -1)
+        : context(context), str(String::fromUtf8(str)), disambiguation(disambiguation), defaultN(n) {}
+    TranslatableString(const char* context, const String& str, const char* disambiguation = nullptr, int n = -1)
+        : context(context), str(str), disambiguation(disambiguation), defaultN(n) {}
 
     static TranslatableString untranslatable(const char* str)
     {
-        return TranslatableString(nullptr, str, nullptr);
+        return TranslatableString(nullptr, str);
     }
 
     static TranslatableString untranslatable(const String& str)
     {
-        return TranslatableString(nullptr, str, nullptr);
+        return TranslatableString(nullptr, str);
     }
 
     inline bool isEmpty() const
@@ -66,7 +67,12 @@ public:
         return context && context[0];
     }
 
-    inline String translated(int n = -1) const
+    inline String translated() const
+    {
+        return translated(defaultN);
+    }
+
+    inline String translated(int n) const
     {
         if (isEmpty()) {
             return {};
@@ -82,7 +88,12 @@ public:
     }
 
 #ifndef NO_QT_SUPPORT
-    inline QString qTranslated(int n = -1) const
+    inline QString qTranslated() const
+    {
+        return qTranslated(defaultN);
+    }
+
+    inline QString qTranslated(int n) const
     {
         if (isEmpty()) {
             return {};
@@ -108,6 +119,7 @@ public:
                && str == other.str
                && (disambiguation == other.disambiguation
                    || (disambiguation && other.disambiguation && strcmp(disambiguation, other.disambiguation) == 0))
+               && defaultN == other.defaultN
                && args == other.args;
     }
 
@@ -254,4 +266,4 @@ TranslatableString TranslatableString::arg(const Args& ... args) const
 }
 }
 
-#endif // MU_FRAMEWORK_TRANSLATABLESTRING_H
+#endif // MUSE_GLOBAL_TRANSLATABLESTRING_H

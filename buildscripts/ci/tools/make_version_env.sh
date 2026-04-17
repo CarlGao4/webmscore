@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
-# MuseScore-CLA-applies
+# MuseScore-Studio-CLA-applies
 #
-# MuseScore
+# MuseScore Studio
 # Music Composition & Notation
 #
-# Copyright (C) 2021 MuseScore BVBA and others
+# Copyright (C) 2021 MuseScore Limited
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 3 as
@@ -26,9 +26,9 @@ ARTIFACTS_DIR="build.artifacts" # default output dir
 
 if [ -z "$2" ]; then OUT_DIR=${ARTIFACTS_DIR}/env; fi
 
-export MUSESCORE_VERSION=$(cmake -P version.cmake | sed -n -e 's/^.*MUSESCORE_VERSION  *//p')
+export MUSE_APP_VERSION=$(cmake -P version.cmake | sed -n -e 's/^.*MUSE_APP_VERSION  *//p')
 
-MUSESCORE_VERSION_FULL=$MUSESCORE_VERSION.$BUILD_NUMBER
+MUSESCORE_VERSION_FULL=$MUSE_APP_VERSION.$BUILD_NUMBER
 
 echo ${MUSESCORE_VERSION_FULL} > ${OUT_DIR}/build_version.env
 cat ${OUT_DIR}/build_version.env

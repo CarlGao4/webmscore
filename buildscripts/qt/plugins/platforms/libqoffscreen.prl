@@ -1,0 +1,6 @@
+QMAKE_PRL_BUILD_DIR = /home/runner/work/qt-libqoffscreen-wasm/qt-libqoffscreen-wasm/qtbase/src/plugins/platforms/offscreen
+QMAKE_PRL_TARGET = libqoffscreen.a
+QMAKE_PRL_CONFIG = static
+QMAKE_PRL_VERSION = 6.4.3
+QMAKE_PRL_LIBS = $$[QT_INSTALL_PREFIX]/lib/objects-Release/Gui_resources_1/.rcc/qrc_qpdf.cpp.o $$[QT_INSTALL_PREFIX]/lib/objects-Release/Gui_resources_2/.rcc/qrc_gui_shaders.cpp.o $$[QT_INSTALL_PLUGINS]/platforms/libqoffscreen.a $$[QT_INSTALL_LIBS]/libQt6Gui.a $$[QT_INSTALL_LIBS]/libQt6Gui.a $$[QT_INSTALL_LIBS]/libQt6Core.a $$[QT_INSTALL_LIBS]/libQt6BundledHarfbuzz.a $$[QT_INSTALL_LIBS]/libQt6BundledFreetype.a $$[QT_INSTALL_LIBS]/libQt6BundledLibpng.a $$[QT_INSTALL_LIBS]/libQt6Core.a $$[QT_INSTALL_LIBS]/libQt6BundledZLIB.a $$[QT_INSTALL_LIBS]/libQt6BundledPcre2.a -lembind
+QMAKE_PRL_LIBS_FOR_CMAKE = $$[QT_INSTALL_PREFIX]/lib/objects-Release/Gui_resources_1/.rcc/qrc_qpdf.cpp.o;$$[QT_INSTALL_PREFIX]/lib/objects-Release/Gui_resources_2/.rcc/qrc_gui_shaders.cpp.o;$$[QT_INSTALL_PLUGINS]/platforms/libqoffscreen.a;$$[QT_INSTALL_LIBS]/libQt6Gui.a;$$[QT_INSTALL_LIBS]/libQt6Gui.a;$$[QT_INSTALL_LIBS]/libQt6Core.a;$$[QT_INSTALL_LIBS]/libQt6BundledHarfbuzz.a;$$[QT_INSTALL_LIBS]/libQt6BundledFreetype.a;$$[QT_INSTALL_LIBS]/libQt6BundledLibpng.a;$$[QT_INSTALL_LIBS]/libQt6Core.a;$$[QT_INSTALL_LIBS]/libQt6BundledZLIB.a;$$[QT_INSTALL_LIBS]/libQt6BundledPcre2.a;-lembind

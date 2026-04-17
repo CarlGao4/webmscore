@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -34,54 +34,59 @@
 #include "notation/inotationconfiguration.h"
 #include "draw/types/transform.h"
 
+//! NOTE When this class is going to be removed, make sure to
+//! remove the StateMachine dependency from FindQt6.cmake too.
+//! This is the only class that uses it.
+
 namespace mu::engraving {
 class EngravingItem;
 class Score;
 }
 
 namespace mu::notation {
-class ExampleView : public QFrame, public engraving::MuseScoreView
+//! NOTE When this class is going to be removed, make sure to
+//! remove the StateMachine dependency from FindQt6.cmake too.
+//! This is the only class that uses it.
+class ExampleView : public QFrame, public engraving::MuseScoreView, public muse::Injectable
 {
     Q_OBJECT
 
-    INJECT(notation::INotationConfiguration, notationConfiguration)
+    muse::Inject<notation::INotationConfiguration> notationConfiguration = { this };
 
 public:
     ExampleView(QWidget* parent = 0);
     ~ExampleView();
     void resetMatrix();
     void layoutChanged() override;
-    void dataChanged(const RectF&) override;
+    void dataChanged(const muse::RectF&) override;
     void updateAll() override;
     void adjustCanvasPosition(const engraving::EngravingItem* el, int staff = -1) override;
     void setScore(engraving::Score*) override;
     void removeScore() override;
 
     void changeEditElement(engraving::EngravingItem*) override;
-    void setDropRectangle(const mu::RectF&) override;
-    void cmdAddSlur(engraving::Note* firstNote, Note* lastNote);
-    void drawBackground(draw::Painter*, const RectF&) const override;
+    void setDropRectangle(const muse::RectF&) override;
+    void drawBackground(muse::draw::Painter*, const muse::RectF&) const override;
     void dragExampleView(QMouseEvent* ev);
-    const Rect geometry() const override { return Rect(QFrame::geometry()); }
 
 protected:
     void mousePressEvent(QMouseEvent*) override;
 
-    PointF toLogical(const QPointF& point);
+    muse::PointF toLogical(const QPointF& point);
 
 private:
-    void drawElements(mu::draw::Painter& painter, const std::vector<EngravingItem*>& el);
+    void drawElements(muse::draw::Painter& painter, const std::vector<EngravingItem*>& el);
     void paintEvent(QPaintEvent*) override;
     void wheelEvent(QWheelEvent*) override;
     void constraintCanvas(int* dxx);
     QSize sizeHint() const override;
 
-    mu::draw::Transform m_matrix;
+    muse::draw::Transform m_matrix;
     QColor m_backgroundColor;
     QPixmap* m_backgroundPixmap;
 
     QStateMachine* m_stateMachine;
-    mu::PointF m_moveStartPoint;
+    muse::PointF m_moveStartPoint;
 
     double m_defaultScaling = 0;
 };

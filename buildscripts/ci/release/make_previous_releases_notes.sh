@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
-# MuseScore-CLA-applies
+# MuseScore-Studio-CLA-applies
 #
-# MuseScore
+# MuseScore Studio
 # Music Composition & Notation
 #
-# Copyright (C) 2024 MuseScore BVBA and others
+# Copyright (C) 2024 MuseScore Limited
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 3 as
@@ -44,12 +44,12 @@ done
 
 echo "=== Get release info ==="
 
-sudo bash ./build/ci/release/get_file_from_s3.sh \
-            --s3_key "${S3_KEY}" \
-            --s3_secret "${S3_SECRET}" \
-            --s3_url "${S3_URL}" \
-            --s3_bucket "${S3_BUCKET}" \
-            --local_file_name "${PREVIOUS_FILE_NAME}"
+bash ./buildscripts/ci/release/get_file_from_s3.sh \
+    --s3_key "${S3_KEY}" \
+    --s3_secret "${S3_SECRET}" \
+    --s3_url "${S3_URL}" \
+    --s3_bucket "${S3_BUCKET}" \
+    --local_file_name "${PREVIOUS_FILE_NAME}"
 
 echo "=== Append release info to previous releases ==="
 

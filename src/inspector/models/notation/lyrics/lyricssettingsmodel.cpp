@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -29,14 +29,15 @@ LyricsSettingsModel::LyricsSettingsModel(QObject* parent, IElementRepositoryServ
     : AbstractInspectorModel(parent, repository)
 {
     setModelType(InspectorModelType::TYPE_LYRICS);
-    setTitle(qtrc("inspector", "Lyrics"));
-    setIcon(ui::IconCode::Code::LYRICS);
+    setTitle(muse::qtrc("inspector", "Lyrics"));
+    setIcon(muse::ui::IconCode::Code::LYRICS);
     createProperties();
 }
 
 void LyricsSettingsModel::createProperties()
 {
     m_verse = buildPropertyItem(mu::engraving::Pid::VERSE);
+    m_avoidBarlines = buildPropertyItem(mu::engraving::Pid::AVOID_BARLINES);
 }
 
 void LyricsSettingsModel::requestElements()
@@ -47,14 +48,21 @@ void LyricsSettingsModel::requestElements()
 void LyricsSettingsModel::loadProperties()
 {
     loadPropertyItem(m_verse);
+    loadPropertyItem(m_avoidBarlines);
 }
 
 void LyricsSettingsModel::resetProperties()
 {
     m_verse->resetToDefault();
+    m_avoidBarlines->resetToDefault();
 }
 
 PropertyItem* LyricsSettingsModel::verse() const
 {
     return m_verse;
+}
+
+PropertyItem* LyricsSettingsModel::avoidBarlines() const
+{
+    return m_avoidBarlines;
 }

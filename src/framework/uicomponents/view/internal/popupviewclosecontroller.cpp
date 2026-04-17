@@ -23,12 +23,12 @@
 #include "popupviewclosecontroller.h"
 
 #include <QApplication>
-#include <QWindow>
+#include <QQuickWindow>
 
-using namespace mu::uicomponents;
+using namespace muse::uicomponents;
 
-PopupViewCloseController::PopupViewCloseController(QObject* parent)
-    : QObject(parent)
+PopupViewCloseController::PopupViewCloseController(const modularity::ContextPtr& iocCtx, QObject* parent)
+    : QObject(parent), muse::Injectable(iocCtx)
 {
 }
 
@@ -87,39 +87,32 @@ void PopupViewCloseController::setWindow(QWindow* window)
     m_popupWindow = window;
 }
 
-bool PopupViewCloseController::popupHasFocus() const
+void PopupViewCloseController::setIsCloseOnPressOutsideParent(bool arg)
 {
-    return m_popupHasFocus;
+    m_isCloseOnPressOutsideParent = arg;
 }
 
-void PopupViewCloseController::setPopupHasFocus(bool hasFocus)
+void PopupViewCloseController::setCanClosed(bool arg)
 {
-    m_popupHasFocus = hasFocus;
+    m_canClosed = arg;
 }
 
-void PopupViewCloseController::setIsCloseOnPressOutsideParent(bool close)
-{
-    m_isCloseOnPressOutsideParent = close;
-}
-
-mu::async::Notification PopupViewCloseController::closeNotification() const
+muse::async::Notification PopupViewCloseController::closeNotification() const
 {
     return m_closeNotification;
 }
 
 bool PopupViewCloseController::eventFilter(QObject* watched, QEvent* event)
 {
-    if (QEvent::Close == event->type() && watched == mainWindow()->qWindow()) {
+    if (QEvent::Close == event->type() && watched == parentWindow()) {
         notifyAboutClose();
-    }
-
-    if (!m_popupHasFocus) {
-        if (QEvent::MouseButtonPress == event->type()) {
-            doFocusOut();
-        }
-    } else {
-        if (QEvent::FocusOut == event->type() && watched == popupWindow()) {
-            doFocusOut();
+    } else if (QEvent::MouseButtonPress == event->type()) {
+        doFocusOut(static_cast<QMouseEvent*>(event)->globalPosition());
+    } else if (QEvent::FocusOut == event->type() && watched == popupWindow()) {
+        doFocusOut(QCursor::pos());
+    } else if (QEvent::Close == event->type() && watched == popupWindow()) {
+        if (!m_canClosed) {
+            event->ignore();
         }
     }
 
@@ -132,15 +125,20 @@ void PopupViewCloseController::onApplicationStateChanged(Qt::ApplicationState st
         return;
     }
 
+    // Hack for https://github.com/musescore/MuseScore/issues/29656 on Linux
+    if (interactiveProvider()->isSelectColorOpened()) {
+        return;
+    }
+
     if (state != Qt::ApplicationActive) {
         notifyAboutClose();
     }
 }
 
-void PopupViewCloseController::doFocusOut()
+void PopupViewCloseController::doFocusOut(const QPointF& mousePos)
 {
     if (m_isCloseOnPressOutsideParent) {
-        if (!isMouseWithinBoundaries(QCursor::pos())) {
+        if (!isMouseWithinBoundaries(mousePos)) {
             notifyAboutClose();
         }
     }
@@ -155,30 +153,63 @@ void PopupViewCloseController::doUpdateEventFilters()
     }
 }
 
-bool PopupViewCloseController::isMouseWithinBoundaries(const QPoint& mousePos) const
+bool PopupViewCloseController::isMouseWithinBoundaries(const QPointF& mousePos) const
 {
     QWindow* window = popupWindow();
     if (!window) {
         return false;
     }
 
-    QRect viewRect = window->geometry();
-    bool contains = viewRect.contains(mousePos);
-    if (!contains) {
-        //! NOTE We also check the parent because often clicking on the parent should toggle the popup,
-        //! but if we don't check a parent here, the popup will be closed and reopened.
-        QQuickItem* parent = parentItem();
-        QPointF localPos = parent->mapFromGlobal(mousePos);
-        QRectF parentRect = QRectF(0, 0, parent->width(), parent->height());
-        contains = parentRect.contains(localPos);
+    QRectF viewRect = window->geometry();
+    if (viewRect.contains(mousePos)) {
+        return true;
     }
 
-    return contains;
+    //! NOTE We also check the parent because often clicking on the parent should toggle the popup,
+    //! but if we don't check a parent here, the popup will be closed and reopened.
+    QQuickItem* parent = parentItem();
+    QPointF localPos = parent->mapFromGlobal(mousePos);
+    QRectF parentRect = QRectF(0, 0, parent->width(), parent->height());
+    if (parentRect.contains(localPos)) {
+        return true;
+    }
+
+    //! NOTE We also check child windows
+    for (QWindow* child : QGuiApplication::allWindows()) {
+        if (!child->isVisible()) {
+            continue;
+        }
+
+        if (!window->isAncestorOf(child, QWindow::IncludeTransients)) {
+            continue;
+        }
+
+        QRectF childRect = child->geometry();
+        if (childRect.contains(mousePos)) {
+            return true;
+        }
+    }
+
+    // Hack for https://github.com/musescore/MuseScore/issues/29656
+    if (interactiveProvider()->isSelectColorOpened()) {
+        return true;
+    }
+
+    return false;
 }
 
 void PopupViewCloseController::notifyAboutClose()
 {
     m_closeNotification.notify();
+}
+
+QWindow* PopupViewCloseController::parentWindow() const
+{
+    if (m_parentItem && m_parentItem->window()) {
+        return m_parentItem->window();
+    }
+
+    return mainWindow()->qWindow();
 }
 
 QWindow* PopupViewCloseController::popupWindow() const

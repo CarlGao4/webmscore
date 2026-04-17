@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,8 +22,8 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 
-import MuseScore.Ui 1.0
-import MuseScore.UiComponents 1.0
+import Muse.Ui 1.0
+import Muse.UiComponents 1.0
 import MuseScore.Project 1.0
 
 RadioButtonGroup {
@@ -53,6 +53,10 @@ RadioButtonGroup {
 
     AudioGenerationSettingsModel {
         id: settingsModel
+    }
+
+    Component.onCompleted: {
+        settingsModel.load()
     }
 
     model: [
@@ -121,10 +125,11 @@ RadioButtonGroup {
     Component {
         id: numberOfSavesComp
 
-        RowLayout {
+        Row {
             id: numberOfSavesItem
 
             width: parent.width
+            height: button.implicitHeight
             spacing: 6
 
             // "Every: %1 saves" needs to be one string for correct translatability. We then split the translated version.
@@ -152,7 +157,8 @@ RadioButtonGroup {
             RoundedRadioButton {
                 id: button
 
-                Layout.minimumWidth: 80
+                anchors.verticalCenter: parent.verticalCenter
+                width: Math.max(implicitWidth, 80)
 
                 text: numberOfSavesItem.textPart1.trim()
                 checked: settingsModel.timePeriodType === numberOfSavesItem.type
@@ -170,7 +176,8 @@ RadioButtonGroup {
             }
 
             IncrementalPropertyControl {
-                Layout.preferredWidth: numberOfSavesItem.textPart2InSpinbox ? 96 : 60
+                anchors.verticalCenter: parent.verticalCenter
+                width: numberOfSavesItem.textPart2InSpinbox ? 96 : 60
 
                 minValue: 2
                 maxValue: 30
@@ -190,7 +197,8 @@ RadioButtonGroup {
             }
 
             StyledTextLabel {
-                Layout.fillWidth: true
+                anchors.verticalCenter: parent.verticalCenter
+                width: parent.width - x
 
                 text: numberOfSavesItem.textPart2InSpinbox ? "" : numberOfSavesItem.textPart2.trim()
                 horizontalAlignment: Text.AlignLeft

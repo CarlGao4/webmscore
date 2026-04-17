@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -54,7 +54,7 @@ public:
     }
 
     double EvalY(const double t) const { return -(t * t) * (2.0 * t - 3.0); }
-    mu::PointF Eval(const double t) const { return { EvalX(t), EvalY(t) }; }
+    muse::PointF Eval(const double t) const { return { EvalX(t), EvalY(t) }; }
     double tFromX(const double x) const;
     double tFromY(const double y) const;
     double YfromX(const double x) const { return EvalY(tFromX(x)); }

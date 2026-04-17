@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,20 +22,21 @@
 
 #include "gridcanvas.h"
 
-#include <QApplication>
-#include <QPalette>
 #include <cmath>
+
+#include <QGuiApplication>
+#include <QPalette>
 
 #include "draw/types/pen.h"
 
 #include "log.h"
 
 using namespace mu::inspector;
-using namespace mu::ui;
+using namespace muse::ui;
 using namespace mu::engraving;
 
 GridCanvas::GridCanvas(QQuickItem* parent)
-    : uicomponents::QuickPaintedView(parent)
+    : muse::uicomponents::QuickPaintedView(parent)
 {
     setAcceptedMouseButtons(Qt::AllButtons);
 }
@@ -162,7 +163,7 @@ void GridCanvas::paint(QPainter* painter)
 
     painter->setRenderHint(QPainter::Antialiasing, true);
 
-    painter->fillRect(childrenRect(), QApplication::palette().color(QPalette::Window).lighter());
+    painter->fillRect(childrenRect(), QGuiApplication::palette().color(QPalette::Window).lighter());
     QPen pen = painter->pen();
     pen.setWidth(1);
 
@@ -243,11 +244,12 @@ void GridCanvas::mousePressEvent(QMouseEvent* ev)
     const qreal rowHeight = qreal(height()) / m_rows;
 
     // Half a column/row of margin around
-    const int x = ev->x() - columnWidth * .5;
-    const int y = ev->y() - rowHeight * .5;
+    const QPointF pos = ev->position();
+    const double x = pos.x() - columnWidth * .5;
+    const double y = pos.y() - rowHeight * .5;
 
-    int column = round(qreal(x) / columnWidth);
-    int row = round(qreal(y) / rowHeight);
+    int column = round(x / columnWidth);
+    int row = round(y / rowHeight);
 
     // restrict to clickable area
     if (column >= m_columns) {

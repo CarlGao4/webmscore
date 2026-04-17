@@ -20,158 +20,86 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "uiconfiguration.h"
+#include "global/configreader.h"
 
 #include "async/async.h"
 #include "settings.h"
-#include "log.h"
-#include "translation.h"
 #include "themeconverter.h"
 
-#include <QScreen>
 #include <QFontDatabase>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QJsonArray>
+#include <QScreen>
+#include <QSettings>
 
 #ifdef Q_OS_WIN
 #include <QOperatingSystemVersion>
 #endif
 
-using namespace mu;
-using namespace mu::ui;
-using namespace mu::framework;
-using namespace mu::async;
+#include "muse_framework_config.h"
+
+#include "log.h"
+
+using namespace Qt::Literals;
+using namespace muse;
+using namespace muse::ui;
+using namespace muse::async;
 
 static const Settings::Key UI_THEMES_KEY("ui", "ui/application/themes");
 static const Settings::Key UI_CURRENT_THEME_CODE_KEY("ui", "ui/application/currentThemeCode");
+static const Settings::Key UI_CUSTOM_COLORS_KEY("ui", "ui/application/customColors");
 static const Settings::Key UI_FOLLOW_SYSTEM_THEME_KEY("ui", "ui/application/followSystemTheme");
 static const Settings::Key UI_FONT_FAMILY_KEY("ui", "ui/theme/fontFamily");
 static const Settings::Key UI_FONT_SIZE_KEY("ui", "ui/theme/fontSize");
 static const Settings::Key UI_ICONS_FONT_FAMILY_KEY("ui", "ui/theme/iconsFontFamily");
 static const Settings::Key UI_MUSICAL_FONT_FAMILY_KEY("ui", "ui/theme/musicalFontFamily");
 static const Settings::Key UI_MUSICAL_FONT_SIZE_KEY("ui", "ui/theme/musicalFontSize");
+static const Settings::Key UI_MUSICAL_TEXT_FONT_FAMILY_KEY("ui", "ui/theme/musicalTextFontFamily");
+static const Settings::Key UI_MUSICAL_TEXT_FONT_SIZE_KEY("ui", "ui/theme/musicalTextFontSize");
 
 static const QString WINDOW_GEOMETRY_KEY("window");
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 6, 0)
+static const int FLICKABLE_MAX_VELOCITY = 4000;
+#else
 static const int FLICKABLE_MAX_VELOCITY = 1500;
+#endif
 
-static const QMap<ThemeStyleKey, QVariant> LIGHT_THEME_VALUES {
-    { BACKGROUND_PRIMARY_COLOR, "#F5F5F6" },
-    { BACKGROUND_SECONDARY_COLOR, "#E6E9ED" },
-    { POPUP_BACKGROUND_COLOR, "#F5F5F6" },
-    { TEXT_FIELD_COLOR, "#FFFFFF" },
-    { ACCENT_COLOR, "#70AFEA" },
-    { STROKE_COLOR, "#CED1D4" },
-    { BUTTON_COLOR, "#CFD5DD" },
-    { FONT_PRIMARY_COLOR, "#111132" },
-    { FONT_SECONDARY_COLOR, "#FFFFFF" },
-    { LINK_COLOR, "#0B69BF" },
-    { FOCUS_COLOR, "#75507b" },
+static const int TOOLTIP_DELAY = 500;
 
-    { BORDER_WIDTH, 0 },
-    { NAVIGATION_CONTROL_BORDER_WIDTH, 2.0 },
+// read custom colors saved by Qt < 6.9
+// see: https://github.com/qt/qtbase/blob/v6.2.4/src/gui/kernel/qplatformdialoghelper.cpp#L292-L302
+static std::vector<Val> readLegacyCustomColors()
+{
+    constexpr size_t customColorCount = 16;
 
-    { ACCENT_OPACITY_NORMAL, 0.5 },
-    { ACCENT_OPACITY_HOVER, 0.3 },
-    { ACCENT_OPACITY_HIT, 0.7 },
+    QSettings settings(QSettings::UserScope, u"QtProject"_s);
+    std::vector<Val> legacyValues(customColorCount, Val(QColorConstants::White));
+    for (size_t i = 0; i < customColorCount; ++i) {
+        const QVariant value = settings.value(u"Qt/customColors/"_s + QString::number(i));
+        if (value.isValid()) {
+            legacyValues[i] = Val(QColor::fromRgb(value.toUInt()));
+        }
+    }
 
-    { BUTTON_OPACITY_NORMAL, 0.7 },
-    { BUTTON_OPACITY_HOVER, 0.5 },
-    { BUTTON_OPACITY_HIT, 1.0 },
-
-    { ITEM_OPACITY_DISABLED, 0.3 }
-};
-
-static const QMap<ThemeStyleKey, QVariant> DARK_THEME_VALUES {
-    { BACKGROUND_PRIMARY_COLOR, "#2D2D30" },
-    { BACKGROUND_SECONDARY_COLOR, "#363638" },
-    { POPUP_BACKGROUND_COLOR, "#39393C" },
-    { TEXT_FIELD_COLOR, "#242427" },
-    { ACCENT_COLOR, "#2093FE" },
-    { STROKE_COLOR, "#1E1E1E" },
-    { BUTTON_COLOR, "#595959" },
-    { FONT_PRIMARY_COLOR, "#EBEBEB" },
-    { FONT_SECONDARY_COLOR, "#BDBDBD" },
-    { LINK_COLOR, "#8EC9FF" },
-    { FOCUS_COLOR, "#75507b" },
-
-    { BORDER_WIDTH, 0 },
-    { NAVIGATION_CONTROL_BORDER_WIDTH, 2.0 },
-
-    { ACCENT_OPACITY_NORMAL, 0.5 },
-    { ACCENT_OPACITY_HOVER, 0.3 },
-    { ACCENT_OPACITY_HIT, 0.7 },
-
-    { BUTTON_OPACITY_NORMAL, 0.7 },
-    { BUTTON_OPACITY_HOVER, 0.5 },
-    { BUTTON_OPACITY_HIT, 1.0 },
-
-    { ITEM_OPACITY_DISABLED, 0.3 }
-};
-
-static const QMap<ThemeStyleKey, QVariant> HIGH_CONTRAST_BLACK_THEME_VALUES {
-    { BACKGROUND_PRIMARY_COLOR, "#000000" },
-    { BACKGROUND_SECONDARY_COLOR, "#000000" },
-    { POPUP_BACKGROUND_COLOR, "#000000" },
-    { TEXT_FIELD_COLOR, "#000000" },
-    { ACCENT_COLOR, "#0071DA" },
-    { STROKE_COLOR, "#FFFFFF" },
-    { BUTTON_COLOR, "#000000" },
-    { FONT_PRIMARY_COLOR, "#FFFD38" },
-    { FONT_SECONDARY_COLOR, "#BDBDBD" },
-    { LINK_COLOR, "#FFFFFF" },
-    { FOCUS_COLOR, "#75507b" },
-
-    { BORDER_WIDTH, 1.0 },
-    { NAVIGATION_CONTROL_BORDER_WIDTH, 2.0 },
-
-    { ACCENT_OPACITY_NORMAL, 0.5 },
-    { ACCENT_OPACITY_HOVER, 0.3 },
-    { ACCENT_OPACITY_HIT, 0.7 },
-
-    { BUTTON_OPACITY_NORMAL, 0.7 },
-    { BUTTON_OPACITY_HOVER, 0.5 },
-    { BUTTON_OPACITY_HIT, 1.0 },
-
-    { ITEM_OPACITY_DISABLED, 0.3 }
-};
-
-static const QMap<ThemeStyleKey, QVariant> HIGH_CONTRAST_WHITE_THEME_VALUES {
-    { BACKGROUND_PRIMARY_COLOR, "#FFFFFF" },
-    { BACKGROUND_SECONDARY_COLOR, "#FFFFFF" },
-    { POPUP_BACKGROUND_COLOR, "#FFFFFF" },
-    { TEXT_FIELD_COLOR, "#FFFFFF" },
-    { ACCENT_COLOR, "#00D87D" },
-    { STROKE_COLOR, "#000000" },
-    { BUTTON_COLOR, "#FFFFFF" },
-    { FONT_PRIMARY_COLOR, "#1E0073" },
-    { FONT_SECONDARY_COLOR, "#000000" },
-    { LINK_COLOR, "#000000" },
-    { FOCUS_COLOR, "#75507b" },
-
-    { BORDER_WIDTH, 1.0 },
-    { NAVIGATION_CONTROL_BORDER_WIDTH, 2.0 },
-
-    { ACCENT_OPACITY_NORMAL, 0.5 },
-    { ACCENT_OPACITY_HOVER, 0.3 },
-    { ACCENT_OPACITY_HIT, 0.7 },
-
-    { BUTTON_OPACITY_NORMAL, 0.7 },
-    { BUTTON_OPACITY_HOVER, 0.5 },
-    { BUTTON_OPACITY_HIT, 1.0 },
-
-    { ITEM_OPACITY_DISABLED, 0.3 }
-};
+    return legacyValues;
+}
 
 void UiConfiguration::init()
 {
+    m_config = ConfigReader::read(":/configs/ui.cfg");
+
     settings()->setDefaultValue(UI_CURRENT_THEME_CODE_KEY, Val(LIGHT_THEME_CODE));
+    settings()->setDefaultValue(UI_CUSTOM_COLORS_KEY, Val(readLegacyCustomColors()));
     settings()->setDefaultValue(UI_FOLLOW_SYSTEM_THEME_KEY, Val(false));
     settings()->setDefaultValue(UI_FONT_FAMILY_KEY, Val(defaultFontFamily()));
     settings()->setDefaultValue(UI_FONT_SIZE_KEY, Val(defaultFontSize()));
     settings()->setDefaultValue(UI_ICONS_FONT_FAMILY_KEY, Val("MusescoreIcon"));
     settings()->setDefaultValue(UI_MUSICAL_FONT_FAMILY_KEY, Val("Leland"));
     settings()->setDefaultValue(UI_MUSICAL_FONT_SIZE_KEY, Val(24));
+    settings()->setDefaultValue(UI_MUSICAL_TEXT_FONT_FAMILY_KEY, Val("Leland Text"));
+    settings()->setDefaultValue(UI_MUSICAL_TEXT_FONT_SIZE_KEY, Val(defaultFontSize()));
     settings()->setDefaultValue(UI_THEMES_KEY, Val(""));
 
     settings()->valueChanged(UI_THEMES_KEY).onReceive(this, [this](const Val&) {
@@ -213,6 +141,8 @@ void UiConfiguration::init()
         m_windowGeometryChanged.notify();
     });
 
+    correctUserFontIfNeeded();
+
     initThemes();
 }
 
@@ -242,6 +172,17 @@ void UiConfiguration::initThemes()
 
     updateThemes();
     updateCurrentTheme();
+}
+
+void UiConfiguration::correctUserFontIfNeeded()
+{
+    QString userFontFamily = QString::fromStdString(fontFamily());
+    if (!QFontDatabase::hasFamily(userFontFamily)) {
+        std::string fallbackFontFamily = defaultFontFamily();
+        LOGI() << "The user font " << userFontFamily << " is missing, we will use the fallback font " << fallbackFontFamily;
+
+        setFontFamily(fallbackFontFamily);
+    }
 }
 
 void UiConfiguration::updateCurrentTheme()
@@ -328,15 +269,42 @@ ThemeInfo UiConfiguration::makeStandardTheme(const ThemeCode& codeKey) const
     ThemeInfo theme;
     theme.codeKey = codeKey;
 
-    if (codeKey == LIGHT_THEME_CODE) {
-        theme.values = LIGHT_THEME_VALUES;
-    } else if (codeKey == DARK_THEME_CODE) {
-        theme.values = DARK_THEME_VALUES;
-    } else if (codeKey == HIGH_CONTRAST_WHITE_THEME_CODE) {
-        theme.values = HIGH_CONTRAST_WHITE_THEME_VALUES;
-    } else if (codeKey == HIGH_CONTRAST_BLACK_THEME_CODE) {
-        theme.values = HIGH_CONTRAST_BLACK_THEME_VALUES;
-    }
+    Config config = ConfigReader::read(QString(":/configs/%1.cfg").arg(QString::fromStdString(codeKey)));
+
+    theme.values = {
+        { BACKGROUND_PRIMARY_COLOR, config.value("background_primary_color").toQString() },
+        { BACKGROUND_SECONDARY_COLOR, config.value("background_secondary_color").toQString() },
+        { BACKGROUND_TERTIARY_COLOR, config.value("background_tertiary_color").toQString() },
+        { BACKGROUND_QUARTERNARY_COLOR, config.value("background_quarternary_color").toQString() },
+        { POPUP_BACKGROUND_COLOR, config.value("popup_background_color").toQString() },
+        { PROJECT_TAB_COLOR, config.value("project_tab_color").toQString() },
+        { TEXT_FIELD_COLOR, config.value("text_field_color").toQString() },
+        { ACCENT_COLOR, config.value("accent_color").toQString() },
+        { STROKE_COLOR, config.value("stroke_color").toQString() },
+        { STROKE_SECONDARY_COLOR, config.value("stroke_secondary_color").toQString() },
+        { BUTTON_COLOR, config.value("button_color").toQString() },
+        { FONT_PRIMARY_COLOR, config.value("font_primary_color").toQString() },
+        { FONT_SECONDARY_COLOR, config.value("font_secondary_color").toQString() },
+        { LINK_COLOR, config.value("link_color").toQString() },
+        { FOCUS_COLOR, config.value("focus_color").toQString() },
+        { WHITE_COLOR, config.value("white_color").toQString() },
+        { BLACK_COLOR, config.value("black_color").toQString() },
+        { PLAY_COLOR, config.value("play_color").toQString() },
+        { RECORD_COLOR, config.value("record_color").toQString() },
+
+        { BORDER_WIDTH, config.value("border_width").toDouble() },
+        { NAVIGATION_CONTROL_BORDER_WIDTH, config.value("navigation_control_border_width").toDouble() },
+
+        { ACCENT_OPACITY_NORMAL, config.value("accent_opacity_normal").toDouble() },
+        { ACCENT_OPACITY_HOVER, config.value("accent_opacity_hover").toDouble() },
+        { ACCENT_OPACITY_HIT, config.value("accent_opacity_hit").toDouble() },
+
+        { BUTTON_OPACITY_NORMAL, config.value("button_opacity_normal").toDouble() },
+        { BUTTON_OPACITY_HOVER, config.value("button_opacity_hover").toDouble() },
+        { BUTTON_OPACITY_HIT, config.value("button_opacity_hit").toDouble() },
+
+        { ITEM_OPACITY_DISABLED, config.value("item_opacity_disabled").toDouble() }
+    };
 
     return theme;
 }
@@ -393,12 +361,6 @@ ThemeList UiConfiguration::themes() const
     return m_themes;
 }
 
-QStringList UiConfiguration::possibleFontFamilies() const
-{
-    QFontDatabase db;
-    return db.families();
-}
-
 QStringList UiConfiguration::possibleAccentColors() const
 {
     static const QStringList lightAccentColors {
@@ -426,6 +388,20 @@ QStringList UiConfiguration::possibleAccentColors() const
     }
 
     return lightAccentColors;
+}
+
+QStringList UiConfiguration::possibleFontFamilies() const
+{
+    QStringList allFonts = QFontDatabase::families();
+    for (const QString& fontFamily : m_nonTextFonts) {
+        allFonts.removeAll(fontFamily);
+    }
+    return allFonts;
+}
+
+void UiConfiguration::setNonTextFonts(const QStringList& fontFamilies)
+{
+    m_nonTextFonts = fontFamilies;
 }
 
 void UiConfiguration::resetThemes()
@@ -517,7 +493,7 @@ void UiConfiguration::setCurrentThemeStyleValue(ThemeStyleKey key, const Val& va
     writeThemes(modifiedThemes);
 }
 
-Notification UiConfiguration::currentThemeChanged() const
+muse::async::Notification UiConfiguration::currentThemeChanged() const
 {
     return m_currentThemeChanged;
 }
@@ -560,7 +536,7 @@ void UiConfiguration::setBodyFontSize(int size)
     settings()->setSharedValue(UI_FONT_SIZE_KEY, Val(size));
 }
 
-Notification UiConfiguration::fontChanged() const
+muse::async::Notification UiConfiguration::fontChanged() const
 {
     return m_fontChanged;
 }
@@ -582,9 +558,14 @@ int UiConfiguration::iconsFontSize(IconSizeType type) const
     return bodyFontSize;
 }
 
-Notification UiConfiguration::iconsFontChanged() const
+muse::async::Notification UiConfiguration::iconsFontChanged() const
 {
     return m_iconsFontChanged;
+}
+
+io::path_t UiConfiguration::appIconPath() const
+{
+    return m_config.value("appIconPath").toPath();
 }
 
 std::string UiConfiguration::musicalFontFamily() const
@@ -597,24 +578,37 @@ int UiConfiguration::musicalFontSize() const
     return settings()->value(UI_MUSICAL_FONT_SIZE_KEY).toInt();
 }
 
-Notification UiConfiguration::musicalFontChanged() const
+muse::async::Notification UiConfiguration::musicalFontChanged() const
 {
     return m_musicalFontChanged;
 }
 
+std::string UiConfiguration::musicalTextFontFamily() const
+{
+    return settings()->value(UI_MUSICAL_TEXT_FONT_FAMILY_KEY).toString();
+}
+
+int UiConfiguration::musicalTextFontSize() const
+{
+    return settings()->value(UI_MUSICAL_TEXT_FONT_SIZE_KEY).toInt();
+}
+
+Notification UiConfiguration::musicalTextFontChanged() const
+{
+    return m_musicalTextFontChanged;
+}
+
 std::string UiConfiguration::defaultFontFamily() const
 {
-    std::string family = QFontDatabase::systemFont(QFontDatabase::GeneralFont).family().toStdString();
-
 #ifdef Q_OS_WIN
     static const QString defaultWinFamily = "Segoe UI";
-    QFontDatabase fontDatabase;
-    if (fontDatabase.hasFamily(defaultWinFamily)) {
-        family = defaultWinFamily.toStdString();
+
+    if (QFontDatabase::hasFamily(defaultWinFamily)) {
+        return defaultWinFamily.toStdString();
     }
 #endif
 
-    return family;
+    return QFontDatabase::systemFont(QFontDatabase::GeneralFont).family().toStdString();
 }
 
 int UiConfiguration::defaultFontSize() const
@@ -681,7 +675,7 @@ double UiConfiguration::logicalDpi() const
     return screen->logicalDotsPerInch();
 }
 
-mu::ValNt<QByteArray> UiConfiguration::pageState(const QString& pageName) const
+ValNt<QByteArray> UiConfiguration::pageState(const QString& pageName) const
 {
     ValNt<QByteArray> result;
     result.val = m_uiArrangement.state(pageName);
@@ -705,7 +699,7 @@ void UiConfiguration::setWindowGeometry(const QByteArray& geometry)
     m_uiArrangement.setState(WINDOW_GEOMETRY_KEY, geometry);
 }
 
-Notification UiConfiguration::windowGeometryChanged() const
+muse::async::Notification UiConfiguration::windowGeometryChanged() const
 {
     return m_windowGeometryChanged;
 }
@@ -713,6 +707,15 @@ Notification UiConfiguration::windowGeometryChanged() const
 bool UiConfiguration::isGlobalMenuAvailable() const
 {
     return platformTheme()->isGlobalMenuAvailable();
+}
+
+bool UiConfiguration::isSystemDragSupported() const
+{
+#ifdef MUSE_MODULE_UI_SYSTEMDRAG_SUPPORTED
+    return true;
+#else
+    return false;
+#endif
 }
 
 void UiConfiguration::applyPlatformStyle(QWindow* window)
@@ -733,9 +736,24 @@ void UiConfiguration::setIsVisible(const QString& key, bool val)
     m_uiArrangement.setValue(key, QString::number(val ? 1 : 0));
 }
 
-mu::async::Notification UiConfiguration::isVisibleChanged(const QString& key) const
+async::Notification UiConfiguration::isVisibleChanged(const QString& key) const
 {
     return m_uiArrangement.valueChanged(key);
+}
+
+QString UiConfiguration::uiItemState(const QString& itemName) const
+{
+    return m_uiArrangement.value(itemName);
+}
+
+void UiConfiguration::setUiItemState(const QString& itemName, const QString& value)
+{
+    m_uiArrangement.setValue(itemName, value);
+}
+
+Notification UiConfiguration::uiItemStateChanged(const QString& itemName) const
+{
+    return m_uiArrangement.valueChanged(itemName);
 }
 
 ToolConfig UiConfiguration::toolConfig(const QString& toolName, const ToolConfig& defaultConfig) const
@@ -754,7 +772,7 @@ void UiConfiguration::setToolConfig(const QString& toolName, const ToolConfig& c
     m_uiArrangement.setToolConfig(toolName, config);
 }
 
-mu::async::Notification UiConfiguration::toolConfigChanged(const QString& toolName) const
+async::Notification UiConfiguration::toolConfigChanged(const QString& toolName) const
 {
     return m_uiArrangement.toolConfigChanged(toolName);
 }
@@ -860,4 +878,33 @@ void UiConfiguration::updateToolConfig(const QString& toolName, ToolConfig& user
 int UiConfiguration::flickableMaxVelocity() const
 {
     return FLICKABLE_MAX_VELOCITY;
+}
+
+int UiConfiguration::tooltipDelay() const
+{
+    return TOOLTIP_DELAY;
+}
+
+std::vector<QColor> UiConfiguration::colorDialogCustomColors() const
+{
+    const ValList colorVals = settings()->value(UI_CUSTOM_COLORS_KEY).toList();
+
+    std::vector<QColor> customColors;
+    customColors.reserve(colorVals.size());
+    for (const auto& colorVal : colorVals) {
+        customColors.push_back(colorVal.toQColor());
+    }
+
+    return customColors;
+}
+
+void UiConfiguration::setColorDialogCustomColors(const std::vector<QColor>& customColors)
+{
+    ValList colorVals;
+    colorVals.reserve(customColors.size());
+    for (const auto& color: customColors) {
+        colorVals.emplace_back(color);
+    }
+
+    settings()->setLocalValue(UI_CUSTOM_COLORS_KEY, Val(colorVals));
 }

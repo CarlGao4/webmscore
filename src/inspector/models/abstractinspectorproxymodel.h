@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -38,6 +38,7 @@ class AbstractInspectorProxyModel : public AbstractInspectorModel
 
     Q_PROPERTY(InspectorModelType defaultSubModelType READ defaultSubModelType NOTIFY defaultSubModelTypeChanged)
 
+public:
     INJECT(IInspectorModelCreator, inspectorModelCreator)
 
 public:
@@ -62,8 +63,12 @@ public:
     bool isEmpty() const override;
 
     void updateModels(const ElementKeySet& newElementKeySet);
+    bool shouldUpdateOnEmptyPropertyAndStyleIdSets() const override;
 
     void onCurrentNotationChanged() override;
+
+    void onNotationChanged(const mu::engraving::PropertyIdSet& changedPropertyIdSet,
+                           const mu::engraving::StyleIdSet& changedStyleIdSet) override;
 
 public slots:
     void setDefaultSubModelType(mu::inspector::InspectorModelType modelType);
@@ -76,7 +81,7 @@ protected:
     void setModels(const QList<AbstractInspectorModel*>& models);
 
 private:
-    QHash<InspectorModelType, AbstractInspectorModel*> m_modelsHash;
+    QHash<InspectorModelType, AbstractInspectorModel*> m_models;
     InspectorModelType m_defaultSubModelType = InspectorModelType::TYPE_UNDEFINED;
 };
 }

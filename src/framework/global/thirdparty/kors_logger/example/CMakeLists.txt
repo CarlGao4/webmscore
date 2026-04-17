@@ -10,8 +10,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 option(KORS_LOGGER_QT_SUPPORT "Enabling Qt support" ON)
 
 if (KORS_LOGGER_QT_SUPPORT)
-    find_package(Qt5Core)
-    add_definitions(-DKORS_LOGGER_QT_SUPPORT)
+    find_package(Qt6Core)
+    add_compile_definitions(KORS_LOGGER_QT_SUPPORT)
 endif()
 
 include(${CMAKE_CURRENT_LIST_DIR}/../logger.cmake)

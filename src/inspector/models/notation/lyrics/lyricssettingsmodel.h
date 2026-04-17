@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -30,6 +30,7 @@ class LyricsSettingsModel : public AbstractInspectorModel
     Q_OBJECT
 
     Q_PROPERTY(PropertyItem * verse READ verse CONSTANT)
+    Q_PROPERTY(PropertyItem * avoidBarlines READ avoidBarlines CONSTANT)
 public:
     explicit LyricsSettingsModel(QObject* parent, IElementRepositoryService* repository);
 
@@ -39,9 +40,11 @@ public:
     void resetProperties() override;
 
     PropertyItem* verse() const;
+    PropertyItem* avoidBarlines() const;
 
 private:
     PropertyItem* m_verse = nullptr;
+    PropertyItem* m_avoidBarlines = nullptr;
 };
 }
 

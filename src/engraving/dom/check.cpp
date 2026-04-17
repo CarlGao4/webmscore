@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -38,6 +38,7 @@
 #include "log.h"
 
 using namespace mu;
+using namespace muse;
 using namespace mu::engraving;
 
 namespace mu::engraving {
@@ -127,9 +128,8 @@ Ret MasterScore::sanityCheck()
     }
 
     if (accumulatedErrors.empty()) {
-        return make_ok();
+        return muse::make_ok();
     }
-
     return Ret(static_cast<int>(Err::FileCorrupted), accumulatedErrors);
 }
 
@@ -142,12 +142,14 @@ Ret Score::sanityCheckLocal()
 
     auto excerptInfo = [this]() {
         if (isMaster()) {
-            return mtrc("engraving", "Full score");
+            return muse::mtrc("engraving", "Full score");
         }
 
         //: %1 is the name of a part score.
-        return mtrc("engraving", "Part score: %1").arg(name());
+        return muse::mtrc("engraving", "Part score: %1").arg(name());
     };
+
+    setHasCorruptedMeasures(false);
 
     for (Measure* m = firstMeasure(); m; m = m->nextMeasure()) {
         Fraction mLen = m->ticks();
@@ -157,9 +159,8 @@ Ret Score::sanityCheckLocal()
             Rest* fmrest0 = nullptr; // full measure rest in voice 0
             Fraction voices[VOICES];
 
-#ifndef NDEBUG
             m->setCorrupted(staffIdx, false);
-#endif
+            setHasCorruptedMeasures(true);
 
             for (Segment* s = m->first(SegmentType::ChordRest); s; s = s->next(SegmentType::ChordRest)) {
                 for (voice_idx_t v = 0; v < VOICES; ++v) {
@@ -187,20 +188,18 @@ Ret Score::sanityCheckLocal()
             }
 
             if (!repeatsIsValid) {
-                errors << mtrc("engraving", "<b>Corrupted measure</b>: %1, measure %2, staff %3.")
+                errors << muse::mtrc("engraving", "<b>Corrupted measure</b>: %1, measure %2, staff %3.")
                     .arg(excerptInfo()).arg(mNumber).arg(staffIdx + 1);
-#ifndef NDEBUG
                 m->setCorrupted(staffIdx, true);
-#endif
+                setHasCorruptedMeasures(true);
             }
 
             if (voices[0] != mLen) {
                 //: %1 describes in which score the corruption is (either `Full score` or `"[part name]" part score`)
-                errors << mtrc("engraving", "<b>Incomplete measure</b>: %1, measure %2, staff %3. Found: %4. Expected: %5.")
+                errors << muse::mtrc("engraving", "<b>Incomplete measure</b>: %1, measure %2, staff %3. Found: %4. Expected: %5.")
                     .arg(excerptInfo()).arg(mNumber).arg(staffIdx + 1).arg(voices[0].toString(), mLen.toString());
-#ifndef NDEBUG
                 m->setCorrupted(staffIdx, true);
-#endif
+                setHasCorruptedMeasures(true);
                 // try to fix a bad full measure rest
                 if (fmrest0) {
                     // fmrest0->setDuration(mLen * fmrest0->staff()->timeStretch(fmrest0->tick()));
@@ -211,11 +210,10 @@ Ret Score::sanityCheckLocal()
             for (voice_idx_t v = 1; v < VOICES; ++v) {
                 if (voices[v] > mLen) {
                     //: %1 describes in which score the corruption is (either `Full score` or `"[part name]" part score`)
-                    errors << mtrc("engraving", "<b>Voice too long</b>: %1, measure %2, staff %3, voice %4. Found: %5. Expected: %6.")
+                    errors << muse::mtrc("engraving", "<b>Voice too long</b>: %1, measure %2, staff %3, voice %4. Found: %5. Expected: %6.")
                         .arg(excerptInfo()).arg(mNumber).arg(staffIdx + 1).arg(v + 1).arg(voices[v].toString(), mLen.toString());
-#ifndef NDEBUG
                     m->setCorrupted(staffIdx, true);
-#endif
+                    setHasCorruptedMeasures(true);
                 }
             }
         }
@@ -224,7 +222,7 @@ Ret Score::sanityCheckLocal()
     }
 
     if (errors.empty()) {
-        return make_ok();
+        return muse::make_ok();
     }
 
     return Ret(static_cast<int>(Err::FileCorrupted), errors.join(u"\n").toStdString());
@@ -271,31 +269,18 @@ void Measure::fillGap(const Fraction& pos, const Fraction& len, track_idx_t trac
          stretch.numerator(), stretch.denominator(),
          track);
 
-    if (useGapRests) {
-        // fill this gap with a single gap rest, where the duration does not need to correspond to a valid DurationType
-        TDuration d;
-        d.setVal(len.ticks());
-        Rest* rest = Factory::createRest(score()->dummy()->segment());
-        rest->setTicks(len);
-        rest->setDurationType(d);
-        rest->setTrack(track);
-        rest->setGap(useGapRests);
-        score()->undoAddCR(rest, this, (pos / stretch) + tick());
-        return;
-    }
-
     // break the gap into shorter durations if necessary
-    std::vector<TDuration> durationList = toRhythmicDurationList(len, true, pos, score()->sigmap()->timesig(tick()).nominal(), this, 0);
+    std::vector<TDuration> durationList = toRhythmicDurationList(len, true, pos, timesig(), this, 0);
 
     Fraction curTick = pos;
     for (TDuration d : durationList) {
         Rest* rest = Factory::createRest(score()->dummy()->segment());
-        rest->setTicks(d.fraction());
+        rest->setTicks(d.isMeasure() ? ticks() : d.fraction());
         rest->setDurationType(d);
         rest->setTrack(track);
         rest->setGap(useGapRests);
         score()->undoAddCR(rest, this, curTick + tick());
-        curTick += d.fraction();
+        curTick += d.fraction() / stretch;
     }
 }
 
@@ -338,6 +323,9 @@ void Measure::checkMeasure(staff_idx_t staffIdx, bool useGapRests)
                 LOGN("in measure underrun %6d at %d-%d track %zu", tick().ticks(),
                      (currentPos / stretch).ticks(), (expectedPos / stretch).ticks(), track);
                 fillGap(expectedPos, currentPos - expectedPos, track, stretch, useGapRests);
+                if (currentPos >= f) {
+                    break;
+                }
             }
 
             DurationElement* de = cr;

@@ -36,7 +36,7 @@
 
 #include "log.h"
 
-using namespace mu::draw;
+using namespace muse::draw;
 
 QPainterProvider::QPainterProvider(QPainter* painter, bool ownsPainter)
     : m_painter(painter), m_ownsPainter(ownsPainter), m_drawObjectsLogger(new DrawObjectsLogger())
@@ -232,7 +232,9 @@ void QPainterProvider::drawPolygon(const PointF* points, size_t pointCount, Poly
 
 void QPainterProvider::drawText(const PointF& point, const String& text)
 {
-    m_painter->drawText(point.toQPointF(), text);
+    QPointF p = point.toQPointF();
+    QString t = text.toQString();
+    m_painter->drawText(p, t);
 }
 
 void QPainterProvider::drawText(const RectF& rect, int flags, const String& text)
@@ -353,6 +355,27 @@ bool QPainterProvider::hasClipping() const
 void QPainterProvider::setClipRect(const RectF& rect)
 {
     m_painter->setClipRect(rect.toQRectF());
+}
+
+void QPainterProvider::setMask(const RectF& background, const std::vector<RectF>& maskRects)
+{
+    if (maskRects.empty()) {
+        m_painter->setClipPath(QPainterPath(), Qt::NoClip);
+        return;
+    }
+
+    QPainterPath backgroundPath;
+    backgroundPath.addRect(background.toQRectF());
+
+    QPainterPath exclusionRegion;
+    exclusionRegion.setFillRule(Qt::WindingFill);
+    for (const RectF& rect : maskRects) {
+        exclusionRegion.addRect(rect.toQRectF());
+    }
+
+    QPainterPath mask = backgroundPath.subtracted(exclusionRegion);
+
+    m_painter->setClipPath(mask);
 }
 
 void QPainterProvider::setClipping(bool enable)

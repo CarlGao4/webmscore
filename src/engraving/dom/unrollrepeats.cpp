@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -99,7 +99,7 @@ static void createExcerpts(MasterScore* cs, const std::list<Excerpt*>& excerpts)
         Score* nscore = e->masterScore()->createScore();
         e->setExcerptScore(nscore);
         nscore->style().set(Sid::createMultiMeasureRests, true);
-        cs->startCmd();
+        cs->startCmd(TranslatableString("undoableAction", "Create parts"));
         cs->undo(new AddExcerpt(e));
         Excerpt::createExcerpt(e);
 
@@ -150,7 +150,7 @@ MasterScore* MasterScore::unrollRepeats()
     bool first = true;
     for (const RepeatSegment* rs: original->repeatList()) {
         Fraction startTick = Fraction::fromTicks(rs->tick);
-        Fraction endTick   = Fraction::fromTicks(rs->tick + rs->len());
+        Fraction endTick   = Fraction::fromTicks(rs->endTick());
 
         // first segment left from clone, everything past that removed
         if (first) {

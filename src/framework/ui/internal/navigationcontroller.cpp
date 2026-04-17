@@ -23,15 +23,19 @@
 
 #include <algorithm>
 #include <limits>
-#include <utility>
 
-#include <QApplication>
+#include <QCoreApplication>
 #include <QWindow>
 #include <QTextStream>
 
+#include "global/defer.h"
+
+#include "muse_framework_config.h"
+
+#ifdef MUSE_MODULE_DIAGNOSTICS
 #include "diagnostics/diagnosticutils.h"
-#include "async/async.h"
-#include "defer.h"
+#endif
+
 #include "log.h"
 
 // #define NAVIGATION_LOGGING_ENABLED
@@ -42,9 +46,9 @@
 #define MYLOG() LOGN()
 #endif
 
-using namespace mu::ui;
+using namespace muse::ui;
 
-static const mu::UriQuery DEV_SHOW_CONTROLS_URI("musescore://devtools/keynav/controls?sync=false&modal=false");
+static const muse::UriQuery DEV_SHOW_CONTROLS_URI("muse://devtools/keynav/controls?modal=false");
 
 using MoveDirection = NavigationController::MoveDirection;
 using Event = INavigation::Event;
@@ -343,7 +347,7 @@ void NavigationController::setIsHighlight(bool isHighlight)
     m_highlightChanged.notify();
 }
 
-mu::async::Notification NavigationController::highlightChanged() const
+muse::async::Notification NavigationController::highlightChanged() const
 {
     return m_highlightChanged;
 }
@@ -359,8 +363,8 @@ void NavigationController::resetIfNeed(QObject* watched)
         return;
     }
 
-#ifdef MUE_BUILD_DIAGNOSTICS_MODULE
-    if (diagnostics::isDiagnosticHierarchy(watched)) {
+#ifdef MUSE_MODULE_DIAGNOSTICS
+    if (muse::diagnostics::isDiagnosticHierarchy(watched)) {
         return;
     }
 #endif
@@ -644,12 +648,35 @@ INavigationControl* NavigationController::activeControl() const
     return findActive(activePanel->controls());
 }
 
+const INavigationSection* NavigationController::findSection(const std::string& sectionName) const
+{
+    const INavigationSection* sec = findByName(m_sections, QString::fromStdString(sectionName));
+    return sec;
+}
+
+const INavigationPanel* NavigationController::findPanel(const std::string& sectionName, const std::string& panelName) const
+{
+    const INavigationSection* sec = findByName(m_sections, QString::fromStdString(sectionName));
+    const INavigationPanel* pnl = sec ? findByName(sec->panels(), QString::fromStdString(panelName)) : nullptr;
+    return pnl;
+}
+
+const INavigationControl* NavigationController::findControl(const std::string& sectionName, const std::string& panelName,
+                                                            const std::string& controlName) const
+{
+    const INavigationSection* sec = findByName(m_sections, QString::fromStdString(sectionName));
+    const INavigationPanel* pnl = sec ? findByName(sec->panels(), QString::fromStdString(panelName)) : nullptr;
+    const INavigationControl* ctrl = pnl ? findByName(pnl->controls(), QString::fromStdString(controlName)) : nullptr;
+
+    return ctrl;
+}
+
 void NavigationController::setDefaultNavigationControl(INavigationControl* control)
 {
     m_defaultNavigationControl = control;
 }
 
-mu::async::Notification NavigationController::navigationChanged() const
+muse::async::Notification NavigationController::navigationChanged() const
 {
     return m_navigationChanged;
 }

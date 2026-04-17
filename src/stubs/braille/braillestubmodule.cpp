@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2023 MuseScore BVBA and others
+ * Copyright (C) 2023 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -28,19 +28,30 @@
 
 #include "brailleconfigurationstub.h"
 
+using namespace muse;
 using namespace mu::braille;
+
+static void braille_init_qrc()
+{
+    Q_INIT_RESOURCE(braille);
+}
 
 std::string BrailleModule::moduleName() const
 {
     return "braille";
 }
 
+void BrailleModule::registerResources()
+{
+    braille_init_qrc();
+}
+
 void BrailleModule::registerExports()
 {
-    modularity::ioc()->registerExport<IBrailleConfiguration>(moduleName(), new BrailleConfigurationStub());
+    ioc()->registerExport<IBrailleConfiguration>(moduleName(), new BrailleConfigurationStub());
 }
 
 void BrailleModule::registerUiTypes()
 {
-    modularity::ioc()->resolve<ui::IUiEngine>(moduleName())->addSourceImportPath(braille_QML_IMPORT);
+    ioc()->resolve<muse::ui::IUiEngine>(moduleName())->addSourceImportPath(braille_QML_IMPORT);
 }

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -23,7 +23,7 @@
 
 #include "continuouspanel.h"
 
-#include "engraving/rendering/dev/tlayout.h"
+#include "engraving/rendering/score/tlayout.h"
 
 #include "engraving/dom/barline.h"
 #include "engraving/dom/factory.h"
@@ -45,8 +45,10 @@
 
 #include "log.h"
 
+using namespace muse;
+using namespace muse::draw;
 using namespace mu::notation;
-using namespace mu::engraving::rendering::dev;
+using namespace mu::engraving::rendering::score;
 
 static constexpr bool ACCESSIBILITY_DISABLED = false;
 
@@ -56,7 +58,7 @@ void ContinuousPanel::setNotation(INotationPtr notation)
 }
 
 //! NOTE: Copied from MU3
-void ContinuousPanel::paint(mu::draw::Painter& painter, const NotationViewContext& ctx)
+void ContinuousPanel::paint(Painter& painter, const NotationViewContext& ctx)
 {
     TRACEFUNC;
 
@@ -170,7 +172,7 @@ void ContinuousPanel::paint(mu::draw::Painter& painter, const NotationViewContex
     qreal widthTimeSig = 0;
     qreal xPosTimeSig  = 0;
 
-    for (const mu::engraving::EngravingItem* e : qAsConst(el)) {
+    for (const mu::engraving::EngravingItem* e : std::as_const(el)) {
         e->itemDiscovered = false;
         if (!e->visible() && !showInvisible) {
             continue;
@@ -300,9 +302,9 @@ void ContinuousPanel::paint(mu::draw::Painter& painter, const NotationViewContex
     PointF pos(offsetPanel, 0);
 
     painter.translate(pos);
-    mu::draw::Pen pen;
+    Pen pen;
     pen.setWidthF(0.0);
-    pen.setStyle(mu::draw::PenStyle::NoPen);
+    pen.setStyle(PenStyle::NoPen);
     painter.setPen(pen);
     painter.setBrush(notationConfiguration()->foregroundColor());
 
@@ -317,7 +319,7 @@ void ContinuousPanel::paint(mu::draw::Painter& painter, const NotationViewContex
         painter.drawTiledPixmap(bg, wallpaper, bg.topLeft() - PointF(lrint(ctx.xOffset), lrint(ctx.yOffset)));
     }
 
-    mu::draw::Color color = engravingConfiguration()->formattingMarksColor();
+    Color color = engravingConfiguration()->invisibleColor();
 
     // Draw measure text number
     // TODO: simplify (no Text element)
@@ -329,17 +331,17 @@ void ContinuousPanel::paint(mu::draw::Painter& painter, const NotationViewContex
     newElement->setFamily(u"FreeSans");
     newElement->setSizeIsSpatiumDependent(true);
     newElement->setColor(color);
-    EngravingItem::renderer()->layoutText1(newElement);
+    newElement->renderer()->layoutText1(newElement);
     pos = PointF(styleMM(mu::engraving::Sid::clefLeftMargin) + widthClef, y + newElement->height());
     painter.translate(pos);
-    EngravingItem::renderer()->drawItem(newElement, &painter);
+    newElement->renderer()->drawItem(newElement, &painter);
 
     pos += PointF(offsetPanel, 0);
     painter.translate(-pos);
     delete newElement;
 
     // This second pass draws the elements spaced evenly using the width of the largest element
-    for (const mu::engraving::EngravingItem* e : qAsConst(el)) {
+    for (const mu::engraving::EngravingItem* e : std::as_const(el)) {
         if (!e->visible() && !showInvisible) {
             continue;
         }
@@ -377,7 +379,7 @@ void ContinuousPanel::paint(mu::draw::Painter& painter, const NotationViewContex
             barLine->setSpanTo(currentStaff->barLineTo());
             scoreRender()->layoutItem(barLine);
             barLine->setColor(color);
-            EngravingItem::renderer()->drawItem(barLine, &painter);
+            barLine->renderer()->drawItem(barLine, &painter);
 
             // Draw the current staff name
             const std::list<mu::engraving::StaffName>& staffNamesLong
@@ -405,7 +407,7 @@ void ContinuousPanel::paint(mu::draw::Painter& painter, const NotationViewContex
                 const double spatium2 = score->style().spatium();
                 pos = PointF(styleMM(mu::engraving::Sid::clefLeftMargin) + widthClef, -spatium2 * 2);
                 painter.translate(pos);
-                EngravingItem::renderer()->drawItem(newName, &painter);
+                newName->renderer()->drawItem(newName, &painter);
 
                 painter.translate(-pos);
             }
@@ -421,7 +423,10 @@ void ContinuousPanel::paint(mu::draw::Painter& painter, const NotationViewContex
             clef->setColor(color);
             scoreRender()->layoutItem(clef);
             posX += styleMM(mu::engraving::Sid::clefLeftMargin);
-            clef->drawAt(&painter, PointF(posX, clef->pos().y()));
+            const PointF clefPos = PointF(posX, clef->pos().y());
+            painter.translate(clefPos);
+            scoreRender()->drawItem(clef, &painter);
+            painter.translate(-clefPos);
             posX += widthClef;
 
             // Draw the current KeySignature
@@ -436,7 +441,10 @@ void ContinuousPanel::paint(mu::draw::Painter& painter, const NotationViewContex
             newKs->setHideNaturals(true);
             scoreRender()->layoutItem(newKs);
             posX += styleMM(mu::engraving::Sid::keysigLeftMargin);
-            newKs->drawAt(&painter, PointF(posX, 0.0));
+            const PointF ksPos = PointF(posX, 0.0);
+            painter.translate(ksPos);
+            scoreRender()->drawItem(newKs, &painter);
+            painter.translate(-ksPos);
 
             posX += widthKeySig + xPosTimeSig;
 
@@ -452,7 +460,10 @@ void ContinuousPanel::paint(mu::draw::Painter& painter, const NotationViewContex
                 newTs->setColor(color);
                 scoreRender()->layoutItem(newTs);
                 posX += styleMM(mu::engraving::Sid::timesigLeftMargin);
-                newTs->drawAt(&painter, PointF(posX, 0.0));
+                const PointF tsPos = PointF(posX, 0.0);
+                painter.translate(tsPos);
+                scoreRender()->drawItem(newTs, &painter);
+                painter.translate(-tsPos);
             }
 
             delete newKs;

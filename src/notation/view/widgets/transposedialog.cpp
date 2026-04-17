@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -25,14 +25,14 @@
 #include "ui/view/widgetstatestore.h"
 
 using namespace mu::notation;
-using namespace mu::ui;
+using namespace muse::ui;
 
 //---------------------------------------------------------
 //   TransposeDialog
 //---------------------------------------------------------
 
 TransposeDialog::TransposeDialog(QWidget* parent)
-    : QDialog(parent)
+    : QDialog(parent), muse::Injectable(muse::iocCtxForQWidget(this))
 {
     setObjectName("TransposeDialog");
     setupUi(this);
@@ -52,20 +52,19 @@ TransposeDialog::TransposeDialog(QWidget* parent)
     bool rangeSelection = selection()->isRange();
     setEnableTransposeKeys(rangeSelection);
     setEnableTransposeToKey(rangeSelection);
-    setEnableTransposeChordNames(rangeSelection);
+
+    const std::vector<EngravingItem*>& elements = selection()->elements();
+    bool hasChordNames = std::any_of(elements.cbegin(), elements.cend(), [](const EngravingItem* item) {
+        return item->isHarmony();
+    });
+    setEnableTransposeChordNames(hasChordNames);
+
     setKey(firstPitchedStaffKey());
 
     connect(this, &TransposeDialog::accepted, this, &TransposeDialog::apply);
 
-    WidgetStateStore::restoreGeometry(this);
-
     //! NOTE: It is necessary for the correct start of navigation in the dialog
     setFocus();
-}
-
-TransposeDialog::TransposeDialog(const TransposeDialog& dialog)
-    : TransposeDialog(dialog.parentWidget())
-{
 }
 
 //---------------------------------------------------------
@@ -74,22 +73,46 @@ TransposeDialog::TransposeDialog(const TransposeDialog& dialog)
 
 void TransposeDialog::transposeByKeyToggled(bool val)
 {
-    transposeByInterval->setChecked(!val);
+    if (val) {
+        transposeByInterval->setChecked(false);
+    } else {
+        if (!transposeByInterval->isChecked()) {
+            transposeByKey->setChecked(true);
+        }
+    }
 }
 
 void TransposeDialog::transposeByIntervalToggled(bool val)
 {
-    transposeByKey->setChecked(!val);
+    if (val) {
+        transposeByKey->setChecked(false);
+    } else {
+        if (!transposeByKey->isChecked()) {
+            transposeByInterval->setChecked(true);
+        }
+    }
 }
 
 void TransposeDialog::chromaticBoxToggled(bool val)
 {
-    diatonicBox->setChecked(!val);
+    if (val) {
+        diatonicBox->setChecked(false);
+    } else {
+        if (!diatonicBox->isChecked()) {
+            chromaticBox->setChecked(true);
+        }
+    }
 }
 
 void TransposeDialog::diatonicBoxToggled(bool val)
 {
-    chromaticBox->setChecked(!val);
+    if (val) {
+        chromaticBox->setChecked(false);
+    } else {
+        if (!chromaticBox->isChecked()) {
+            diatonicBox->setChecked(true);
+        }
+    }
 }
 
 //---------------------------------------------------------
@@ -144,6 +167,16 @@ TransposeDirection TransposeDialog::direction() const
         return TransposeDirection::UNKNOWN;
     }
     return TransposeDirection::UP;
+}
+
+//---------------------------------------------------------
+//   showEvent
+//---------------------------------------------------------
+
+void TransposeDialog::showEvent(QShowEvent* event)
+{
+    WidgetStateStore::restoreGeometry(this);
+    QDialog::showEvent(event);
 }
 
 //---------------------------------------------------------

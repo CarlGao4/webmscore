@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -43,7 +43,7 @@ class MasterNotation : public IMasterNotation, public Notation, public std::enab
 public:
     ~MasterNotation();
 
-    Ret setupNewScore(engraving::MasterScore* score, const ScoreCreateOptions& options) override;
+    muse::Ret setupNewScore(engraving::MasterScore* score, const ScoreCreateOptions& options) override;
     void applyOptions(engraving::MasterScore* score, const ScoreCreateOptions& options, bool createdFromTemplate = false) override;
     engraving::MasterScore* masterScore() const override;
     void setMasterScore(engraving::MasterScore* masterScore) override;
@@ -54,7 +54,7 @@ public:
     IExcerptNotationPtr createEmptyExcerpt(const QString& name = QString()) const override;
 
     const ExcerptNotationList& excerpts() const override;
-    async::Notification excerptsChanged() const override;
+    muse::async::Notification excerptsChanged() const override;
     const ExcerptNotationList& potentialExcerpts() const override;
 
     void initExcerpts(const ExcerptNotationList& excerpts) override;
@@ -66,14 +66,15 @@ public:
 
     INotationPartsPtr parts() const override;
     bool hasParts() const override;
-    async::Notification hasPartsChanged() const override;
+    muse::async::Notification hasPartsChanged() const override;
 
     INotationPlaybackPtr playback() const override;
+    void initNotationSoloMuteState(const INotationPtr notation) override;
 
 private:
 
     friend class project::NotationProject;
-    explicit MasterNotation();
+    explicit MasterNotation(const muse::modularity::ContextPtr& iocCtx);
 
     void initAfterSettingScore(const engraving::MasterScore* score);
 
@@ -93,9 +94,9 @@ private:
     void markScoreAsNeedToSave();
 
     ExcerptNotationList m_excerpts;
-    async::Notification m_excerptsChanged;
+    muse::async::Notification m_excerptsChanged;
     INotationPlaybackPtr m_notationPlayback = nullptr;
-    async::Notification m_hasPartsChanged;
+    muse::async::Notification m_hasPartsChanged;
 
     mutable ExcerptNotationList m_potentialExcerpts;
 

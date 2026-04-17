@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: GPL-3.0-only
-# MuseScore-CLA-applies
+# MuseScore-Studio-CLA-applies
 #
-# MuseScore
+# MuseScore Studio
 # Music Composition & Notation
 #
-# Copyright (C) 2021 MuseScore BVBA and others
+# Copyright (C) 2021 MuseScore Limited
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 3 as
@@ -18,13 +18,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-set(MODULE iex_mei)
+declare_module(iex_mei)
 
-set(MODULE_INCLUDE
+set(MODULE_INCLUDE_PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/internal/
     ${CMAKE_CURRENT_LIST_DIR}/thirdparty/
     ${CMAKE_CURRENT_LIST_DIR}/thirdparty/libmei/
-    )
+    ${CMAKE_SOURCE_DIR}/src/framework/global/thirdparty/pugixml
+)
 
 set(MODULE_SRC
     ${CMAKE_CURRENT_LIST_DIR}/imeiconfiguration.h
@@ -44,9 +45,6 @@ set(MODULE_SRC
     ${CMAKE_CURRENT_LIST_DIR}/internal/meiwriter.h
     ${CMAKE_CURRENT_LIST_DIR}/internal/libmei.h
 
-    ${CMAKE_CURRENT_LIST_DIR}/thirdparty/pugixml.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/thirdparty/pugixml.hpp
-
     ${CMAKE_CURRENT_LIST_DIR}/thirdparty/libmei/att.cpp
     ${CMAKE_CURRENT_LIST_DIR}/thirdparty/libmei/att.h
     ${CMAKE_CURRENT_LIST_DIR}/thirdparty/libmei/attalternates.h
@@ -61,6 +59,8 @@ set(MODULE_SRC
     ${CMAKE_CURRENT_LIST_DIR}/thirdparty/libmei/atts_cmnornaments.h
     ${CMAKE_CURRENT_LIST_DIR}/thirdparty/libmei/atts_externalsymbols.cpp
     ${CMAKE_CURRENT_LIST_DIR}/thirdparty/libmei/atts_externalsymbols.h
+    ${CMAKE_CURRENT_LIST_DIR}/thirdparty/libmei/atts_fingering.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/thirdparty/libmei/atts_fingering.h
     ${CMAKE_CURRENT_LIST_DIR}/thirdparty/libmei/atts_gestural.cpp
     ${CMAKE_CURRENT_LIST_DIR}/thirdparty/libmei/atts_gestural.h
     ${CMAKE_CURRENT_LIST_DIR}/thirdparty/libmei/atts_harmony.cpp
@@ -78,6 +78,8 @@ set(MODULE_SRC
     ${CMAKE_CURRENT_LIST_DIR}/thirdparty/libmei/cmn.h
     ${CMAKE_CURRENT_LIST_DIR}/thirdparty/libmei/cmnornaments.cpp
     ${CMAKE_CURRENT_LIST_DIR}/thirdparty/libmei/cmnornaments.h
+    ${CMAKE_CURRENT_LIST_DIR}/thirdparty/libmei/fingering.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/thirdparty/libmei/fingering.h
     ${CMAKE_CURRENT_LIST_DIR}/thirdparty/libmei/harmony.cpp
     ${CMAKE_CURRENT_LIST_DIR}/thirdparty/libmei/harmony.h
     ${CMAKE_CURRENT_LIST_DIR}/thirdparty/libmei/lyrics.cpp
@@ -85,15 +87,15 @@ set(MODULE_SRC
     ${CMAKE_CURRENT_LIST_DIR}/thirdparty/libmei/midi.cpp
     ${CMAKE_CURRENT_LIST_DIR}/thirdparty/libmei/midi.h
     ${CMAKE_CURRENT_LIST_DIR}/thirdparty/libmei/shared.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/thirdparty/libmei/shared.h
-    )
+    ${CMAKE_CURRENT_LIST_DIR}/thirdparty/libmei/shared.h   
+)
 
 set(MODULE_LINK
     engraving
     )
 
-include(${PROJECT_SOURCE_DIR}/build/module.cmake)
+setup_module()
 
-if (MUE_BUILD_UNIT_TESTS)
+if (MUE_BUILD_IMPORTEXPORT_TESTS)
     add_subdirectory(tests)
 endif()

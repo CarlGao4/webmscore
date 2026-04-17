@@ -19,16 +19,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_FRAMEWORK_STRINGUTILS_H
-#define MU_FRAMEWORK_STRINGUTILS_H
+#ifndef MUSE_GLOBAL_STRINGUTILS_H
+#define MUSE_GLOBAL_STRINGUTILS_H
 
+#include <locale>
 #include <string>
 #include <vector>
 #include <sstream>
 
 #include "types/string.h"
 
-namespace mu::strings {
+namespace muse::strings {
 bool replace(std::string& source, const std::string& what, const std::string& to);
 void split(const std::string& str, std::vector<std::string>& out, const std::string& delim);
 std::string join(const std::vector<std::string>& strs, const std::string& sep = ",");
@@ -54,6 +55,8 @@ std::string toString(const T& t)
 
 bool lessThanCaseInsensitive(const std::string& lhs, const std::string& rhs);
 bool lessThanCaseInsensitive(const String& lhs, const String& rhs);
+
+size_t levenshteinDistance(const std::string& s1, const std::string& s2);
 }
 
-#endif // MU_FRAMEWORK_STRINGUTILS_H
+#endif // MUSE_GLOBAL_STRINGUTILS_H

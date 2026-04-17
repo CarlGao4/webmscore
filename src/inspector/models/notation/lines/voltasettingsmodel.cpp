@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -28,20 +28,20 @@
 
 using namespace mu::inspector;
 
-using IconCode = mu::ui::IconCode::Code;
+using IconCode = muse::ui::IconCode::Code;
 
 VoltaSettingsModel::VoltaSettingsModel(QObject* parent, IElementRepositoryService* repository)
     : TextLineSettingsModel(parent, repository, mu::engraving::ElementType::VOLTA)
 {
     setModelType(InspectorModelType::TYPE_VOLTA);
-    setTitle(qtrc("inspector", "Volta"));
-    setIcon(ui::IconCode::Code::VOLTA);
+    setTitle(muse::qtrc("inspector", "Volta"));
+    setIcon(muse::ui::IconCode::Code::VOLTA);
 
     setPossibleStartHookTypes({});
 
     static const QList<HookTypeInfo> endHookTypes {
-        { mu::engraving::HookType::NONE, IconCode::LINE_WITH_INVERTED_START_HOOK, qtrc("inspector", "Normal") },
-        { mu::engraving::HookType::HOOK_90, IconCode::LINE_WITH_TWO_INVERTED_HOOKS, qtrc("inspector", "Hooked 90°") }
+        { mu::engraving::HookType::NONE, IconCode::LINE_WITH_INVERTED_START_HOOK, muse::qtrc("inspector", "Normal") },
+        { mu::engraving::HookType::HOOK_90, IconCode::LINE_WITH_TWO_INVERTED_HOOKS, muse::qtrc("inspector", "Hooked 90°") }
     };
 
     setPossibleEndHookTypes(endHookTypes);

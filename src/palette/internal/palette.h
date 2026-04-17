@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -37,7 +37,7 @@
 #include "iinteractive.h"
 
 namespace mu::engraving {
-enum class ActionIconType;
+enum class ActionIconType : signed char;
 class XmlWriter;
 class XMLReader;
 }
@@ -51,9 +51,9 @@ class Palette : public QObject
     Q_GADGET
 
     INJECT_STATIC(IPaletteConfiguration, configuration)
-    INJECT_STATIC(ui::IUiActionsRegister, actionsRegister)
+    INJECT_STATIC(muse::ui::IUiActionsRegister, actionsRegister)
     INJECT_STATIC(engraving::rendering::ISingleRenderer, engravingRender)
-    INJECT(framework::IInteractive, interactive)
+    INJECT(muse::IInteractive, interactive)
 
 public:
     enum class Type {
@@ -88,6 +88,7 @@ public:
         Harp,
         StringTunings,
         Playback,
+        Handbells,
         Custom
     };
     Q_ENUM(Type)
@@ -111,15 +112,15 @@ public:
     // TODO: Remove QString overload
     PaletteCellPtr insertElement(size_t idx, engraving::ElementPtr element, const QString& name, qreal mag = 1.0,
                                  const QPointF& offset = QPointF(), const QString& tag = "");
-    PaletteCellPtr insertElement(size_t idx, engraving::ElementPtr element, const TranslatableString& name, qreal mag = 1.0,
+    PaletteCellPtr insertElement(size_t idx, engraving::ElementPtr element, const muse::TranslatableString& name, qreal mag = 1.0,
                                  const QPointF& offset = QPointF(), const QString& tag = "");
-    PaletteCellPtr insertActionIcon(size_t idx, engraving::ActionIconType type, actions::ActionCode code, double mag = 1.0);
+    PaletteCellPtr insertActionIcon(size_t idx, engraving::ActionIconType type, muse::actions::ActionCode code, double mag = 1.0);
     // TODO: Remove QString overload
     PaletteCellPtr appendElement(engraving::ElementPtr element, const QString& name, qreal mag = 1.0,
                                  const QPointF& offset = QPointF(), const QString& tag = "");
-    PaletteCellPtr appendElement(engraving::ElementPtr element, const TranslatableString& name, qreal mag = 1.0,
+    PaletteCellPtr appendElement(engraving::ElementPtr element, const muse::TranslatableString& name, qreal mag = 1.0,
                                  const QPointF& offset = QPointF(), const QString& tag = "");
-    PaletteCellPtr appendActionIcon(engraving::ActionIconType type, actions::ActionCode code, double mag = 1.0);
+    PaletteCellPtr appendActionIcon(engraving::ActionIconType type, muse::actions::ActionCode code, double mag = 1.0);
 
     bool insertCell(size_t idx, PaletteCellPtr cell);
     bool insertCells(size_t idx, std::vector<PaletteCellPtr> cells);

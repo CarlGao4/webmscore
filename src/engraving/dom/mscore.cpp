@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -62,10 +62,6 @@ int MScore::pedalEventsMinTicks;
 double MScore::nudgeStep;
 double MScore::nudgeStep10;
 double MScore::nudgeStep50;
-int MScore::defaultPlayDuration;
-
-int MScore::sampleRate  = 44100;
-int MScore::mtcType;
 
 bool MScore::noExcerpts = false;
 bool MScore::noImages = false;
@@ -77,32 +73,6 @@ double MScore::pixelRatio  = 0.8;         // DPI / logicalDPI
 extern void initDrumset();
 
 MsError MScore::_error { MsError::MS_NO_ERROR };
-
-//---------------------------------------------------------
-//   init
-//---------------------------------------------------------
-
-void MScore::init()
-{
-    static bool initDone = false;
-    if (initDone) {
-        return;
-    }
-
-    defaultPlayDuration = 300;        // ms
-    warnPitchRange      = true;
-    warnGuitarBends     = true;
-    pedalEventsMinTicks = 1;
-
-    //
-    //  initialize styles
-    //
-    StaffType::initStaffTypes();
-    initDrumset();
-    FiguredBass::readConfigFile(String());
-
-    initDone = true;
-}
 
 void MScore::registerUiTypes()
 {
@@ -154,6 +124,7 @@ std::string MScore::errorToString(MsError err)
     case MsError::CANNOT_CHANGE_LOCAL_TIMESIG_HAS_EXCERPTS: return "CANNOT_CHANGE_LOCAL_TIMESIG_HAS_EXCERPTS";
     case MsError::CORRUPTED_MEASURE: return "CORRUPTED_MEASURE";
     case MsError::CANNOT_REMOVE_KEY_SIG: return "CANNOT_REMOVE_KEY_SIG";
+    case MsError::CANNOT_JOIN_MEASURE_STAFFTYPE_CHANGE: return "CANNOT_JOIN_MEASURE_STAFFTYPE_CHANGE";
     }
 
     return {};

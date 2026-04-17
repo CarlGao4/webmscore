@@ -20,18 +20,19 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_VST_VSTPLUGINMETAREADER_H
-#define MU_VST_VSTPLUGINMETAREADER_H
+#ifndef MUSE_VST_VSTPLUGINMETAREADER_H
+#define MUSE_VST_VSTPLUGINMETAREADER_H
 
-#include "audio/iaudiopluginmetareader.h"
+#include "audioplugins/iaudiopluginmetareader.h"
 
-namespace mu::vst {
-class VstPluginMetaReader : public audio::IAudioPluginMetaReader
+namespace muse::vst {
+class VstPluginMetaReader : public audioplugins::IAudioPluginMetaReader
 {
 public:
+    audio::AudioResourceType metaType() const override;
     bool canReadMeta(const io::path_t& pluginPath) const override;
-    RetVal<audio::AudioResourceMetaList> readMeta(const io::path_t& pluginPath) const override;
+    RetVal<muse::audio::AudioResourceMetaList> readMeta(const io::path_t& pluginPath) const override;
 };
 }
 
-#endif // MU_VST_VSTPLUGINMETAREADER_H
+#endif // MUSE_VST_VSTPLUGINMETAREADER_H

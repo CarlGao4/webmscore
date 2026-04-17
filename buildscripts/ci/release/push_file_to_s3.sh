@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
-# MuseScore-CLA-applies
+# MuseScore-Studio-CLA-applies
 #
-# MuseScore
+# MuseScore Studio
 # Music Composition & Notation
 #
-# Copyright (C) 2021 MuseScore BVBA and others
+# Copyright (C) 2021 MuseScore Limited
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 3 as
@@ -44,7 +44,7 @@ command -v s3cmd >/dev/null 2>&1
 if [[ $? -ne 0 ]]; then
     echo "=== Install tools ==="
 
-    apt install python3-setuptools
+    sudo apt-get install python3-setuptools
 
     echo "Install s3cmd"
     pip3 install s3cmd

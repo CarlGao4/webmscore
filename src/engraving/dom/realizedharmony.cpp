@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -124,7 +124,7 @@ const RealizedHarmony::PitchMap RealizedHarmony::generateNotes(int rootTpc, int 
         if (!m_harmony->parsedForm()->understandable()) {
             break;
         }
-    // FALLTHROUGH
+        [[fallthrough]];
     case Voicing::CLOSE:        //Voices notes in close position in the first octave above middle C
     {
         notes.insert({ rootPitch + DEFAULT_OCTAVE * PITCH_DELTA_OCTAVE, rootTpc });
@@ -212,9 +212,6 @@ void RealizedHarmony::update(int rootTpc, int bassTpc, int transposeOffset /*= 0
     //otherwise checked by RealizedHarmony. This saves us 3 ints of space, but
     //has the added risk
     if (!m_dirty) {
-        assert(
-            m_harmony->harmonyType() != HarmonyType::STANDARD
-            || (m_notes.begin()->second == rootTpc || m_notes.begin()->second == bassTpc));
         return;
     }
 
@@ -324,12 +321,19 @@ RealizedHarmony::PitchMap RealizedHarmony::getIntervals(int rootTpc, bool litera
             if (s.at(c).isDigit()) {
                 int alter = 0;
                 size_t cutoff = c;
-                int deg = s.right(s.size() - c).toInt();
+                String degreeString = s;
+                static const std::wregex NOT_DIGITS = std::wregex(L"[^0-9]+");
+                degreeString.remove(NOT_DIGITS);
+                int deg = degreeString.toInt();
                 //account for if the flat/sharp is stuck to the end of add
                 if (c) {
                     if (s.at(c - 1) == u'#') {
                         cutoff -= 1;
-                        alter = +1;
+                        if (deg == 7) {
+                            alter = 0;
+                        } else {
+                            alter = +1;
+                        }
                     } else if (s.at(c - 1) == u'b') {
                         cutoff -= 1;
                         alter = -1;
@@ -435,7 +439,7 @@ RealizedHarmony::PitchMap RealizedHarmony::getIntervals(int rootTpc, bool litera
             ret.insert({ 9 + RANK_MULT * RANK_ADD, tpcInterval(rootTpc, 13, 0) });               //maj13
             omit |= 1 << 13;
         }
-    // FALLTHROUGH
+        [[fallthrough]];
     case 11:
         if (!(omit & (1 << 11))) {
             if (quality == "minor") {
@@ -445,13 +449,13 @@ RealizedHarmony::PitchMap RealizedHarmony::getIntervals(int rootTpc, bool litera
             }
             omit |= 1 << 11;
         }
-    // FALLTHROUGH
+        [[fallthrough]];
     case 9:
         if (!(omit & (1 << 9))) {
             ret.insert({ 2 + RANK_MULT * RANK_9TH, tpcInterval(rootTpc, 9, 0) });               //maj9
             omit |= 1 << 9;
         }
-    // FALLTHROUGH
+        [[fallthrough]];
     case 7:
         if (!(omit & (1 << 7))) {
             if (quality == "major") {
@@ -519,7 +523,7 @@ RealizedHarmony::PitchMap RealizedHarmony::getIntervals(int rootTpc, bool litera
             if (quality == "dominant" && pitchBetween == 5 && (qNext == "minor" || false)) {
                 //flat 13 for dominant to chord a P4 up
                 //only for minor chords for now
-                mu::remove(ret, FIFTH);
+                muse::remove(ret, FIFTH);
                 ret.insert({ 8 + RANK_MULT * RANK_ADD, tpcInterval(rootTpc, 13, -1) });
             }
             //major 13 considered, but too dependent on melody and voicing of other chord

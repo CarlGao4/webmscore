@@ -19,13 +19,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_FRAMEWORK_RUNTIME_H
-#define MU_FRAMEWORK_RUNTIME_H
+#pragma once
 
-#include <thread>
 #include <sstream>
+#include <string>
+#include <thread>
 
-namespace mu::runtime {
+namespace muse::runtime {
 inline constexpr bool isDebug()
 {
 #ifndef NDEBUG
@@ -51,5 +51,3 @@ inline std::string toString(const std::thread::id& id)
 void setThreadName(const std::string& name);
 const std::string& threadName();
 }
-
-#endif // MU_FRAMEWORK_RUNTIME_H

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -33,8 +33,8 @@ class INotationMidiInput
 public:
     virtual ~INotationMidiInput() = default;
 
-    virtual void onMidiEventReceived(const midi::Event& event) = 0;
-    virtual async::Channel<std::vector<const Note*> > notesReceived() const = 0;
+    virtual void onMidiEventReceived(const muse::midi::Event& event) = 0;
+    virtual muse::async::Channel<std::vector<const Note*> > notesReceived() const = 0;
 
     virtual void onRealtimeAdvance() = 0;
 };

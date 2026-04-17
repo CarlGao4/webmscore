@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,7 +22,6 @@
 
 #include "notegroupsexampleview.h"
 
-#include <cmath>
 #include <QMimeData>
 
 #include "engraving/rw/rwregister.h"
@@ -57,7 +56,7 @@ void NoteGroupsExampleView::dragEnterEvent(QDragEnterEvent* event)
 
 // LOGD("NoteGroupsExampleView::dragEnterEvent Symbol: <%s>", a.data());
 
-        XmlReader e(ByteArray::fromQByteArrayNoCopy(a));
+        XmlReader e(muse::ByteArray::fromQByteArrayNoCopy(a));
         PointF dragOffset;
         Fraction duration;      // dummy
         ElementType type = EngravingItem::readType(e, &dragOffset, &duration);
@@ -103,12 +102,12 @@ void NoteGroupsExampleView::dragMoveEvent(QDragMoveEvent* event)
         return;
     }
 
-    const EngravingItem* newDropTarget = nullptr;
+    EngravingItem* newDropTarget = nullptr;
 
-    PointF position = toLogical(event->posF());
+    PointF position = toLogical(event->position());
     std::vector<EngravingItem*> el = elementsAt(position);
 
-    for (const EngravingItem* e : el) {
+    for (EngravingItem* e : el) {
         if (e->type() == ElementType::NOTE) {
             newDropTarget = e;
             break;
@@ -123,7 +122,7 @@ void NoteGroupsExampleView::dragMoveEvent(QDragMoveEvent* event)
     return;
 }
 
-void NoteGroupsExampleView::setDropTarget(const EngravingItem* el)
+void NoteGroupsExampleView::setDropTarget(EngravingItem* el)
 {
     if (m_dropTarget != el) {
         if (m_dropTarget) {
@@ -147,7 +146,7 @@ void NoteGroupsExampleView::setDropTarget(const EngravingItem* el)
 
 void NoteGroupsExampleView::dropEvent(QDropEvent* event)
 {
-    PointF position = toLogical(event->posF());
+    PointF position = toLogical(event->position());
 
     if (!m_dragElement) {
         return;
@@ -159,7 +158,7 @@ void NoteGroupsExampleView::dropEvent(QDropEvent* event)
         return;
     }
 
-    foreach (EngravingItem* e, elementsAt(position)) {
+    for (EngravingItem* e : elementsAt(position)) {
         if (e->type() == ElementType::NOTE) {
             ActionIcon* icon = toActionIcon(m_dragElement);
             Chord* chord = toNote(e)->chord();
@@ -178,9 +177,9 @@ void NoteGroupsExampleView::mousePressEvent(QMouseEvent* event)
 {
     ExampleView::mousePressEvent(event);
 
-    PointF position = toLogical(event->pos());
+    PointF position = toLogical(event->position());
 
-    foreach (EngravingItem* e, elementsAt(position)) {
+    for (EngravingItem* e : elementsAt(position)) {
         if (e->type() == ElementType::NOTE) {
             emit noteClicked(toNote(e));
             break;

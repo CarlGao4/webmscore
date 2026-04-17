@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -19,8 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_CONVERTER_CONVERTERCONTROLLER_H
-#define MU_CONVERTER_CONVERTERCONTROLLER_H
+#pragma once
 
 #include <list>
 
@@ -31,64 +30,85 @@
 #include "project/inotationwritersregister.h"
 #include "project/iprojectrwregister.h"
 #include "context/iglobalcontext.h"
+#include "extensions/iextensionsprovider.h"
 
 #include "types/retval.h"
 
 namespace mu::converter {
-class ConverterController : public IConverterController
+class ConverterController : public IConverterController, public muse::Injectable
 {
-    INJECT(project::IProjectCreator, notationCreator)
-    INJECT(project::INotationWritersRegister, writers)
-    INJECT(project::IProjectRWRegister, projectRW)
-    INJECT(context::IGlobalContext, globalContext)
+    muse::Inject<project::IProjectCreator> notationCreator = { this };
+    muse::Inject<project::INotationWritersRegister> writers = { this };
+    muse::Inject<project::IProjectRWRegister> projectRW = { this };
+    muse::Inject<context::IGlobalContext> globalContext = { this };
+    muse::Inject<muse::extensions::IExtensionsProvider> extensionsProvider = { this };
 
 public:
-    ConverterController() = default;
+    ConverterController(const muse::modularity::ContextPtr& iocCtx)
+        : muse::Injectable(iocCtx) {}
 
-    Ret fileConvert(const io::path_t& in, const io::path_t& out,
-                    const io::path_t& stylePath = io::path_t(), bool forceMode = false, const String& soundProfile = String()) override;
-    Ret batchConvert(const io::path_t& batchJobFile,
-                     const io::path_t& stylePath = io::path_t(), bool forceMode = false, const String& soundProfile = String()) override;
+    muse::Ret fileConvert(const muse::io::path_t& in, const muse::io::path_t& out, const OpenParams& openParams = {},
+                          const muse::String& soundProfile = muse::String(), const muse::io::path_t& tracksDiffPath = {},
+                          const muse::UriQuery& extensionUri = muse::UriQuery(), const std::string& transposeOptionsJson = {},
+                          const std::optional<size_t>& pageNum = std::nullopt) override;
 
-    Ret convertScoreParts(const io::path_t& in, const io::path_t& out, const io::path_t& stylePath = io::path_t(),
-                          bool forceMode = false) override;
+    muse::Ret batchConvert(const muse::io::path_t& batchJobFile, const OpenParams& openParams = {}, const muse::String& soundProfile = {},
+                           const muse::UriQuery& extensionUri = {}, muse::ProgressPtr progress = nullptr) override;
 
-    Ret exportScoreMedia(const io::path_t& in, const io::path_t& out,
-                         const io::path_t& highlightConfigPath = io::path_t(), const io::path_t& stylePath = io::path_t(),
-                         bool forceMode = false) override;
-    Ret exportScoreMeta(const io::path_t& in, const io::path_t& out, const io::path_t& stylePath = io::path_t(),
-                        bool forceMode = false) override;
-    Ret exportScoreParts(const io::path_t& in, const io::path_t& out, const io::path_t& stylePath = io::path_t(),
-                         bool forceMode = false) override;
-    Ret exportScorePartsPdfs(const io::path_t& in, const io::path_t& out,
-                             const io::path_t& stylePath = io::path_t(), bool forceMode = false) override;
-    Ret exportScoreTranspose(const io::path_t& in, const io::path_t& out, const std::string& optionsJson,
-                             const io::path_t& stylePath = io::path_t(), bool forceMode = false) override;
+    muse::Ret convertScoreParts(const muse::io::path_t& in, const muse::io::path_t& out, const OpenParams& openParams = {}) override;
 
-    Ret exportScoreVideo(const io::path_t& in, const io::path_t& out) override;
+    muse::Ret exportScoreMedia(const muse::io::path_t& in, const muse::io::path_t& out,  const OpenParams& openParams = {},
+                               const muse::io::path_t& highlightConfigPath = muse::io::path_t()) override;
+    muse::Ret exportScoreMeta(const muse::io::path_t& in, const muse::io::path_t& out, const OpenParams& openParams = {}) override;
+    muse::Ret exportScoreParts(const muse::io::path_t& in, const muse::io::path_t& out, const OpenParams& openParams = {}) override;
+    muse::Ret exportScorePartsPdfs(const muse::io::path_t& in, const muse::io::path_t& out, const OpenParams& openParams = {}) override;
+    muse::Ret exportScoreTranspose(const muse::io::path_t& in, const muse::io::path_t& out, const std::string& optionsJson,
+                                   const OpenParams& openParams = {}) override;
 
-    Ret updateSource(const io::path_t& in, const std::string& newSource, bool forceMode = false) override;
+    muse::Ret exportScoreElements(const muse::io::path_t& in, const muse::io::path_t& out, const std::string& optionsJson,
+                                  const OpenParams& openParams = {}) override;
+
+    muse::Ret exportScoreVideo(const muse::io::path_t& in, const muse::io::path_t& out, const OpenParams& openParams = {}) override;
+
+    muse::Ret updateSource(const muse::io::path_t& in, const std::string& newSource, bool forceMode = false) override;
 
 private:
-
     struct Job {
-        io::path_t in;
-        io::path_t out;
+        muse::io::path_t in;
+        muse::io::path_t out;
+        muse::io::path_t tracksDiffPath;
+        std::optional<notation::TransposeOptions> transposeOptions;
+        std::optional<size_t> pageNum;
     };
 
     using BatchJob = std::list<Job>;
+    using TransposeOpts = std::optional<notation::TransposeOptions>;
 
-    RetVal<BatchJob> parseBatchJob(const io::path_t& batchJobFile) const;
+    muse::RetVal<BatchJob> parseBatchJob(const muse::io::path_t& batchJobFile) const;
 
+    muse::Ret convertFile(const muse::io::path_t& in, const muse::io::path_t& out, const OpenParams& openParams = {},
+                          const muse::String& soundProfile = {}, const muse::io::path_t& tracksDiffPath = {},
+                          const muse::UriQuery& extensionUri = {}, const TransposeOpts& transposeOptions = std::nullopt,
+                          const std::optional<size_t>& pageNum = std::nullopt);
+
+    muse::Ret convertScoreParts(project::INotationWriterPtr writer, notation::IMasterNotationPtr masterNotation,
+                                const muse::io::path_t& out);
+
+    muse::Ret convertByExtension(project::INotationWriterPtr writer, notation::INotationPtr notation, const muse::io::path_t& out,
+                                 const muse::UriQuery& extensionUri);
     bool isConvertPageByPage(const std::string& suffix) const;
-    Ret convertPageByPage(project::INotationWriterPtr writer, notation::INotationPtr notation, const io::path_t& out) const;
-    Ret convertFullNotation(project::INotationWriterPtr writer, notation::INotationPtr notation, const io::path_t& out) const;
+    muse::Ret convertPageByPage(project::INotationWriterPtr writer, notation::INotationPtr notation, const muse::io::path_t& out) const;
+    muse::Ret convertPage(project::INotationWriterPtr writer, notation::INotationPtr notation, const size_t pageNum,
+                          const muse::io::path_t& filePath, const muse::io::path_t& dirPath = {}) const;
+    muse::Ret convertFullNotation(project::INotationWriterPtr writer, notation::INotationPtr notation, const muse::io::path_t& out) const;
 
-    Ret convertScorePartsToPdf(project::INotationWriterPtr writer, notation::IMasterNotationPtr masterNotation,
-                               const io::path_t& out) const;
-    Ret convertScorePartsToPngs(project::INotationWriterPtr writer, notation::IMasterNotationPtr masterNotation,
-                                const io::path_t& out) const;
+    muse::Ret convertScorePartsToPdf(project::INotationWriterPtr writer, notation::IMasterNotationPtr masterNotation,
+                                     const muse::io::path_t& out) const;
+    muse::Ret convertScorePartsToPngs(project::INotationWriterPtr writer, notation::IMasterNotationPtr masterNotation,
+                                      const muse::io::path_t& out) const;
+    muse::Ret convertScorePartsToMp3(project::INotationWriterPtr writer, notation::IMasterNotationPtr masterNotation,
+                                     const muse::io::path_t& out) const;
+
+    muse::Ret writeTracksDiff(project::INotationProjectPtr project, const QJsonArray& oldTracks, const muse::io::path_t& path) const;
 };
 }
-
-#endif // MU_CONVERTER_CONVERTERCONTROLLER_H

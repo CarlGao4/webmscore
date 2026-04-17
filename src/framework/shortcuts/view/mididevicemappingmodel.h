@@ -20,8 +20,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_SHORTCUTS_MIDIDEVICEMAPPINGMODEL_H
-#define MU_SHORTCUTS_MIDIDEVICEMAPPINGMODEL_H
+#ifndef MUSE_SHORTCUTS_MIDIDEVICEMAPPINGMODEL_H
+#define MUSE_SHORTCUTS_MIDIDEVICEMAPPINGMODEL_H
 
 #include <QAbstractListModel>
 #include <QItemSelection>
@@ -37,20 +37,20 @@
 #include "ui/iuiactionsregister.h"
 #include "ui/uitypes.h"
 
-namespace mu::shortcuts {
-class MidiDeviceMappingModel : public QAbstractListModel, public async::Asyncable
+namespace muse::shortcuts {
+class MidiDeviceMappingModel : public QAbstractListModel, public Injectable, public async::Asyncable
 {
     Q_OBJECT
-
-    INJECT(ui::IUiActionsRegister, uiActionsRegister)
-    INJECT(shortcuts::IMidiRemote, midiRemote)
-    INJECT(IShortcutsConfiguration, configuration)
-    INJECT(midi::IMidiConfiguration, midiConfiguration)
 
     Q_PROPERTY(bool useRemoteControl READ useRemoteControl WRITE setUseRemoteControl NOTIFY useRemoteControlChanged)
 
     Q_PROPERTY(QItemSelection selection READ selection WRITE setSelection NOTIFY selectionChanged)
     Q_PROPERTY(bool canEditAction READ canEditAction NOTIFY selectionChanged)
+
+    Inject<muse::ui::IUiActionsRegister> uiActionsRegister = { this };
+    Inject<shortcuts::IMidiRemote> midiRemote = { this };
+    Inject<IShortcutsConfiguration> configuration = { this };
+    Inject<muse::midi::IMidiConfiguration> midiConfiguration = { this };
 
 public:
     explicit MidiDeviceMappingModel(QObject* parent = nullptr);
@@ -98,4 +98,4 @@ private:
 };
 }
 
-#endif // MU_SHORTCUTS_MIDIDEVICEMAPPINGMODEL_H
+#endif // MUSE_SHORTCUTS_MIDIDEVICEMAPPINGMODEL_H

@@ -19,15 +19,14 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_DRAW_QIMAGEPAINTERPROVIDER_H
-#define MU_DRAW_QIMAGEPAINTERPROVIDER_H
+#pragma once
 
 #include <QImage>
 
 #include "qpainterprovider.h"
 #include "types/pixmap.h"
 
-namespace mu::draw {
+namespace muse::draw {
 class QImagePainterProvider : public QPainterProvider
 {
 public:
@@ -42,5 +41,3 @@ private:
     QImage m_image;
 };
 }
-
-#endif // MU_DRAW_QIMAGEPAINTERPROVIDER_H

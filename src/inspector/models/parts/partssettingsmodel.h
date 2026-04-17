@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -19,8 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_INSPECTOR_PARTSSETTINGSMODEL_H
-#define MU_INSPECTOR_PARTSSETTINGSMODEL_H
+#pragma once
 
 #include "models/abstractinspectormodel.h"
 
@@ -37,6 +36,7 @@ class PartsSettingsModel : public AbstractInspectorModel
     Q_PROPERTY(bool showPartLinkingOption READ showPartLinkingOption NOTIFY showPartLinkingOptionChanged)
     Q_PROPERTY(bool showExcludeOption READ showExcludeOption NOTIFY showExcludeOptionChanged)
     Q_PROPERTY(bool showTextLinkingOption READ showTextLinkingOption NOTIFY showTextLinkingOptionChanged)
+    Q_PROPERTY(bool isMasterScore READ isMasterScore NOTIFY isMasterScoreChanged)
 
 public:
     explicit PartsSettingsModel(QObject* parent, IElementRepositoryService* repository);
@@ -49,11 +49,13 @@ public:
     bool showPartLinkingOption() const;
     bool showExcludeOption() const;
     bool showTextLinkingOption() const;
+    bool isMasterScore() const;
 
 signals:
     void showPartLinkingOptionChanged(bool showPartsOption);
     void showExcludeOptionChanged(bool excludeOption);
     void showTextLinkingOptionChanged(bool showTextLink);
+    void isMasterScoreChanged(bool isMasterScore);
 
 private:
     void createProperties() override;
@@ -61,6 +63,7 @@ private:
     void loadProperties() override;
     void resetProperties() override;
     void onNotationChanged(const mu::engraving::PropertyIdSet&, const mu::engraving::StyleIdSet&) override;
+    void onCurrentNotationChanged() override;
 
     void updateShowPartLinkingOption();
     void updateShowExcludeOption();
@@ -81,5 +84,3 @@ private:
     bool m_showTextLinkingOption = false;
 };
 }
-
-#endif // MU_INSPECTOR_PARTSSETTINGSMODEL_H

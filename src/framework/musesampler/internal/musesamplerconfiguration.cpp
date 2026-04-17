@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2022 MuseScore BVBA and others
+ * Copyright (C) 2025 MuseScore BVBA and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -24,66 +24,56 @@
 
 #include "settings.h"
 
-#include <cstdlib>
+using namespace muse::musesampler;
 
-using namespace mu;
-using namespace mu::musesampler;
-using namespace mu::framework;
-
-static const Settings::Key USER_MUSESAMPLER_PATH("musesampler", "application/paths/museSampler");
+static const muse::Settings::Key USE_LEGACY_AUDITION("musesampler", "museSampler/useLegacyAudition");
 
 void MuseSamplerConfiguration::init()
 {
-    settings()->setDefaultValue(USER_MUSESAMPLER_PATH, Val(""));
+    settings()->setDefaultValue(USE_LEGACY_AUDITION, Val(false));
 }
 
-#if defined(Q_OS_LINUX)
-static const io::path_t LIB_NAME("libMuseSamplerCoreLib.so");
-static const io::path_t FALLBACK_PATH = LIB_NAME;
-
-io::path_t MuseSamplerConfiguration::defaultPath() const
+muse::io::path_t MuseSamplerConfiguration::libraryPath() const
 {
-    return globalConfig()->genericDataPath() + "/MuseSampler/lib/" + LIB_NAME;
-}
-
-#elif defined(Q_OS_MAC)
-static const io::path_t LIB_NAME("libMuseSamplerCoreLib.dylib");
-static const io::path_t FALLBACK_PATH = "/usr/local/lib/" + LIB_NAME;
-
-io::path_t MuseSamplerConfiguration::defaultPath() const
-{
-    return globalConfig()->genericDataPath() + "/MuseSampler/lib/" + LIB_NAME;
-}
-
-#else
-static const io::path_t LIB_NAME("MuseSamplerCoreLib.dll");
-static const io::path_t FALLBACK_PATH = LIB_NAME;
-
-io::path_t MuseSamplerConfiguration::defaultPath() const
-{
-    return globalConfig()->genericDataPath() + "\\MuseSampler\\lib\\" + LIB_NAME;
-}
-
-#endif
-
-// Preferred location
-io::path_t MuseSamplerConfiguration::userLibraryPath() const
-{
-    // Override for testing/dev:
+    // Used on the backend
     if (const char* path = std::getenv("MUSESAMPLER_PATH")) {
         return io::path_t(path);
     }
 
-    io::path_t path = settings()->value(USER_MUSESAMPLER_PATH).toString();
-    if (!path.empty()) {
-        return path;
-    }
-
-    return defaultPath();
+    return defaultLibraryPath();
 }
 
-// If installed on the system instead of user dir...do this as a backup
-io::path_t MuseSamplerConfiguration::fallbackLibraryPath() const
+#if defined(Q_OS_LINUX)
+muse::io::path_t MuseSamplerConfiguration::defaultLibraryPath() const
 {
-    return FALLBACK_PATH;
+    return globalConfig()->genericDataPath() + "/MuseSampler/lib/libMuseSamplerCoreLib.so";
+}
+
+#elif defined(Q_OS_MAC)
+muse::io::path_t MuseSamplerConfiguration::defaultLibraryPath() const
+{
+    return globalConfig()->genericDataPath() + "/MuseSampler/lib/libMuseSamplerCoreLib.dylib";
+}
+
+#else
+muse::io::path_t MuseSamplerConfiguration::defaultLibraryPath() const
+{
+    return globalConfig()->genericDataPath() + "/MuseSampler/lib/MuseSamplerCoreLib.dll";
+}
+
+#endif
+
+muse::Version MuseSamplerConfiguration::minSupportedVersion() const
+{
+    return Version(0, 101, 0);
+}
+
+bool MuseSamplerConfiguration::shouldShowBuildNumber() const
+{
+    return globalConfig()->devModeEnabled();
+}
+
+bool MuseSamplerConfiguration::useLegacyAudition() const
+{
+    return settings()->value(USE_LEGACY_AUDITION).toBool();
 }

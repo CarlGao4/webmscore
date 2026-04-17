@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -21,12 +21,11 @@
  */
 import QtQuick 2.15
 
-import MuseScore.Ui 1.0
-import MuseScore.UiComponents 1.0
-import MuseScore.Dock 1.0
+import Muse.Ui 1.0
+import Muse.UiComponents 1.0
+import Muse.Dock 1.0
 
-import MuseScore.Audio 1.0
-import MuseScore.Mpe 1.0
+import Muse.Audio 1.0
 
 import "./Gallery"
 import "./Interactive"
@@ -34,8 +33,6 @@ import "./CrashHandler"
 import "./CorruptScore"
 import "./KeyNav"
 import "./Preferences"
-
-import "../dockwindow"
 
 DockPage {
     id: root
@@ -51,6 +48,7 @@ DockPage {
         case "crashhandler": root.central = crashhandlerComp; break
         case "corruptscore": root.central = corruptScoreComp; break
         case "mpe": root.central = mpeComponent; break
+        case "extensions": root.central = extensionsComp; break
         case "navigation": root.central = keynavComp; break
         }
     }
@@ -82,6 +80,7 @@ DockPage {
                         { "name": "crashhandler", "title": "Crash handler" },
                         { "name": "corruptscore", "title": "Corrupt score" },
                         { "name": "mpe", "title": "MPE" },
+                        { "name": "extensions", "title": "Extensions" },
                         { "name": "navigation", "title": "KeyNav" }
                     ]
 
@@ -122,7 +121,9 @@ DockPage {
     Component {
         id: corruptScoreComp
 
-        CorruptScoreDevTools {}
+        Loader {
+            source: "qrc:/qml/DevTools/CorruptScore/CorruptScoreDevTools.qml"
+        }
     }
 
     Component {
@@ -130,6 +131,14 @@ DockPage {
 
         Loader {
             source: "qrc:/qml/DevTools/MPE/ArticulationsProfileEditorView.qml"
+        }
+    }
+
+    Component {
+        id: extensionsComp
+
+        Loader {
+            source: "qrc:/qml/DevTools/Extensions/ExtensionsListView.qml"
         }
     }
 

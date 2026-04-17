@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,24 +22,32 @@
 
 #include "publishtoolbarmodel.h"
 
-using namespace mu::appshell;
-using namespace mu::uicomponents;
+#include "uicomponents/view/toolbaritem.h"
 
-PublishToolBarModel::PublishToolBarModel(QObject* parent)
-    : AbstractMenuModel(parent)
-{
-}
+using namespace mu::appshell;
+using namespace muse::uicomponents;
+using namespace muse::actions;
 
 void PublishToolBarModel::load()
 {
-    AbstractMenuModel::load();
+    AbstractToolBarModel::load();
 
-    MenuItemList items {
-        makeMenuItem("print"),
-        makeMenuItem("file-publish"),
-        makeMenuItem("file-share-audio"),
-        makeMenuItem("file-export")
+    ToolBarItemList items;
+    const auto addItem = [this, &items](const muse::actions::ActionCode& code, const muse::TranslatableString& description = {}) {
+        auto* item = makeItem(code);
+        item->setShowTitle(true);
+
+        if (!description.isEmpty()) {
+            item->setDescription(description);
+        }
+
+        items << item;
     };
+
+    addItem("print");
+    addItem("file-publish", muse::TranslatableString("project/save", "Share this score and its audio on MuseScore.com"));
+    addItem("file-share-audio", muse::TranslatableString("project/save", "Share the audio from this score on Audio.com"));
+    addItem("file-export");
 
     setItems(items);
 }

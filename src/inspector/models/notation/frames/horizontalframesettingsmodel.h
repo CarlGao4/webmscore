@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -33,6 +33,7 @@ class HorizontalFrameSettingsModel : public AbstractInspectorModel
     Q_PROPERTY(PropertyItem * leftGap READ leftGap CONSTANT)
     Q_PROPERTY(PropertyItem * rightGap READ rightGap CONSTANT)
     Q_PROPERTY(PropertyItem * shouldDisplayKeysAndBrackets READ shouldDisplayKeysAndBrackets CONSTANT)
+    Q_PROPERTY(PropertyItem * isSizeSpatiumDependent READ isSizeSpatiumDependent CONSTANT)
 
 public:
     explicit HorizontalFrameSettingsModel(QObject* parent, IElementRepositoryService* repository);
@@ -41,6 +42,7 @@ public:
     PropertyItem* leftGap() const;
     PropertyItem* rightGap() const;
     PropertyItem* shouldDisplayKeysAndBrackets() const;
+    PropertyItem* isSizeSpatiumDependent() const;
 
 private:
     void createProperties() override;
@@ -56,6 +58,7 @@ private:
     PropertyItem* m_leftGap = nullptr;
     PropertyItem* m_rightGap = nullptr;
     PropertyItem* m_shouldDisplayKeysAndBrackets = nullptr;
+    PropertyItem* m_isSizeSpatiumDependent = nullptr;
 };
 }
 

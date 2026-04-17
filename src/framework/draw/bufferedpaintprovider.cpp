@@ -24,8 +24,8 @@
 #include "utils/drawlogger.h"
 #include "log.h"
 
-using namespace mu;
-using namespace mu::draw;
+using namespace muse;
+using namespace muse::draw;
 
 BufferedPaintProvider::BufferedPaintProvider()
 {
@@ -86,7 +86,7 @@ void BufferedPaintProvider::beginObject(const std::string& name)
 
     ensureItemInit(ch);
 
-#ifdef MUE_ENABLE_DRAW_TRACE
+#ifdef MUSE_MODULE_DRAW_TRACE
     //m_drawObjectsLogger->beginObject(name);
 #endif
 }
@@ -107,7 +107,7 @@ void BufferedPaintProvider::endObject()
 
     --m_itemLevel;
 
-#ifdef MUE_ENABLE_DRAW_TRACE
+#ifdef MUSE_MODULE_DRAW_TRACE
     //m_drawObjectsLogger->endObject();
 #endif
 }
@@ -342,6 +342,12 @@ bool BufferedPaintProvider::hasClipping() const
 void BufferedPaintProvider::setClipRect(const RectF& rect)
 {
     UNUSED(rect);
+}
+
+void BufferedPaintProvider::setMask(const RectF& background, const std::vector<RectF>& maskRects)
+{
+    UNUSED(background);
+    UNUSED(maskRects);
 }
 
 void BufferedPaintProvider::setClipping(bool enable)

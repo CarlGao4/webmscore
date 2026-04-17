@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,6 +22,7 @@
 
 #include <gtest/gtest.h>
 
+#include "dom/lyrics.h"
 #include "dom/masterscore.h"
 #include "dom/measure.h"
 #include "dom/page.h"
@@ -77,6 +78,18 @@ static void isLayoutDone(void* data, EngravingItem* e)
         // another valid exception
         return;
     }
+    if (e->isTimeTickAnchor()) {
+        // not expected to be laid out
+        return;
+    }
+    if (e->isLyricsLineSegment() && toLyricsLineSegment(e)->lyricsLine()->isEndMelisma()) {
+        // Melisma line may be omitted if too short
+        return;
+    }
+    if (e->isLayoutBreak() || e->isSystemLockIndicator() /*TODO: || e->isStaffVisibilityIndicator()*/) {
+        return;
+    }
+
     // If layout of element is done it (usually?) has a valid
     // bounding box (bbox).
     if (e->visible() && !e->ldata()->bbox().isValid()) {

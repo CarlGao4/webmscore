@@ -19,17 +19,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_NETWORK_INETWORKMANAGER_H
-#define MU_NETWORK_INETWORKMANAGER_H
+#ifndef MUSE_NETWORK_INETWORKMANAGER_H
+#define MUSE_NETWORK_INETWORKMANAGER_H
 
 #include "types/ret.h"
-#include "async/channel.h"
 #include "global/progress.h"
 #include "networktypes.h"
 
 class QUrl;
 
-namespace mu::network {
+namespace muse::network {
 class INetworkManager
 {
 public:
@@ -45,7 +44,7 @@ public:
                       const RequestHeaders& headers = RequestHeaders()) = 0;
     virtual Ret del(const QUrl& url, IncomingDevice* incomingData, const RequestHeaders& headers = RequestHeaders()) = 0;
 
-    virtual framework::Progress progress() const = 0;
+    virtual Progress progress() const = 0;
 
     virtual void abort() = 0;
 };
@@ -53,4 +52,4 @@ public:
 using INetworkManagerPtr = std::shared_ptr<INetworkManager>;
 }
 
-#endif // MU_NETWORK_INETWORKMANAGER_H
+#endif // MUSE_NETWORK_INETWORKMANAGER_H

@@ -19,15 +19,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_ACTIONS_ACTIONSDISPATCHER_H
-#define MU_ACTIONS_ACTIONSDISPATCHER_H
+#ifndef MUSE_ACTIONS_ACTIONSDISPATCHER_H
+#define MUSE_ACTIONS_ACTIONSDISPATCHER_H
 
 #include <map>
 
 #include "../iactionsdispatcher.h"
+#include "async/asyncable.h"
+#include "async/channel.h"
 
-namespace mu::actions {
-class ActionsDispatcher : public IActionsDispatcher
+namespace muse::actions {
+class ActionsDispatcher : public IActionsDispatcher, public async::Asyncable
 {
 public:
     ActionsDispatcher() = default;
@@ -35,17 +37,31 @@ public:
 
     void dispatch(const ActionCode& actionCode) override;
     void dispatch(const ActionCode& actionCode, const ActionData& data) override;
+    void dispatch(const ActionQuery& actionQuery) override;
+
+    async::Channel<ActionCode> preDispatch() const override;
+    async::Channel<ActionCode> postDispatch() const override;
 
     void unReg(Actionable* client) override;
     void reg(Actionable* client, const ActionCode& actionCode, const ActionCallBackWithNameAndData& call) override;
+    void reg(Actionable* client, const ActionQuery& actionQuery, const ActionCallBackWithQuery& call) override;
+    bool isReg(Actionable* client) const override;
+    ActionCodeList actionList() const override;
 
 private:
 
     using CallBacks = std::map<ActionCode, ActionCallBackWithNameAndData>;
     using Clients = std::map<Actionable*, CallBacks>;
 
+    void doDispatch(const Clients& clients, const ActionCode& actionCode, const ActionData& data);
+
+    void dump() const; // for debug
+
     std::map<ActionCode, Clients > m_clients;
+
+    async::Channel<ActionCode> m_preDispatch;
+    async::Channel<ActionCode> m_postDispatch;
 };
 }
 
-#endif // MU_ACTIONS_ACTIONSDISPATCHER_H
+#endif // MUSE_ACTIONS_ACTIONSDISPATCHER_H

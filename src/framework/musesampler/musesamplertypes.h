@@ -25,7 +25,7 @@
 
 #include "types/string.h"
 
-namespace mu::musesampler {
+namespace muse::musesampler {
 enum class ClefType {
     None,
     Treble,

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -30,15 +30,15 @@
 #include "ui/iuiconfiguration.h"
 
 namespace mu::notation {
-class NoteInputBarModel : public uicomponents::AbstractMenuModel
+class NoteInputBarModel : public muse::uicomponents::AbstractMenuModel
 {
     Q_OBJECT
 
-    INJECT(context::IGlobalContext, context)
-    INJECT(playback::IPlaybackController, playbackController)
-    INJECT(ui::IUiConfiguration, uiConfiguration)
-
     Q_PROPERTY(bool isInputAllowed READ isInputAllowed NOTIFY isInputAllowedChanged)
+
+    muse::Inject<context::IGlobalContext> context = { this };
+    muse::Inject<playback::IPlaybackController> playbackController = { this };
+    muse::Inject<muse::ui::IUiConfiguration> uiConfiguration = { this };
 
 public:
     explicit NoteInputBarModel(QObject* parent = nullptr);
@@ -55,8 +55,7 @@ signals:
 
 private:
     enum NoteInputRoles {
-        IsMenuSecondaryRole = AbstractMenuModel::Roles::UserRole + 1,
-        OrderRole,
+        OrderRole = AbstractMenuModel::Roles::UserRole + 1,
         SectionRole
     };
 
@@ -65,7 +64,7 @@ private:
 
     void onNotationChanged();
 
-    void updateItemStateChecked(uicomponents::MenuItem* item, bool checked);
+    void updateItemStateChecked(muse::uicomponents::MenuItem& item, bool checked);
 
     void updateState();
     void updateNoteInputState();
@@ -74,35 +73,28 @@ private:
     void updateNoteDurationState();
     void updateNoteAccidentalState();
     void updateTieState();
+    void updateLvState();
     void updateSlurState();
     void updateVoicesState();
     void updateArticulationsState();
     void updateRestState();
     void updateAddState();
 
-    bool isNoteInputModeAction(const actions::ActionCode& actionCode) const;
+    muse::uicomponents::MenuItem* makeActionItem(const muse::ui::UiAction& action, const QString& section,
+                                                 const muse::uicomponents::MenuItemList& subitems = {});
+    muse::uicomponents::MenuItem* makeAddItem(const QString& section);
 
-    ui::UiAction currentNoteInputModeAction() const;
-
-    uicomponents::MenuItem* makeActionItem(const ui::UiAction& action, const QString& section,
-                                           const uicomponents::MenuItemList& subitems = {});
-    uicomponents::MenuItem* makeAddItem(const QString& section);
-
-    uicomponents::MenuItemList makeSubitems(const actions::ActionCode& actionCode);
-    uicomponents::MenuItemList makeNoteInputMethodItems();
-    uicomponents::MenuItemList makeCrossStaffBeamingItems();
-    uicomponents::MenuItemList makeTupletItems();
-    uicomponents::MenuItemList makeAddItems();
-    uicomponents::MenuItemList makeNotesItems();
-    uicomponents::MenuItemList makeIntervalsItems();
-    uicomponents::MenuItemList makeMeasuresItems();
-    uicomponents::MenuItemList makeFramesItems();
-    uicomponents::MenuItemList makeTextItems();
-    uicomponents::MenuItemList makeLinesItems();
-
-    bool isMenuSecondary(const actions::ActionCode& actionCode) const;
-
-    int findNoteInputModeItemIndex() const;
+    muse::uicomponents::MenuItemList makeCrossStaffBeamingItems();
+    muse::uicomponents::MenuItemList makeTupletItems();
+    muse::uicomponents::MenuItemList makeAddItems();
+    muse::uicomponents::MenuItemList makeNotesItems();
+    muse::uicomponents::MenuItemList makeIntervalsItems();
+    muse::uicomponents::MenuItemList makeMeasuresItems();
+    muse::uicomponents::MenuItemList makeFramesItems();
+    muse::uicomponents::MenuItemList makeFramesAppendItems();
+    muse::uicomponents::MenuItemList makeTextItems();
+    muse::uicomponents::MenuItemList makeLinesItems();
+    muse::uicomponents::MenuItemList makeChordAndFretboardDiagramsItems();
 
     INotationNoteInputPtr noteInput() const;
     INotationInteractionPtr interaction() const;
@@ -115,7 +107,7 @@ private:
     DurationType resolveCurrentDurationType() const;
 
     bool isNoteInputMode() const;
-    NoteInputState noteInputState() const;
+    const NoteInputState& noteInputState() const;
 
     const ChordRest* elementToChordRest(const EngravingItem* element) const;
 };

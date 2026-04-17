@@ -21,7 +21,9 @@
  */
 #include <gtest/gtest.h>
 
+#include <cstdint>
 #include <cstring>
+#include <string>
 
 #include "io/buffer.h"
 
@@ -29,8 +31,8 @@
 #include "log.h"
 #endif
 
-using namespace mu;
-using namespace mu::io;
+using namespace muse;
+using namespace muse::io;
 
 class Global_IO_IODeviceTests : public ::testing::Test
 {

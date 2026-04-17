@@ -25,8 +25,8 @@
 #include <QXmlStreamReader>
 #include <QFile>
 
-using namespace mu::framework;
-using namespace mu::io;
+using namespace muse::deprecated;
+using namespace muse::io;
 
 static XmlReader::TokenType convertTokenType(QXmlStreamReader::TokenType type)
 {
@@ -132,7 +132,7 @@ std::string XmlReader::attribute(std::string_view name) const
     return attributeValue(name).toString().toStdString();
 }
 
-QStringRef XmlReader::attributeValue(std::string_view name) const
+QStringView XmlReader::attributeValue(std::string_view name) const
 {
     return m_reader->attributes().value(name.data());
 }

@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: GPL-3.0-only
-# MuseScore-CLA-applies
+# MuseScore-Studio-CLA-applies
 #
-# MuseScore
+# MuseScore Studio
 # Music Composition & Notation
 #
-# Copyright (C) 2021 MuseScore BVBA and others
+# Copyright (C) 2021 MuseScore Limited
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 3 as
@@ -18,18 +18,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-set(MODULE appshell)
+declare_module(appshell)
 
 set(MODULE_QRC appshell.qrc)
 set(MODULE_QML_IMPORT ${CMAKE_CURRENT_LIST_DIR}/qml)
-
-include(${CMAKE_CURRENT_LIST_DIR}/view/dockwindow/dockwindow.cmake)
 
 set(MODULE_SRC
     ${CMAKE_CURRENT_LIST_DIR}/appshellmodule.cpp
     ${CMAKE_CURRENT_LIST_DIR}/appshellmodule.h
     ${CMAKE_CURRENT_LIST_DIR}/iappshellconfiguration.h
-    ${CMAKE_CURRENT_LIST_DIR}/iapplicationactioncontroller.h
     ${CMAKE_CURRENT_LIST_DIR}/appshelltypes.h
     ${CMAKE_CURRENT_LIST_DIR}/internal/applicationuiactions.cpp
     ${CMAKE_CURRENT_LIST_DIR}/internal/applicationuiactions.h
@@ -37,8 +34,6 @@ set(MODULE_SRC
     ${CMAKE_CURRENT_LIST_DIR}/internal/appshellconfiguration.h
     ${CMAKE_CURRENT_LIST_DIR}/internal/applicationactioncontroller.cpp
     ${CMAKE_CURRENT_LIST_DIR}/internal/applicationactioncontroller.h
-    ${CMAKE_CURRENT_LIST_DIR}/internal/framelesswindowcontroller.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/internal/framelesswindowcontroller.h
     ${CMAKE_CURRENT_LIST_DIR}/internal/istartupscenario.h
     ${CMAKE_CURRENT_LIST_DIR}/internal/startupscenario.cpp
     ${CMAKE_CURRENT_LIST_DIR}/internal/startupscenario.h
@@ -57,6 +52,8 @@ set(MODULE_SRC
     ${CMAKE_CURRENT_LIST_DIR}/view/notationstatusbarmodel.h
     ${CMAKE_CURRENT_LIST_DIR}/view/aboutmodel.cpp
     ${CMAKE_CURRENT_LIST_DIR}/view/aboutmodel.h
+    ${CMAKE_CURRENT_LIST_DIR}/view/welcomedialogmodel.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/view/welcomedialogmodel.h
     ${CMAKE_CURRENT_LIST_DIR}/view/firstlaunchsetup/firstlaunchsetupmodel.cpp
     ${CMAKE_CURRENT_LIST_DIR}/view/firstlaunchsetup/firstlaunchsetupmodel.h
     ${CMAKE_CURRENT_LIST_DIR}/view/firstlaunchsetup/themespagemodel.cpp
@@ -87,18 +84,16 @@ set(MODULE_SRC
     ${CMAKE_CURRENT_LIST_DIR}/view/preferences/scorepreferencesmodel.h
     ${CMAKE_CURRENT_LIST_DIR}/view/preferences/importpreferencesmodel.cpp
     ${CMAKE_CURRENT_LIST_DIR}/view/preferences/importpreferencesmodel.h
-    ${CMAKE_CURRENT_LIST_DIR}/view/preferences/iopreferencesmodel.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/view/preferences/iopreferencesmodel.h
+    ${CMAKE_CURRENT_LIST_DIR}/view/preferences/audiomidipreferencesmodel.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/view/preferences/audiomidipreferencesmodel.h
+    ${CMAKE_CURRENT_LIST_DIR}/view/preferences/percussionpreferencesmodel.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/view/preferences/percussionpreferencesmodel.h
     ${CMAKE_CURRENT_LIST_DIR}/view/preferences/commonaudioapiconfigurationmodel.cpp
     ${CMAKE_CURRENT_LIST_DIR}/view/preferences/commonaudioapiconfigurationmodel.h
     ${CMAKE_CURRENT_LIST_DIR}/view/preferences/braillepreferencesmodel.cpp
     ${CMAKE_CURRENT_LIST_DIR}/view/preferences/braillepreferencesmodel.h
-    ${CMAKE_CURRENT_LIST_DIR}/view/framelesswindow/framelesswindowmodel.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/view/framelesswindow/framelesswindowmodel.h
     ${CMAKE_CURRENT_LIST_DIR}/view/publish/publishtoolbarmodel.cpp
     ${CMAKE_CURRENT_LIST_DIR}/view/publish/publishtoolbarmodel.h
-    ${CMAKE_CURRENT_LIST_DIR}/view/windowdroparea.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/view/windowdroparea.h
     ${CMAKE_CURRENT_LIST_DIR}/view/internal/iappmenumodelhook.h
     ${CMAKE_CURRENT_LIST_DIR}/view/internal/maintoolbarmodel.cpp
     ${CMAKE_CURRENT_LIST_DIR}/view/internal/maintoolbarmodel.h
@@ -108,23 +103,27 @@ set(MODULE_SRC
     ${CMAKE_CURRENT_LIST_DIR}/view/internal/splashscreen/loadingscreenview.h
     ${CMAKE_CURRENT_LIST_DIR}/view/internal/splashscreen/newinstanceloadingscreenview.cpp
     ${CMAKE_CURRENT_LIST_DIR}/view/internal/splashscreen/newinstanceloadingscreenview.h
-    ${DOCKWINDOW_SRC}
     )
 
-
 set(MODULE_LINK
-    uicomponents
-    ui
-    ${DOCK_LIBS}
+    muse::ui
+    muse::uicomponents
+    muse::dockwindow
     )
 
 if (OS_IS_MAC)
     set(MODULE_SRC ${MODULE_SRC}
         ${CMAKE_CURRENT_LIST_DIR}/view/internal/platform/macos/macosappmenumodelhook.mm
         ${CMAKE_CURRENT_LIST_DIR}/view/internal/platform/macos/macosappmenumodelhook.h
-        ${CMAKE_CURRENT_LIST_DIR}/view/internal/platform/macos/macosscrollinghook.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/view/internal/platform/macos/macosscrollinghook.h
     )
+
+    if (${Qt6_VERSION} VERSION_LESS "6.9.0")
+        set(MODULE_SRC ${MODULE_SRC}
+            ${CMAKE_CURRENT_LIST_DIR}/view/internal/platform/macos/macosscrollinghook.cpp
+            ${CMAKE_CURRENT_LIST_DIR}/view/internal/platform/macos/macosscrollinghook.h
+        )
+    endif()
+
     set_source_files_properties(
         ${CMAKE_CURRENT_LIST_DIR}/view/internal/platform/macos/macosappmenumodelhook.mm
         PROPERTIES
@@ -133,15 +132,6 @@ if (OS_IS_MAC)
         )
 endif(OS_IS_MAC)
 
-if (OS_IS_WIN)
-    set(MODULE_SRC ${MODULE_SRC}
-        ${CMAKE_CURRENT_LIST_DIR}/internal/platform/win/winframelesswindowcontroller.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/internal/platform/win/winframelesswindowcontroller.h
-    )
-
-    set(MODULE_LINK ${MODULE_LINK} dwmapi)
-endif(OS_IS_WIN)
-
 if (NOT OS_IS_MAC)
     set(MODULE_SRC ${MODULE_SRC}
         ${CMAKE_CURRENT_LIST_DIR}/view/navigableappmenumodel.cpp
@@ -149,9 +139,12 @@ if (NOT OS_IS_MAC)
     )
 
     # we use QKeyMapper to fix https://github.com/musescore/MuseScore/issues/10181
-    set(MODULE_INCLUDE
-        ${Qt5Gui_PRIVATE_INCLUDE_DIRS}
-    )
+    find_package(Qt6 REQUIRED COMPONENTS GuiPrivate)
+    set(MODULE_LINK ${MODULE_LINK} Qt6::GuiPrivate)
 endif(NOT OS_IS_MAC)
 
-include(${PROJECT_SOURCE_DIR}/build/module.cmake)
+if (QT_SUPPORT)
+    list(APPEND MODULE_LINK Qt::Core5Compat Qt::Quick Qt::Svg Qt::Widgets)
+endif()
+
+setup_module()

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,13 +22,12 @@
 
 #include "instrumentsonscorelistmodel.h"
 
-#include "types/translatablestring.h"
-
 #include "log.h"
 
+using namespace muse;
+using namespace muse::uicomponents;
+using namespace muse::async;
 using namespace mu::instrumentsscene;
-using namespace mu::uicomponents;
-using namespace mu::async;
 using namespace mu::notation;
 
 namespace mu::instrumentsscene {
@@ -164,7 +163,7 @@ void InstrumentsOnScoreListModel::loadOrders()
     m_scoreOrders = repository()->orders();
 
     const ScoreOrder& custom = customOrder();
-    if (m_scoreOrders.empty() || !mu::contains(m_scoreOrders, custom)) {
+    if (m_scoreOrders.empty() || !muse::contains(m_scoreOrders, custom)) {
         m_scoreOrders.push_back(custom);
     }
 
@@ -172,7 +171,7 @@ void InstrumentsOnScoreListModel::loadOrders()
     ScoreOrder currentOrder = notation ? notation->parts()->scoreOrder() : m_scoreOrders[0];
     bool orderCustomized = currentOrder.customized;
 
-    if (!mu::contains(m_scoreOrders, currentOrder)) {
+    if (!muse::contains(m_scoreOrders, currentOrder)) {
         currentOrder.customized = false;
         m_scoreOrders.push_back(currentOrder);
     }
@@ -199,7 +198,7 @@ int InstrumentsOnScoreListModel::resolveInstrumentSequenceNumber(const String& i
     }
 
     const InstrumentTemplateList& allTemplates = repository()->instrumentTemplates();
-    return allTemplates.size();
+    return static_cast<int>(allTemplates.size());
 }
 
 void InstrumentsOnScoreListModel::addInstruments(const QStringList& instrumentIdList)

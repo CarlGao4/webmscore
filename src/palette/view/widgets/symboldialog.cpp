@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -60,13 +60,13 @@ void SymbolDialog::createSymbols()
     // init the font if not done yet
     engravingFonts()->fontByName(f->name());
     m_symbolsWidget->clear();
-    for (auto name : Smufl::smuflRanges().at(range)) {
-        SymId id = SymNames::symIdByName(name);
+    for (SymId symId : Smufl::smuflRanges().at(range)) {
+        String symName = SymNames::translatedUserNameForSymId(symId);
         if (search->text().isEmpty()
-            || SymNames::translatedUserNameForSymId(id).toQString().contains(search->text(), Qt::CaseInsensitive)) {
+            || symName.toQString().contains(search->text(), Qt::CaseInsensitive)) {
             auto s = std::make_shared<Symbol>(gpaletteScore->dummy());
-            s->setSym(SymId(id), f);
-            m_symbolsWidget->appendElement(s, SymNames::translatedUserNameForSymId(SymId(id)));
+            s->setSym(symId, f);
+            m_symbolsWidget->appendElement(s, symName);
         }
     }
 }
@@ -82,10 +82,13 @@ SymbolDialog::SymbolDialog(const QString& s, QWidget* parent)
     range = s;          // smufl symbol range
     int idx = 0;
     int currentIndex = 0;
+    Score* score = globalContext()->currentNotation()->elements()->msScore();
+    std::string styleFont = score ? score->style().styleSt(Sid::musicalSymbolFont).toStdString() : "";
     for (const IEngravingFontPtr& f : engravingFonts()->fonts()) {
         fontList->addItem(QString::fromStdString(f->name()));
-        if (f->name() == "Leland" || f->name() == "Bravura") {
+        if (!styleFont.empty() && f->name() == styleFont) {
             currentIndex = idx;
+            styleFont = "";
         }
         ++idx;
     }
@@ -104,8 +107,14 @@ SymbolDialog::SymbolDialog(const QString& s, QWidget* parent)
     m_symbolsWidget->setDrawGrid(true);
     m_symbolsWidget->setSelectable(true);
 
-    connect(systemFlag, &QCheckBox::stateChanged, this, &SymbolDialog::systemFlagChanged);
-    connect(fontList, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &SymbolDialog::systemFontChanged);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
+    connect(systemFlag, &QCheckBox::checkStateChanged, this, &SymbolDialog::systemFlagChanged);
+#else
+    connect(systemFlag, &QCheckBox::stateChanged, this, [this](int st) {
+        systemFlagChanged(static_cast<Qt::CheckState>(st));
+    });
+#endif
+    connect(fontList, &QComboBox::currentIndexChanged, this, &SymbolDialog::systemFontChanged);
 
     symbolsArea->setWidget(m_symbolsWidget);
 
@@ -117,7 +126,7 @@ SymbolDialog::SymbolDialog(const QString& s, QWidget* parent)
 //   systemFlagChanged
 //---------------------------------------------------------
 
-void SymbolDialog::systemFlagChanged(int state)
+void SymbolDialog::systemFlagChanged(Qt::CheckState state)
 {
     bool sysFlag = state == Qt::Checked;
     for (int i = 0; i < m_symbolsWidget->actualCellCount(); ++i) {

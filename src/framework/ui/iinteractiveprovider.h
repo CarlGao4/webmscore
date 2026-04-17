@@ -19,19 +19,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_UI_IINTERACTIVEPROVIDER_H
-#define MU_UI_IINTERACTIVEPROVIDER_H
 
-#include "modularity/imoduleinterface.h"
-#include "types/uri.h"
-#include "types/retval.h"
-#include "progress.h"
+#pragma once
 
-#include "iinteractive.h"
+#include "global/modularity/imoduleinterface.h"
+
+#include "global/types/uri.h"
+#include "global/types/retval.h"
+#include "global/types/color.h"
+#include "global/async/promise.h"
 
 class QWindow;
 
-namespace mu::ui {
+namespace muse::ui {
 class IInteractiveProvider : MODULE_EXPORT_INTERFACE
 {
     INTERFACE_ID(ILaunchProvider)
@@ -39,35 +39,14 @@ class IInteractiveProvider : MODULE_EXPORT_INTERFACE
 public:
     virtual ~IInteractiveProvider() = default;
 
-    virtual RetVal<Val> question(const std::string& title, const framework::IInteractive::Text& text,
-                                 const framework::IInteractive::ButtonDatas& buttons,
-                                 int defBtn = int(framework::IInteractive::Button::NoButton),
-                                 const framework::IInteractive::Options& options = {}) = 0;
+    // color
+    virtual async::Promise<Color> selectColor(const Color& color = Color::WHITE, const std::string& title = {},
+                                              bool allowAlpha = false) = 0;
+    virtual bool isSelectColorOpened() const = 0;
 
-    virtual RetVal<Val> info(const std::string& title, const framework::IInteractive::Text& text,
-                             const framework::IInteractive::ButtonDatas& buttons,
-                             int defBtn = int(framework::IInteractive::Button::NoButton),
-                             const framework::IInteractive::Options& options = {}) = 0;
-
-    virtual RetVal<Val> warning(const std::string& title, const framework::IInteractive::Text& text, const std::string& detailedText = {},
-                                const framework::IInteractive::ButtonDatas& buttons = {},
-                                int defBtn = int(framework::IInteractive::Button::NoButton),
-                                const framework::IInteractive::Options& options = {}) = 0;
-
-    virtual RetVal<Val> error(const std::string& title, const framework::IInteractive::Text& text, const std::string& detailedText = {},
-                              const framework::IInteractive::ButtonDatas& buttons = {},
-                              int defBtn = int(framework::IInteractive::Button::NoButton),
-                              const framework::IInteractive::Options& options = {}) = 0;
-
-    virtual Ret showProgress(const std::string& title, framework::Progress* progress) = 0;
-
-    virtual RetVal<io::path_t> selectOpeningFile(const std::string& title, const io::path_t& dir,
-                                                 const std::vector<std::string>& filter) = 0;
-    virtual RetVal<io::path_t> selectSavingFile(const std::string& title, const io::path_t& path, const std::vector<std::string>& filter,
-                                                bool confirmOverwrite) = 0;
-    virtual RetVal<io::path_t> selectDirectory(const std::string& title, const io::path_t& dir) = 0;
-
-    virtual RetVal<Val> open(const UriQuery& uri) = 0;
+    virtual RetVal<Val> openSync(const UriQuery& uri) = 0;
+    virtual async::Promise<Val> openAsync(const UriQuery& uri) = 0;
+    virtual async::Promise<Val> openAsync(const Uri& uri, const QVariantMap& params) = 0;
     virtual RetVal<bool> isOpened(const Uri& uri) const = 0;
     virtual RetVal<bool> isOpened(const UriQuery& uri) const = 0;
     virtual async::Channel<Uri> opened() const = 0;
@@ -79,6 +58,7 @@ public:
     virtual void closeAllDialogs() = 0;
 
     virtual ValCh<Uri> currentUri() const = 0;
+    virtual RetVal<bool> isCurrentUriDialog() const = 0;
     virtual async::Notification currentUriAboutToBeChanged() const = 0;
     virtual std::vector<Uri> stack() const = 0;
 
@@ -86,5 +66,3 @@ public:
     virtual bool topWindowIsWidget() const = 0;
 };
 }
-
-#endif // MU_UI_IINTERACTIVEPROVIDER_H

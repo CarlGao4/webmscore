@@ -21,13 +21,17 @@
  */
 #include <gtest/gtest.h>
 
+#include <cstdint>
+#include <string>
+#include <vector>
+
 #include "allocator.h"
 
 #include "log.h"
 
-using namespace mu;
+using namespace muse;
 
-namespace mu {
+namespace muse {
 class ItemBase
 {
     OBJECT_ALLOCATOR(test, ItemBase)
@@ -65,7 +69,7 @@ public:
         } \
         ~Item##size() \
         { \
-            LOGI() << "destroed: " << num; \
+            LOGI() << "destroyed: " << num; \
         } \
         uint8_t data[size]; \
     };

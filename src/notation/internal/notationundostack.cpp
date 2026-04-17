@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -28,7 +28,7 @@
 #include "engraving/dom/undo.h"
 
 using namespace mu::notation;
-using namespace mu::async;
+using namespace muse::async;
 
 NotationUndoStack::NotationUndoStack(IGetScore* getScore, Notification notationChanged)
     : m_getScore(getScore), m_notationChanged(notationChanged)
@@ -53,13 +53,8 @@ void NotationUndoStack::undo(mu::engraving::EditData* editData)
     score()->undoRedo(true, editData);
 
     notifyAboutNotationChanged();
-    notifyAboutUndo();
+    notifyAboutUndoRedo();
     notifyAboutStateChanged();
-}
-
-Notification NotationUndoStack::undoNotification() const
-{
-    return m_undoNotification;
 }
 
 bool NotationUndoStack::canRedo() const
@@ -80,16 +75,35 @@ void NotationUndoStack::redo(mu::engraving::EditData* editData)
     score()->undoRedo(false, editData);
 
     notifyAboutNotationChanged();
-    notifyAboutRedo();
+    notifyAboutUndoRedo();
     notifyAboutStateChanged();
 }
 
-Notification NotationUndoStack::redoNotification() const
+void NotationUndoStack::undoRedoToIndex(size_t idx, mu::engraving::EditData* editData)
 {
-    return m_redoNotification;
+    auto stack = undoStack();
+
+    IF_ASSERT_FAILED(stack) {
+        return;
+    }
+
+    if (stack->currentIndex() == idx) {
+        return;
+    }
+
+    while (stack->currentIndex() > idx && stack->canUndo()) {
+        score()->undoRedo(true, editData);
+    }
+    while (stack->currentIndex() < idx && stack->canRedo()) {
+        score()->undoRedo(false, editData);
+    }
+
+    notifyAboutNotationChanged();
+    notifyAboutUndoRedo();
+    notifyAboutStateChanged();
 }
 
-void NotationUndoStack::prepareChanges()
+void NotationUndoStack::prepareChanges(const muse::TranslatableString& actionName)
 {
     IF_ASSERT_FAILED(score()) {
         return;
@@ -99,7 +113,7 @@ void NotationUndoStack::prepareChanges()
         return;
     }
 
-    score()->startCmd();
+    score()->startCmd(actionName);
 }
 
 void NotationUndoStack::rollbackChanges()
@@ -139,6 +153,15 @@ bool NotationUndoStack::isStackClean() const
     return undoStack()->isClean();
 }
 
+void NotationUndoStack::mergeCommands(size_t startIdx)
+{
+    IF_ASSERT_FAILED(undoStack()) {
+        return;
+    }
+
+    undoStack()->mergeCommands(startIdx);
+}
+
 void NotationUndoStack::lock()
 {
     IF_ASSERT_FAILED(undoStack()) {
@@ -159,21 +182,83 @@ void NotationUndoStack::unlock()
 
 bool NotationUndoStack::isLocked() const
 {
-    return undoStack()->locked();
+    return undoStack()->isLocked();
 }
 
-mu::async::Notification NotationUndoStack::stackChanged() const
+const muse::TranslatableString NotationUndoStack::topMostUndoActionName() const
+{
+    IF_ASSERT_FAILED(undoStack()) {
+        return {};
+    }
+
+    if (auto action = undoStack()->last()) {
+        return action->actionName();
+    }
+
+    return {};
+}
+
+const muse::TranslatableString NotationUndoStack::topMostRedoActionName() const
+{
+    IF_ASSERT_FAILED(undoStack()) {
+        return {};
+    }
+
+    if (auto action = undoStack()->next()) {
+        return action->actionName();
+    }
+
+    return {};
+}
+
+size_t NotationUndoStack::undoRedoActionCount() const
+{
+    IF_ASSERT_FAILED(undoStack()) {
+        return 0;
+    }
+
+    return undoStack()->size();
+}
+
+size_t NotationUndoStack::currentStateIndex() const
+{
+    IF_ASSERT_FAILED(undoStack()) {
+        return muse::nidx;
+    }
+
+    return undoStack()->currentIndex();
+}
+
+const muse::TranslatableString NotationUndoStack::lastActionNameAtIdx(size_t idx) const
+{
+    IF_ASSERT_FAILED(undoStack()) {
+        return {};
+    }
+
+    if (auto action = undoStack()->lastAtIndex(idx)) {
+        return action->actionName();
+    }
+
+    return {};
+}
+
+muse::async::Notification NotationUndoStack::stackChanged() const
 {
     return m_stackStateChanged;
 }
 
-mu::async::Channel<ChangesRange> NotationUndoStack::changesChannel() const
+muse::async::Channel<ScoreChanges> NotationUndoStack::changesChannel() const
 {
     IF_ASSERT_FAILED(score()) {
-        return async::Channel<ChangesRange>();
+        return muse::async::Channel<ScoreChanges>();
     }
 
     return score()->changesChannel();
+}
+
+Notification NotationUndoStack::undoRedoNotification() const
+{
+    return m_undoRedoNotification;
 }
 
 mu::engraving::Score* NotationUndoStack::score() const
@@ -201,12 +286,7 @@ void NotationUndoStack::notifyAboutStateChanged()
     m_stackStateChanged.notify();
 }
 
-void NotationUndoStack::notifyAboutUndo()
+void NotationUndoStack::notifyAboutUndoRedo()
 {
-    m_undoNotification.notify();
-}
-
-void NotationUndoStack::notifyAboutRedo()
-{
-    m_redoNotification.notify();
+    m_undoRedoNotification.notify();
 }

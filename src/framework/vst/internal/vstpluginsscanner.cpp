@@ -26,13 +26,14 @@
 
 #include "log.h"
 
-using namespace mu::vst;
+using namespace muse;
+using namespace muse::vst;
 
 /**
  * @brief Scanning for plugins in the default VST locations, considering the current architecture (i386, x86_64, arm, etc.)
  * @see https://developer.steinberg.help/pages/viewpage.action?pageId=9798275
  **/
-namespace mu::vst {
+namespace muse::vst {
 static io::paths_t pluginPathsFromDefaultLocation()
 {
     io::paths_t result;
@@ -51,7 +52,7 @@ static io::paths_t pluginPathsFromDefaultLocation()
 }
 }
 
-mu::io::paths_t VstPluginsScanner::scanPlugins() const
+io::paths_t VstPluginsScanner::scanPlugins() const
 {
     TRACEFUNC;
 
@@ -62,7 +63,7 @@ mu::io::paths_t VstPluginsScanner::scanPlugins() const
     return result;
 }
 
-mu::io::paths_t VstPluginsScanner::pluginPathsFromCustomLocations(const io::paths_t& customPaths) const
+io::paths_t VstPluginsScanner::pluginPathsFromCustomLocations(const io::paths_t& customPaths) const
 {
     io::paths_t result;
 

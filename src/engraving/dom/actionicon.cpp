@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -24,16 +24,14 @@
 
 #include "property.h"
 
-#include "log.h"
-
 using namespace mu;
-using namespace mu::draw;
+using namespace muse::draw;
 using namespace mu::engraving;
 
-ActionIcon::ActionIcon(EngravingItem* score)
-    : EngravingItem(ElementType::ACTION_ICON, score)
+ActionIcon::ActionIcon(EngravingItem* parent)
+    : EngravingItem(ElementType::ACTION_ICON, parent)
 {
-    m_iconFont = Font(engravingConfiguration()->iconsFontFamily(), Font::Type::Icon);
+    m_iconFont = Font(configuration()->iconsFontFamily(), Font::Type::Icon);
     m_iconFont.setPointSizeF(DEFAULT_FONT_SIZE);
 }
 

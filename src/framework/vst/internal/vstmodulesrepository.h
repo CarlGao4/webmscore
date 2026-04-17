@@ -20,8 +20,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_VST_VSTMODULESREPOSITORY_H
-#define MU_VST_VSTMODULESREPOSITORY_H
+#ifndef MUSE_VST_VSTMODULESREPOSITORY_H
+#define MUSE_VST_VSTMODULESREPOSITORY_H
 
 #include <unordered_map>
 #include <mutex>
@@ -29,17 +29,17 @@
 #include "ivstmodulesrepository.h"
 
 #include "modularity/ioc.h"
-#include "audio/iknownaudiopluginsregister.h"
-#include "audio/iaudiothreadsecurer.h"
+#include "audioplugins/iknownaudiopluginsregister.h"
+#include "audio/common/iaudiothreadsecurer.h"
 
-#include "audio/audiotypes.h"
+#include "audioplugins/audiopluginstypes.h"
 #include "vsttypes.h"
 
-namespace mu::vst {
+namespace muse::vst {
 class VstModulesRepository : public IVstModulesRepository
 {
-    INJECT(audio::IKnownAudioPluginsRegister, knownPlugins)
-    INJECT_STATIC(audio::IAudioThreadSecurer, threadSecurer)
+    INJECT(audioplugins::IKnownAudioPluginsRegister, knownPlugins)
+    INJECT_STATIC(muse::audio::IAudioThreadSecurer, threadSecurer)
 
 public:
     VstModulesRepository() = default;
@@ -47,17 +47,17 @@ public:
     void init();
     void deInit();
 
-    bool exists(const audio::AudioResourceId& resourceId) const override;
-    PluginModulePtr pluginModule(const audio::AudioResourceId& resourceId) const override;
-    void addPluginModule(const audio::AudioResourceId& resourceId) override;
-    void removePluginModule(const audio::AudioResourceId& resourceId) override;
+    bool exists(const muse::audio::AudioResourceId& resourceId) const override;
+    PluginModulePtr pluginModule(const muse::audio::AudioResourceId& resourceId) const override;
+    void addPluginModule(const muse::audio::AudioResourceId& resourceId) override;
+    void removePluginModule(const muse::audio::AudioResourceId& resourceId) override;
 
     audio::AudioResourceMetaList instrumentModulesMeta() const override;
     audio::AudioResourceMetaList fxModulesMeta() const override;
     void refresh() override;
 
 private:
-    audio::AudioResourceMetaList modulesMetaList(const audio::AudioPluginType& type) const;
+    audio::AudioResourceMetaList modulesMetaList(const audioplugins::AudioPluginType& type) const;
 
     PluginContext m_pluginContext;
 
@@ -66,4 +66,4 @@ private:
 };
 }
 
-#endif // MU_VST_VSTMODULESREPOSITORY_H
+#endif // MUSE_VST_VSTMODULESREPOSITORY_H

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -30,7 +30,7 @@
 #include "ipaletteconfiguration.h"
 #include "engraving/rendering/isinglerenderer.h"
 
-namespace mu::draw {
+namespace muse::draw {
 class Painter;
 }
 
@@ -47,22 +47,9 @@ public:
 
     void paint(QPainter* painter, const QRect& rect, QIcon::Mode mode, QIcon::State state) override;
 
-    struct PaintContext
-    {
-        mu::draw::Painter* painter = nullptr;
-        bool useElementColors = false;
-        bool colorsInversionEnabled = false;
-    };
-
-    static void paintPaletteItem(void* context, mu::engraving::EngravingItem* element);
-
 private:
-    void paintCell(draw::Painter& painter, const RectF& rect, bool selected, bool current, qreal dpi) const;
-    void paintBackground(draw::Painter& painter, const RectF& rect, bool selected, bool current) const;
-    void paintActionIcon(draw::Painter& painter, const RectF& rect, mu::engraving::EngravingItem* element, double dpi) const;
-    qreal paintStaff(draw::Painter& painter, const RectF& rect, qreal spatium) const;
-    void paintScoreElement(draw::Painter& painter, mu::engraving::EngravingItem* element, qreal spatium, bool alignToStaff,
-                           qreal dpi) const;
+    void paintCell(muse::draw::Painter& painter, const muse::RectF& rect, bool selected, bool current, qreal dpi) const;
+    void paintBackground(muse::draw::Painter& painter, const muse::RectF& rect, bool selected, bool current) const;
 
     PaletteCellConstPtr m_cell;
     qreal m_extraMag = 1.0;

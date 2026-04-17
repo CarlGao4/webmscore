@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,10 +22,13 @@
 
 #include "pedal.h"
 
+#include "chord.h"
 #include "chordrest.h"
 #include "measure.h"
+#include "note.h"
 #include "score.h"
 #include "system.h"
+#include "text.h"
 
 #include "log.h"
 
@@ -65,6 +68,8 @@ const String Pedal::STAR_SYMBOL = u"<sym>keyboardPedalUp</sym>";
 PedalSegment::PedalSegment(Pedal* sp, System* parent)
     : TextLineBaseSegment(ElementType::PEDAL_SEGMENT, sp, parent, ElementFlag::MOVABLE | ElementFlag::ON_STAFF)
 {
+    m_text->setTextStyleType(TextStyleType::PEDAL);
+    m_endText->setTextStyleType(TextStyleType::PEDAL);
 }
 
 //---------------------------------------------------------
@@ -141,7 +146,7 @@ engraving::PropertyValue Pedal::propertyDefault(Pid propertyId) const
 {
     switch (propertyId) {
     case Pid::LINE_WIDTH:
-        return style().styleMM(Sid::pedalLineWidth);              // return point, not spatium
+        return style().styleS(Sid::pedalLineWidth);              // return point, not spatium
 
     case Pid::LINE_STYLE:
         return style().styleV(Sid::pedalLineStyle);
@@ -176,6 +181,31 @@ engraving::PropertyValue Pedal::propertyDefault(Pid propertyId) const
     }
 }
 
+Pedal* Pedal::findNextInStaff() const
+{
+    Fraction endTick = tick2();
+    auto spanners = score()->spannerMap().findOverlapping(endTick.ticks(), score()->endTick().ticks());
+    for (auto element : spanners) {
+        Spanner* spanner = element.value;
+        if (spanner->isPedal() && spanner != this && spanner->staffIdx() == staffIdx() && spanner->tick() == endTick) {
+            return toPedal(spanner);
+        }
+    }
+
+    return nullptr;
+}
+
+bool Pedal::connect45HookToNext() const
+{
+    if (endHookType() != HookType::HOOK_45) {
+        return false;
+    }
+
+    Pedal* nextPedal = findNextInStaff();
+
+    return nextPedal && nextPedal->tick() == tick2() && nextPedal->beginHookType() == HookType::HOOK_45;
+}
+
 //---------------------------------------------------------
 //   linePos
 //    return System() coordinates
@@ -183,87 +213,63 @@ engraving::PropertyValue Pedal::propertyDefault(Pid propertyId) const
 
 PointF Pedal::linePos(Grip grip, System** sys) const
 {
-    double x = 0.0;
-    double nhw = score()->noteHeadWidth();
-    System* s = nullptr;
-    if (grip == Grip::START) {
-        ChordRest* c = toChordRest(startElement());
-        if (c) {
-            s = c->segment()->system();
-            x = c->pos().x() + c->segment()->pos().x() + c->segment()->measure()->pos().x();
-            if (c->type() == ElementType::REST && c->durationType() == DurationType::V_MEASURE) {
-                x -= c->x();
-            }
-            if (beginHookType() == HookType::HOOK_45) {
-                x += nhw * .5;
+    bool start = grip == Grip::START;
+
+    if (start) {
+        Segment* startSeg = startSegment();
+        if (!startSeg) {
+            return PointF();
+        }
+        *sys = startSeg->measure()->system();
+        double x = startSeg->x() + startSeg->measure()->x();
+        if (beginText() == "<sym>keyboardPedalPed</sym>") {
+            x -= 0.5 * spatium();
+        } else if (beginHookType() == HookType::HOOK_90 || beginHookType() == HookType::HOOK_90T) {
+            x += 0.5 * absoluteFromSpatium(lineWidth());
+        } else if (beginHookType() == HookType::HOOK_45) {
+            EngravingItem* item = startElement();
+            if (item && item->isChord()) {
+                Note* downNote = toChord(item)->downNote();
+                x += 0.5 * downNote->headWidth();
+            } else if (item && item->isRest()) {
+                x += 0.5 * item->width();
             }
         }
-    } else {
-        EngravingItem* e = endElement();
-        ChordRest* c = toChordRest(endElement());
-        if (!e || e == startElement() || (endHookType() == HookType::HOOK_90)) {
-            // pedal marking on single note or ends with non-angled hook:
-            // extend to next note or end of measure
-            Segment* seg = nullptr;
-            if (!e) {
-                seg = startSegment();
-            } else {
-                seg = c->segment();
-            }
-            if (seg) {
-                seg = seg->next();
-                for (; seg; seg = seg->next()) {
-                    if (seg->segmentType() == SegmentType::ChordRest) {
-                        // look for a chord/rest in any voice on this staff
-                        bool crFound = false;
-                        track_idx_t track = staffIdx() * VOICES;
-                        for (voice_idx_t i = 0; i < VOICES; ++i) {
-                            if (seg->element(track + i)) {
-                                crFound = true;
-                                break;
-                            }
-                        }
-                        if (crFound) {
-                            break;
-                        }
-                    } else if (seg->segmentType() == SegmentType::EndBarLine) {
-                        if (!seg->enabled()) {
-                            // disabled barline layout is not reliable
-                            // use width of measure instead
-                            Measure* m = seg->measure();
-                            s = seg->system();
-                            x = m->width() + m->pos().x() - nhw * 2;
-                            seg = nullptr;
-                        }
-                        break;
-                    }
-                }
-            }
-            if (seg) {
-                s = seg->system();
-                x = seg->pos().x() + seg->measure()->pos().x() - nhw * 2;
-            }
-        } else if (c) {
-            s = c->segment()->system();
-            x = c->pos().x() + c->segment()->pos().x() + c->segment()->measure()->pos().x();
-            if (c->type() == ElementType::REST && c->durationType() == DurationType::V_MEASURE) {
-                x -= c->x();
-            }
+        return PointF(x, 0.0);
+    }
+
+    Segment* endSeg = endSegment();
+    if (!endSeg) {
+        return PointF();
+    }
+
+    Pedal* nextPedal = findNextInStaff();
+
+    if (nextPedal && endHookType() == HookType::HOOK_45) {
+        *sys = endSeg->measure()->system();
+        double x = endSeg->x() + endSeg->measure()->x();
+        EngravingItem* item = endElement();
+        if (item && item->isChord()) {
+            Note* downNote = toChord(item)->downNote();
+            x += 0.5 * downNote->headWidth();
+        } else if (item && item->isRest()) {
+            x += 0.5 * item->width();
         }
-        if (!s) {
-            Fraction t = tick2();
-            Measure* m = score()->tick2measure(t);
-            s = m->system();
-            x = m->tick2pos(t);
-        }
-        if (endHookType() == HookType::HOOK_45) {
-            x += nhw * .5;
-        } else {
-            x += nhw;
+        return PointF(x, 0.0);
+    }
+
+    if (endSeg->rtick() == Fraction(0, 1)) {
+        Segment* prevSeg = endSeg->prev1(SegmentType::EndBarLine);
+        if (prevSeg) {
+            endSeg = prevSeg;
         }
     }
 
-    *sys = s;
-    return PointF(x, 0);
+    *sys = endSeg->measure()->system();
+    double x = endSeg->x() + endSeg->measure()->x();
+
+    x -= (endSeg->isChordRestType() && nextPedal ? 1.25 : 0.75) * spatium();
+
+    return PointF(x, 0.0);
 }
 }

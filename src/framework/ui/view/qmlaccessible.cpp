@@ -27,11 +27,12 @@
 
 #include "log.h"
 
-using namespace mu::ui;
-using namespace mu::accessibility;
+using namespace muse;
+using namespace muse::ui;
+using namespace muse::accessibility;
 
 AccessibleItem::AccessibleItem(QObject* parent)
-    : QObject(parent)
+    : QObject(parent), Injectable(muse::iocCtxForQmlObject(this))
 {
 }
 
@@ -86,9 +87,9 @@ size_t AccessibleItem::accessibleChildCount() const
     return static_cast<size_t>(m_children.size());
 }
 
-const IAccessible* AccessibleItem::accessibleChild(size_t i) const
+IAccessible* AccessibleItem::accessibleChild(size_t i) const
 {
-    return static_cast<const IAccessible*>(m_children.value(static_cast<int>(i), nullptr));
+    return m_children.value(static_cast<int>(i), nullptr);
 }
 
 QWindow* AccessibleItem::accessibleWindow() const
@@ -103,6 +104,11 @@ QWindow* AccessibleItem::accessibleWindow() const
     }
 
     return visualItem->window();
+}
+
+muse::modularity::ContextPtr AccessibleItem::iocContext() const
+{
+    return Injectable::iocContext();
 }
 
 QRect AccessibleItem::accessibleRect() const
@@ -148,8 +154,8 @@ void AccessibleItem::accessibleSelection(int selectionIndex, int* startOffset, i
         *startOffset = m_selectionStart;
         *endOffset = m_selectionEnd;
     } else {
-        *startOffset = 0;
-        *endOffset = 0;
+        *startOffset = -1;
+        *endOffset = -1;
     }
 }
 
@@ -355,12 +361,12 @@ int AccessibleItem::accessibleCharacterCount() const
     return text().size();
 }
 
-mu::async::Channel<IAccessible::Property, mu::Val> AccessibleItem::accessiblePropertyChanged() const
+async::Channel<IAccessible::Property, Val> AccessibleItem::accessiblePropertyChanged() const
 {
     return m_accessiblePropertyChanged;
 }
 
-mu::async::Channel<IAccessible::State, bool> AccessibleItem::accessibleStateChanged() const
+async::Channel<IAccessible::State, bool> AccessibleItem::accessibleStateChanged() const
 {
     return m_accessibleStateChanged;
 }
@@ -376,8 +382,10 @@ void AccessibleItem::classBegin()
 
 void AccessibleItem::componentComplete()
 {
-    accessibilityController()->reg(this);
-    m_registred = true;
+    if (accessibilityController()) {
+        accessibilityController()->reg(this);
+        m_registred = true;
+    }
 }
 
 AccessibleItem* AccessibleItem::accessibleParent_property() const

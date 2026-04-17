@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,7 +22,8 @@
 #include "glissandoplaybackmodel.h"
 
 #include "translation.h"
-#include "dom/glissando.h"
+
+#include "engraving/dom/glissando.h"
 
 using namespace mu::inspector;
 using namespace mu::engraving;
@@ -30,7 +31,7 @@ using namespace mu::engraving;
 GlissandoPlaybackModel::GlissandoPlaybackModel(QObject* parent, IElementRepositoryService* repository)
     : AbstractInspectorModel(parent, repository)
 {
-    setTitle(qtrc("inspector", "Glissando"));
+    setTitle(muse::qtrc("inspector", "Glissando"));
     setModelType(InspectorModelType::TYPE_GLISSANDO);
 
     createProperties();

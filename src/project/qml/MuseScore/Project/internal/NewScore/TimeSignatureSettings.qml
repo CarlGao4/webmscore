@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -23,8 +23,8 @@ import QtQuick 2.9
 import QtQuick.Controls 2.2
 import QtQuick.Layouts 1.3
 
-import MuseScore.Ui 1.0
-import MuseScore.UiComponents 1.0
+import Muse.Ui 1.0
+import Muse.UiComponents 1.0
 import MuseScore.Project 1.0
 
 FlatButton {
@@ -152,26 +152,40 @@ FlatButton {
     Component {
         id: commonComp
 
-        StyledIconLabel {
+        Item {
             property string accessibleName: root.model.timeSignatureAccessibleName(AdditionalInfoModel.Common)
 
-            font.family: ui.theme.musicalFont.family
-            font.pixelSize: 30
-            horizontalAlignment: Text.AlignLeft
-            iconCode: MusicalSymbolCodes.TIMESIG_COMMON
+            implicitWidth: commonLabel.implicitWidth
+            implicitHeight: 30
+
+            StyledIconLabel {
+                id: commonLabel
+                anchors.verticalCenter: parent.verticalCenter
+                font.family: ui.theme.musicalFont.family
+                font.pixelSize: 30
+                horizontalAlignment: Text.AlignLeft
+                iconCode: MusicalSymbolCodes.TIMESIG_COMMON
+            }
         }
     }
 
     Component {
         id: cutComp
 
-        StyledIconLabel {
+        Item {
             property string accessibleName: root.model.timeSignatureAccessibleName(AdditionalInfoModel.Cut)
 
-            font.family: ui.theme.musicalFont.family
-            font.pixelSize: 30
-            horizontalAlignment: Text.AlignLeft
-            iconCode: MusicalSymbolCodes.TIMESIG_CUT
+            implicitWidth: cutLabel.implicitWidth
+            implicitHeight: 30
+
+            StyledIconLabel {
+                id: cutLabel
+                anchors.verticalCenter: parent.verticalCenter
+                font.family: ui.theme.musicalFont.family
+                font.pixelSize: 30
+                horizontalAlignment: Text.AlignLeft
+                iconCode: MusicalSymbolCodes.TIMESIG_CUT
+            }
         }
     }
 }

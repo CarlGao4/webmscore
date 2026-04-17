@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,13 +22,13 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 
-import MuseScore.UiComponents 1.0
+import Muse.UiComponents 1.0
 
 StyledPopupView {
     id: root
 
-    property var voicesVisibility: [] // array of bool
-    signal voiceVisibilityChangeRequested(var voiceIndex, var voiceVisible)
+    property var voicesVisibility: []
+    signal voiceVisibilityChangeRequested(int voiceIndex, bool voiceVisible)
 
     contentHeight: contentColumn.childrenRect.height
     contentWidth: contentColumn.childrenRect.width
@@ -39,7 +39,7 @@ StyledPopupView {
         spacing: 18
 
         StyledTextLabel {
-            text: qsTrc("notation", "Voices visible on this score")
+            text: qsTrc("notation", "Voices visible on this staff")
         }
 
         ListView {

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -69,7 +69,7 @@ TEST_F(Engraving_EarlymusicTests, earlymusic01)
     // set crossMeasureValue flag ON: score should not change
     MStyle newStyle = score->style();
     newStyle.set(Sid::crossMeasureValues, true);
-    score->startCmd();
+    score->startCmd(TranslatableString::untranslatable("Early music tests"));
     score->deselectAll();
     score->undo(new ChangeStyle(score, newStyle));
     score->update();

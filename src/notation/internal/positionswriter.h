@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -27,7 +27,7 @@
 #include "importexport/imagesexport/iimagesexportconfiguration.h"
 #include "project/inotationwriter.h"
 
-namespace mu::framework {
+namespace muse::deprecated {
 class XmlWriter;
 }
 
@@ -52,18 +52,18 @@ public:
     std::vector<UnitType> supportedUnitTypes() const override;
     bool supportsUnitType(UnitType unitType) const override;
 
-    Ret write(notation::INotationPtr notation, QIODevice& device, const Options& options = Options()) override;
-    Ret writeList(const INotationPtrList& notations, QIODevice& device, const Options& options = Options()) override;
+    muse::Ret write(notation::INotationPtr notation, muse::io::IODevice& device, const Options& options = Options()) override;
+    muse::Ret writeList(const INotationPtrList& notations, muse::io::IODevice& device, const Options& options = Options()) override;
 
 private:
     qreal pngDpiResolution() const;
     QHash<void*, int> elementIds(const mu::engraving::Score* score) const;
 
-    void writeElementsPositions(framework::XmlWriter& writer, const mu::engraving::Score* score) const;
-    void writeSegmentsPositions(framework::XmlWriter& writer, const mu::engraving::Score* score) const;
-    void writeMeasuresPositions(framework::XmlWriter& writer, const mu::engraving::Score* score) const;
+    void writeElementsPositions(muse::deprecated::XmlWriter& writer, const mu::engraving::Score* score) const;
+    void writeSegmentsPositions(muse::deprecated::XmlWriter& writer, const mu::engraving::Score* score) const;
+    void writeMeasuresPositions(muse::deprecated::XmlWriter& writer, const mu::engraving::Score* score) const;
 
-    void writeEventsPositions(framework::XmlWriter& writer, const mu::engraving::Score* score) const;
+    void writeEventsPositions(muse::deprecated::XmlWriter& writer, const mu::engraving::Score* score) const;
 
     ElementType m_elementType = ElementType::SEGMENT;
 };

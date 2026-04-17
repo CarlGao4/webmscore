@@ -26,13 +26,13 @@
 
 #include "global/isysteminfo.h"
 
-namespace mu {
+namespace muse {
 class SystemInfoMock : public ISystemInfo
 {
 public:
     MOCK_METHOD(CpuArchitecture, cpuArchitecture, (), (const, override));
     MOCK_METHOD(ProductType, productType, (), (const, override));
-    MOCK_METHOD(framework::Version, productVersion, (), (const, override));
+    MOCK_METHOD(Version, productVersion, (), (const, override));
 };
 }
 

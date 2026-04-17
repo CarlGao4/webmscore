@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -32,6 +32,7 @@
 
 #include "log.h"
 
+using namespace muse;
 using namespace mu::notation;
 
 NotationSelection::NotationSelection(IGetScore* getScore)
@@ -55,7 +56,7 @@ SelectionState NotationSelection::state() const
     return score()->selection().state();
 }
 
-mu::Ret NotationSelection::canCopy() const
+Ret NotationSelection::canCopy() const
 {
     if (isNone()) {
         return make_ret(Err::EmptySelection);
@@ -65,10 +66,15 @@ mu::Ret NotationSelection::canCopy() const
         return make_ret(Err::SelectCompleteTupletOrTremolo);
     }
 
-    return make_ok();
+    return muse::make_ok();
 }
 
-QMimeData* NotationSelection::mimeData() const
+muse::ByteArray NotationSelection::mimeData() const
+{
+    return score()->selection().mimeData();
+}
+
+QMimeData* NotationSelection::qMimeData() const
 {
     QString mimeType = score()->selection().mimeType();
     if (mimeType.isEmpty()) {
@@ -105,7 +111,7 @@ std::vector<Note*> NotationSelection::notes(NoteFilter filter) const
     return {};
 }
 
-mu::RectF NotationSelection::canvasBoundingRect() const
+muse::RectF NotationSelection::canvasBoundingRect() const
 {
     if (isNone()) {
         return RectF();
@@ -139,7 +145,27 @@ void NotationSelection::onElementHit(EngravingItem* el)
     m_lastElementHit = el;
 }
 
+mu::engraving::MeasureBase* NotationSelection::startMeasureBase() const
+{
+    return score()->selection().startMeasureBase();
+}
+
+mu::engraving::MeasureBase* NotationSelection::endMeasureBase() const
+{
+    return score()->selection().endMeasureBase();
+}
+
+std::vector<mu::engraving::System*> NotationSelection::selectedSystems() const
+{
+    return score()->selection().selectedSystems();
+}
+
 EngravingItem* NotationSelection::lastElementHit() const
 {
     return m_lastElementHit;
+}
+
+bool NotationSelection::elementsSelected(const mu::engraving::ElementTypeSet& types) const
+{
+    return score()->selection().elementsSelected(types);
 }

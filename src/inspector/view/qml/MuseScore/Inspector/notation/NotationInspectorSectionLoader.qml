@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,8 +22,8 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 
-import MuseScore.Ui 1.0
-import MuseScore.UiComponents 1.0
+import Muse.Ui 1.0
+import Muse.UiComponents 1.0
 import MuseScore.Inspector 1.0
 
 import "../common"
@@ -61,6 +61,8 @@ import "rests"
 import "dynamics"
 import "expressions"
 import "stringtunings"
+import "symbols"
+import "playcounttext"
 
 Loader {
     id: root
@@ -90,7 +92,10 @@ Loader {
             case Inspector.TYPE_GLISSANDO: return glissandoComp
             case Inspector.TYPE_VIBRATO: return vibratoComp
             case Inspector.TYPE_SLUR:
-            case Inspector.TYPE_TIE: return slurAndTieComp
+            case Inspector.TYPE_TIE:
+            case Inspector.TYPE_LAISSEZ_VIB:
+            case Inspector.TYPE_PARTIAL_TIE:
+            case Inspector.TYPE_HAMMER_ON_PULL_OFF: return slurAndTieComp
             case Inspector.TYPE_TEMPO: return tempoComp
             case Inspector.TYPE_A_TEMPO: return aTempoComp
             case Inspector.TYPE_TEMPO_PRIMO: return tempoPrimoComp
@@ -103,21 +108,24 @@ Loader {
             case Inspector.TYPE_FRET_DIAGRAM: return fretDiagramComp
             case Inspector.TYPE_SPACER: return spacerComp
             case Inspector.TYPE_CLEF: return clefComp
-            case Inspector.TYPE_PEDAL:
             case Inspector.TYPE_HAIRPIN:
             case Inspector.TYPE_CRESCENDO:
-            case Inspector.TYPE_DIMINUENDO:
+            case Inspector.TYPE_DIMINUENDO: return hairpinLineComp
+            case Inspector.TYPE_PEDAL:
             case Inspector.TYPE_OTTAVA:
             case Inspector.TYPE_PALM_MUTE:
             case Inspector.TYPE_LET_RING:
             case Inspector.TYPE_VOLTA:
-            case Inspector.TYPE_GRADUAL_TEMPO_CHANGE:
+            case Inspector.TYPE_NOTELINE:
             case Inspector.TYPE_TEXT_LINE: return lineComp
+            case Inspector.TYPE_GRADUAL_TEMPO_CHANGE: return gradualTempoChangeComp
             case Inspector.TYPE_STAFF_TYPE_CHANGES: return staffTypeComp
             case Inspector.TYPE_TEXT_FRAME: return textFrameComp
             case Inspector.TYPE_VERTICAL_FRAME: return verticalFrameComp
             case Inspector.TYPE_HORIZONTAL_FRAME: return horizontalFrameComp
+            case Inspector.TYPE_FRET_FRAME: return fretFrameComp
             case Inspector.TYPE_ARTICULATION: return articulationComp
+            case Inspector.TYPE_TAPPING: return articulationComp
             case Inspector.TYPE_ORNAMENT: return ornamentComp
             case Inspector.TYPE_AMBITUS: return ambitusComp
             case Inspector.TYPE_IMAGE: return imageComp
@@ -137,6 +145,8 @@ Loader {
             case Inspector.TYPE_DYNAMIC: return dynamicComp
             case Inspector.TYPE_EXPRESSION: return expressionComp
             case Inspector.TYPE_STRING_TUNINGS: return stringTuningsComp
+            case Inspector.TYPE_SYMBOL: return symbolComp
+            case Inspector.TYPE_PLAY_COUNT_TEXT: return playCountTextComp
             }
 
             return null
@@ -242,6 +252,16 @@ Loader {
     }
 
     Component {
+        id: hairpinLineComp
+        HairpinLineSettings { }
+    }
+
+    Component {
+        id: gradualTempoChangeComp
+        GradualTempoChangeSettings { }
+    }
+
+    Component {
         id: staffTypeComp
         StaffTypeSettings { }
     }
@@ -259,6 +279,11 @@ Loader {
     Component {
         id: horizontalFrameComp
         HorizontalFrameSettings { }
+    }
+
+    Component {
+        id: fretFrameComp
+        FretFrameSettings { }
     }
 
     Component {
@@ -354,5 +379,15 @@ Loader {
     Component {
         id: stringTuningsComp
         StringTuningsSettings {}
+    }
+
+    Component {
+        id: symbolComp
+        SymbolSettings {}
+    }
+
+    Component {
+        id: playCountTextComp
+        PlayCountSettings {}
     }
 }

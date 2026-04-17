@@ -19,27 +19,44 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_FRAMEWORK_APPLICATIONMOCK_H
-#define MU_FRAMEWORK_APPLICATIONMOCK_H
+#ifndef MUSE_GLOBAL_APPLICATIONMOCK_H
+#define MUSE_GLOBAL_APPLICATIONMOCK_H
 
 #include <gmock/gmock.h>
 
-#include "framework/global/iapplication.h"
+#include "global/iapplication.h"
 
-namespace mu::framework {
+namespace muse {
 class ApplicationMock : public IApplication
 {
 public:
-    MOCK_METHOD(void, setRunMode, (const RunMode&), (override));
+
+    MOCK_METHOD(String, name, (), (const, override));
+    MOCK_METHOD(String, title, (), (const, override));
+
+    MOCK_METHOD(bool, unstable, (), (const, override));
+    MOCK_METHOD(Version, version, (), (const, override));
+    MOCK_METHOD(Version, fullVersion, (), (const, override));
+    MOCK_METHOD(String, build, (), (const, override));
+    MOCK_METHOD(String, revision, (), (const, override));
+
     MOCK_METHOD(RunMode, runMode, (), (const, override));
     MOCK_METHOD(bool, noGui, (), (const, override));
 
+#ifndef NO_QT_SUPPORT
     MOCK_METHOD(QWindow*, focusWindow, (), (const, override));
-
     MOCK_METHOD(bool, notify, (QObject*, QEvent*), (override));
 
+    MOCK_METHOD(Qt::KeyboardModifiers, keyboardModifiers, (), (const, override));
+#endif
+
+    MOCK_METHOD(void, perform, (), (override));
+    MOCK_METHOD(void, finish, (), (override));
     MOCK_METHOD(void, restart, (), (override));
+
+    MOCK_METHOD(const modularity::ContextPtr, iocContext, (), (const, override));
+    MOCK_METHOD(modularity::ModulesIoC*, ioc, (), (const, override));
 };
 }
 
-#endif // MU_FRAMEWORK_APPLICATIONMOCK_H
+#endif // MUSE_GLOBAL_APPLICATIONMOCK_H

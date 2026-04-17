@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -21,14 +21,13 @@
  */
 #include "notationnavigator.h"
 
-#include "engraving/dom/system.h"
-
 #include "log.h"
 
+using namespace muse;
 using namespace mu::notation;
 
 NotationNavigatorCursorView::NotationNavigatorCursorView(QQuickItem* parent)
-    : QQuickPaintedItem(parent)
+    : QQuickPaintedItem(parent), muse::Injectable(muse::iocCtxForQmlObject(this))
 {
 }
 
@@ -68,33 +67,34 @@ void NotationNavigator::load()
     });
 
     AbstractNotationPaintView::load();
+
+    rescale();
 }
 
 bool NotationNavigator::isVerticalOrientation() const
 {
-    return configuration()->canvasOrientation().val == framework::Orientation::Vertical;
+    return configuration()->canvasOrientation().val == muse::Orientation::Vertical;
 }
 
-PageList NotationNavigator::pages() const
+const PageList& NotationNavigator::pages() const
 {
-    auto notation = globalContext()->currentNotation();
-    if (!notation) {
-        return {};
+    if (!notation()) {
+        static const PageList dummyPages;
+        return dummyPages;
     }
 
-    auto elements = notation->elements();
-    if (!elements) {
-        return {};
-    }
-
-    return elements->pages();
+    return notation()->elements()->pages();
 }
 
 void NotationNavigator::rescale()
 {
     TRACEFUNC;
 
-    PageList pages = this->pages();
+    if (!isVisible() || size().isEmpty()) {
+        return;
+    }
+
+    const PageList& pages = this->pages();
     if (pages.empty()) {
         return;
     }
@@ -135,7 +135,7 @@ void NotationNavigator::mousePressEvent(QMouseEvent* event)
     double dx = logicPos.x() - (m_cursorRect.x() + (m_cursorRect.width() / 2));
     double dy = logicPos.y() - (m_cursorRect.y() + (m_cursorRect.height() / 2));
 
-    moveNotationRequested(-dx, -dy);
+    emit moveNotationRequested(-dx, -dy);
 }
 
 void NotationNavigator::mouseMoveEvent(QMouseEvent* event)
@@ -144,7 +144,7 @@ void NotationNavigator::mouseMoveEvent(QMouseEvent* event)
 
     PointF logicPos = toLogical(event->pos());
     PointF delta = logicPos - m_startMove;
-    moveNotationRequested(-delta.x(), -delta.y());
+    emit moveNotationRequested(-delta.x(), -delta.y());
 
     m_startMove = logicPos;
 }
@@ -208,7 +208,6 @@ void NotationNavigator::setCursorRect(const QRectF& rect)
     bool moved = moveCanvasToRect(newCursorRect);
     m_cursorRect = newCursorRect;
 
-    rescale();
     m_cursorRectView->setSize(this->size());
     m_cursorRectView->setRect(fromLogical(newCursorRect));
 
@@ -223,15 +222,10 @@ int NotationNavigator::orientation() const
     return static_cast<int>(configuration()->canvasOrientation().val);
 }
 
-INotationPtr NotationNavigator::currentNotation() const
-{
-    return globalContext()->currentNotation();
-}
-
 void NotationNavigator::initOrientation()
 {
-    ValCh<framework::Orientation> orientation = configuration()->canvasOrientation();
-    orientation.ch.onReceive(this, [this](framework::Orientation) {
+    ValCh<muse::Orientation> orientation = configuration()->canvasOrientation();
+    orientation.ch.onReceive(this, [this](muse::Orientation) {
         moveCanvasToPosition(PointF(0, 0));
         emit orientationChanged();
     });
@@ -242,18 +236,19 @@ void NotationNavigator::initOrientation()
 void NotationNavigator::initVisible()
 {
     connect(this, &NotationNavigator::visibleChanged, [this]() {
-        update();
+        if (isVisible()) {
+            rescale();
+        }
     });
 }
 
 ViewMode NotationNavigator::notationViewMode() const
 {
-    auto notation = currentNotation();
-    if (!notation) {
+    if (!notation()) {
         return ViewMode::PAGE;
     }
 
-    return notation->viewMode();
+    return notation()->viewMode();
 }
 
 void NotationNavigator::paint(QPainter* painter)
@@ -271,6 +266,11 @@ void NotationNavigator::paint(QPainter* painter)
 
 void NotationNavigator::onViewSizeChanged()
 {
+    if (!isVisible()) {
+        return;
+    }
+
+    rescale();
 }
 
 void NotationNavigator::paintPageNumbers(QPainter* painter)
@@ -284,13 +284,13 @@ void NotationNavigator::paintPageNumbers(QPainter* painter)
     constexpr int PAGE_NUMBER_FONT_SIZE = 2000;
     QFont font(QString::fromStdString(configuration()->fontFamily()), PAGE_NUMBER_FONT_SIZE);
 
+    painter->setClipping(false);
+    painter->setFont(font);
+    painter->setPen(engravingConfiguration()->scoreGreyColor().toQColor());
+
     for (const Page* page : pages()) {
         painter->translate(page->pos().toQPointF());
-
-        painter->setFont(font);
-        painter->setPen(engravingConfiguration()->formattingMarksColor().toQColor());
         painter->drawText(page->ldata()->bbox().toQRectF(), Qt::AlignCenter, QString("%1").arg(page->no() + 1));
-
         painter->translate(-page->pos().toQPointF());
     }
 }

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -82,13 +82,13 @@ static const Acc ACC_LIST[] = {
     Acc(AccidentalVal::NATURAL,  150,   SymId::accidentalThreeQuarterTonesSharpStein),   // SHARP_SLASH4
 
     // Arel-Ezgi-Uzdilek (AEU)
-    Acc(AccidentalVal::NATURAL,    0,   SymId::accidentalBuyukMucennebFlat),    // FLAT_SLASH2
-    Acc(AccidentalVal::NATURAL,    0,   SymId::accidentalBakiyeFlat),           // FLAT_SLASH
-    Acc(AccidentalVal::NATURAL,    0,   SymId::accidentalKucukMucennebSharp),   // SHARP_SLASH3
-    Acc(AccidentalVal::NATURAL,    0,   SymId::accidentalBuyukMucennebSharp),   // SHARP_SLASH2
+    Acc(AccidentalVal::NATURAL,  -89,   SymId::accidentalBuyukMucennebFlat),    // FLAT_SLASH2
+    Acc(AccidentalVal::NATURAL,  -44,   SymId::accidentalBakiyeFlat),           // FLAT_SLASH
+    Acc(AccidentalVal::NATURAL,   56,   SymId::accidentalKucukMucennebSharp),   // SHARP_SLASH3
+    Acc(AccidentalVal::NATURAL,   89,   SymId::accidentalBuyukMucennebSharp),   // SHARP_SLASH2
 
     // Extended Helmholtz-Ellis accidentals (just intonation)
-    Acc(AccidentalVal::NATURAL,    0, SymId::accidentalDoubleFlatOneArrowDown),
+    Acc(AccidentalVal::NATURAL,    0,   SymId::accidentalDoubleFlatOneArrowDown),
     Acc(AccidentalVal::NATURAL,    0,   SymId::accidentalFlatOneArrowDown),
     Acc(AccidentalVal::NATURAL,    0,   SymId::accidentalNaturalOneArrowDown),
     Acc(AccidentalVal::NATURAL,    0,   SymId::accidentalSharpOneArrowDown),
@@ -151,9 +151,9 @@ static const Acc ACC_LIST[] = {
     Acc(AccidentalVal::NATURAL,    1.7, SymId::accidentalCombiningRaise31Schisma),
     Acc(AccidentalVal::NATURAL,  -10.9, SymId::accidentalCombiningLower53LimitComma),
     Acc(AccidentalVal::NATURAL,   10.9, SymId::accidentalCombiningRaise53LimitComma),
-    //Acc(AccidentalVal::NATURAL,    0,   SymId::accidentalEnharmonicAlmostEqualTo),
-    //Acc(AccidentalVal::NATURAL,    0,   SymId::accidentalEnharmonicEquals),
-    //Acc(AccidentalVal::NATURAL,    0,   SymId::accidentalEnharmonicTilde),
+    Acc(AccidentalVal::NATURAL,    0,   SymId::accidentalEnharmonicAlmostEqualTo),
+    Acc(AccidentalVal::NATURAL,    0,   SymId::accidentalEnharmonicEquals),
+    Acc(AccidentalVal::NATURAL,    0,   SymId::accidentalEnharmonicTilde),
 
     // Persian
     Acc(AccidentalVal::NATURAL,   33,   SymId::accidentalSori),                            // SORI
@@ -252,7 +252,7 @@ Accidental::Accidental(EngravingItem* parent)
 
 TranslatableString Accidental::subtypeUserName() const
 {
-    return TranslatableString("engraving/sym", SymNames::userNameForSymId(symId()));
+    return SymNames::userNameForSymId(symId());
 }
 
 //---------------------------------------------------------
@@ -266,7 +266,7 @@ SymId Accidental::symId() const
 
 bool Accidental::parentNoteHasParentheses() const
 {
-    return explicitParent() && parentItem()->isNote() ? toNote(parentItem())->headHasParentheses() : false;
+    return explicitParent() && parentItem()->isNote() ? toNote(parentItem())->bothParentheses() : false;
 }
 
 //---------------------------------------------------------
@@ -304,6 +304,12 @@ SymId Accidental::subtype2symbol(AccidentalType st)
 double Accidental::subtype2centOffset(AccidentalType st)
 {
     return ACC_LIST[int(st)].centOffset;
+}
+
+int Accidental::line() const
+{
+    Note* n = note();
+    return n ? n->line() : 0;
 }
 
 //---------------------------------------------------------
@@ -371,10 +377,10 @@ AccidentalType Accidental::value2subtype(AccidentalVal v)
 
 bool Accidental::acceptDrop(EditData& data) const
 {
-    EngravingItem* e = data.dropElement;
+    const EngravingItem* e = data.dropElement;
 
     if (e->type() == ElementType::ACCIDENTAL) {
-        return true;
+        return note();
     }
 
     if (e->isActionIcon()) {
@@ -437,6 +443,7 @@ PropertyValue Accidental::getProperty(Pid propertyId) const
     case Pid::SMALL:              return m_isSmall;
     case Pid::ACCIDENTAL_BRACKET: return int(bracket());
     case Pid::ACCIDENTAL_ROLE:    return role();
+    case Pid::ACCIDENTAL_STACKING_ORDER_OFFSET: return stackingOrderOffset();
     default:
         return EngravingItem::getProperty(propertyId);
     }
@@ -453,6 +460,7 @@ PropertyValue Accidental::propertyDefault(Pid propertyId) const
     case Pid::SMALL:              return false;
     case Pid::ACCIDENTAL_BRACKET: return int(AccidentalBracket::NONE);
     case Pid::ACCIDENTAL_ROLE:    return AccidentalRole::AUTO;
+    case Pid::ACCIDENTAL_STACKING_ORDER_OFFSET: return 0;
     default:
         return EngravingItem::propertyDefault(propertyId);
     }
@@ -476,6 +484,9 @@ bool Accidental::setProperty(Pid propertyId, const PropertyValue& v)
         break;
     case Pid::ACCIDENTAL_ROLE:
         m_role = v.value<AccidentalRole>();
+        break;
+    case Pid::ACCIDENTAL_STACKING_ORDER_OFFSET:
+        setStackingOrderOffset(v.toInt());
         break;
     default:
         return EngravingItem::setProperty(propertyId, v);

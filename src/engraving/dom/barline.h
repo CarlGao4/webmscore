@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -20,8 +20,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_ENGRAVING_BARLINE_H
-#define MU_ENGRAVING_BARLINE_H
+#pragma once
 
 #include "engravingitem.h"
 
@@ -52,7 +51,20 @@ static constexpr int BARLINE_SPAN_SHORT2_TO         = -1;
 
 struct BarLineTableItem {
     BarLineType type;
-    const char* userName;         // user name, translatable
+    const muse::TranslatableString& userName;
+};
+
+//---------------------------------------------------------
+//   BarLineEditData
+//---------------------------------------------------------
+
+class BarLineEditData : public ElementEditData
+{
+    OBJECT_ALLOCATOR(engraving, BarLineEditData)
+public:
+    double yoff1;
+    double yoff2;
+    virtual EditDataType type() override { return EditDataType::BarLineEditData; }
 };
 
 //---------------------------------------------------------
@@ -80,8 +92,8 @@ public:
 
     BarLine* clone() const override { return new BarLine(*this); }
     Fraction playTick() const override;
-    mu::PointF canvasPos() const override;      ///< position in canvas coordinates
-    mu::PointF pagePos() const override;        ///< position in page coordinates
+    PointF canvasPos() const override;      ///< position in canvas coordinates
+    PointF pagePos() const override;        ///< position in page coordinates
 
     void scanElements(void* data, void (* func)(void*, EngravingItem*), bool all=true) override;
     void setTrack(track_idx_t t) override;
@@ -92,7 +104,7 @@ public:
     bool isEditable() const override { return true; }
 
     Segment* segment() const { return toSegment(explicitParent()); }
-    Measure* measure() const { return toMeasure(explicitParent()->explicitParent()); }
+    Measure* measure() const { return explicitParent() ? toMeasure(explicitParent()->explicitParent()) : nullptr; }
 
     void setSpanStaff(int val) { m_spanStaff = val; }
     void setSpanFrom(int val) { m_spanFrom = val; }
@@ -120,12 +132,19 @@ public:
     bool isBottom() const;
 
     int subtype() const override { return int(m_barLineType); }
+    TranslatableString subtypeUserName() const override;
 
     PropertyValue getProperty(Pid propertyId) const override;
     bool setProperty(Pid propertyId, const PropertyValue&) override;
     PropertyValue propertyDefault(Pid propertyId) const override;
     void undoChangeProperty(Pid id, const PropertyValue&, PropertyFlags ps) override;
     using EngravingObject::undoChangeProperty;
+    EngravingItem* propertyDelegate(Pid) override;
+
+    void setPlayCount(int playCount) { m_playCount = playCount; }
+    int playCount() const { return m_playCount; }
+
+    PlayCountText* playCountText() const;
 
     EngravingItem* nextSegmentElement() override;
     EngravingItem* prevSegmentElement() override;
@@ -133,11 +152,14 @@ public:
     String accessibleInfo() const override;
     String accessibleExtraInfo() const override;
 
+    void setSelected(bool f) override;
     bool needStartEditingAfterSelecting() const override { return true; }
     int gripsCount() const override { return 1; }
     Grip initialEditModeGrip() const override { return Grip::START; }
     Grip defaultGrip() const override { return Grip::START; }
-    std::vector<mu::PointF> gripsPositions(const EditData&) const override;
+    std::vector<PointF> gripsPositions(const EditData&) const override;
+
+    void styleChanged() override;
 
     static const std::vector<BarLineTableItem> barLineTable;
 
@@ -156,15 +178,13 @@ private:
     BarLine(Segment* parent);
     BarLine(const BarLine&);
 
-    void drawEditMode(mu::draw::Painter* painter, EditData& editData, double currentViewScaling) override;
-
     int m_spanStaff = 0;         // span barline to next staff if true, values > 1 are used for importing from 2.x
-    int m_spanFrom = 0;         // line number on start and end staves
+    int m_spanFrom = 0;          // line number on start and end staves
     int m_spanTo = 0;
     BarLineType m_barLineType = BarLineType::NORMAL;
 
     ElementList m_el;          ///< fermata or other articulations
+
+    int m_playCount = -1;                 // For use during copy & paste
 };
 } // namespace mu::engraving
-
-#endif

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -39,17 +39,18 @@ class Score;
 }
 
 namespace mu::notation {
-class NotationMidiInput : public INotationMidiInput
+class NotationMidiInput : public INotationMidiInput, public muse::Injectable
 {
-    INJECT(playback::IPlaybackController, playbackController)
-    INJECT(actions::IActionsDispatcher, dispatcher)
-    INJECT(INotationConfiguration, configuration)
+    muse::Inject<playback::IPlaybackController> playbackController = { this };
+    muse::Inject<muse::actions::IActionsDispatcher> dispatcher = { this };
+    muse::Inject<INotationConfiguration> configuration = { this };
 
 public:
-    NotationMidiInput(IGetScore* getScore, INotationInteractionPtr notationInteraction, INotationUndoStackPtr undoStack);
+    NotationMidiInput(IGetScore* getScore, INotationInteractionPtr notationInteraction, INotationUndoStackPtr undoStack,
+                      const muse::modularity::ContextPtr& iocCtx);
 
-    void onMidiEventReceived(const midi::Event& event) override;
-    async::Channel<std::vector<const Note*> > notesReceived() const override;
+    void onMidiEventReceived(const muse::midi::Event& event) override;
+    muse::async::Channel<std::vector<const Note*> > notesReceived() const override;
 
     void onRealtimeAdvance() override;
 
@@ -57,8 +58,16 @@ private:
     mu::engraving::Score* score() const;
 
     void doProcessEvents();
-    Note* addNoteToScore(const midi::Event& e);
-    Note* makeNote(const midi::Event& e);
+
+    void startNoteInputIfNeed();
+
+    void addNoteEventsToInputState();
+    Note* addNoteToScore(const muse::midi::Event& e);
+    Note* makePreviewNote(const muse::midi::Event& e);
+
+    using ControllerEventMap = std::map<muse::midi::Event::Opcode, muse::midi::Event>;
+    void triggerControllers(const ControllerEventMap& events);
+    void releasePlayingNotes(const std::vector<int>& pitches);
 
     void enableMetronome();
     void disableMetronome();
@@ -73,22 +82,31 @@ private:
     bool isRealtime() const;
     bool isRealtimeAuto() const;
     bool isRealtimeManual() const;
+    bool isInputByDuration() const;
 
     bool isNoteInputMode() const;
 
     IGetScore* m_getScore = nullptr;
     INotationInteractionPtr m_notationInteraction;
     INotationUndoStackPtr m_undoStack;
-    async::Channel<std::vector<const Note*> > m_notesReceivedChannel;
+    muse::async::Channel<std::vector<const Note*> > m_notesReceivedChannel;
 
     QTimer m_processTimer;
-    std::vector<midi::Event> m_eventsQueue;
+    std::vector<muse::midi::Event> m_eventsQueue;
 
     QTimer m_realtimeTimer;
     QTimer m_extendNoteTimer;
     bool m_allowRealtimeRests = false;
 
     bool m_shouldDisableMetronome = false;
+    bool m_holdingNotesInInputByDuration = false;
+
+    struct PlayingNote {
+        bool isPreview = false;
+        Note* note = nullptr;
+    };
+
+    std::map<int, PlayingNote> m_playingNotes;
 };
 }
 

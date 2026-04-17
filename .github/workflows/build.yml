@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - 'webmscore'
+      - 'webmscore-*'
       - 'Xmader/**'
 
 concurrency:
@@ -13,8 +14,10 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  EM_VERSION: 2.0.6
+  # See https://doc.qt.io/qt-6/wasm.html to have coherent Qt and EM versions
+  EM_VERSION: 3.1.14
   EM_CACHE_FOLDER: 'emsdk-cache'
+  Qt6_VER: '6.4.3'
   COMMIT_MSG: ${{ github.event.head_commit.message }}
 
 jobs:
@@ -23,17 +26,27 @@ jobs:
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
           submodules: true
-      - uses: actions/setup-node@v1
+      - name: Compatibility step for act
+        if: ${{ env.ACT }}
+        run: |
+          # If checkout is a `docker cp`, submodules are missing
+          git submodule init
+          git submodule update
+          sudo apt update
+          sudo apt install -y cmake
+          cmake --version
+    
+      - uses: actions/setup-node@v6
         with:
           node-version: 16
-      - uses: actions/cache@v3
+      - uses: actions/cache/restore@v5
         with:
           path: ${{env.EM_CACHE_FOLDER}}
           key: emsdk-${{env.EM_VERSION}}-${{ runner.os }}
-      - uses: actions/cache@v3
+      - uses: actions/cache@v5
         with:
           # Allows updating the cache
           # https://github.com/actions/cache/blob/main/tips-and-workarounds.md#update-a-cache
@@ -43,26 +56,40 @@ jobs:
           path: ${{ github.workspace }}/.ccache
 
       - name: Install Qt
-        uses: jurplel/install-qt-action@v3
+        uses: jurplel/install-qt-action@v4
         with:
           # aqtversion: '==2.1.*'
-          version: '5.15.2'
+          version: ${{env.Qt6_VER}}
           host: 'linux'
           target: 'desktop'
           arch: 'wasm_32'
-          archives: 'qtbase'
-          dir: ${{ github.workspace }}/build.qt5
+          archives: 'qtbase qtdeclarative qtsvg'
+          modules: 'qt5compat'
+          dir: ${{ github.workspace }}/build.qt6
           setup-python: true
           cache: true
+      - name: Symlink libICU for Qt
+        # This is an *awful* fix, but qmake seems to accept that
+        run: |
+          sudo ln -sf $(whereis libicui18n.so | awk '{print $NF}') $(whereis libicui18n.so | awk '{print $NF}').56
+          sudo ln -sf $(whereis libicudata.so | awk '{print $NF}') $(whereis libicudata.so | awk '{print $NF}').56
+          sudo ln -sf $(whereis libicuuc.so | awk '{print $NF}') $(whereis libicuuc.so | awk '{print $NF}').56
+        
       - name: Install emscripten
         uses: Xmader/setup-emsdk@master
         with:
           version: ${{env.EM_VERSION}}
           actions-cache-folder: ${{env.EM_CACHE_FOLDER}}
+
+      - name: Save Emscripten
+        uses: actions/cache/save@v5
+        with:
+          path: ${{env.EM_CACHE_FOLDER}}
+          key: emsdk-${{env.EM_VERSION}}-${{ runner.os }}
       - name: Apply patches for Qt and emscripten
         run: |
-          echo $Qt5_DIR
-          cp --verbose -r build/qt/* ${Qt5_DIR}
+          cp --verbose -r buildscripts/qt/* build.qt6/Qt/${Qt6_VER}/wasm_32/
+          find build.qt6/Qt/${Qt6_VER}/wasm_32/lib/cmake/Qt6Gui/ -name 'Qt6QWasmIntegration*' -delete
           echo $(which emcc).py
           sed -i -r "s/(shared.Settings.MEM_INIT_IN_WASM = )True/\1False/" "$(which emcc).py"
       - name: Install ccache
@@ -78,7 +105,7 @@ jobs:
           npm pack
 
       - name: Save build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: npm-pack
           path: web-public/webmscore4-*.tgz
@@ -89,15 +116,15 @@ jobs:
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
           submodules: false
-      - uses: actions/setup-node@v1
+      - uses: actions/setup-node@v6
         with:
-          node-version: 12
+          node-version: 16
 
       - name: Download webmscore package tarball
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: npm-pack
           path: web-example
@@ -109,12 +136,12 @@ jobs:
           npm i ./webmscore4-*.tgz
           npm start || echo "failed=1" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: example-exports
           path: web-example/exported*
       
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: steps.run-test.outputs.failed == '1'
         with:
           name: test-log
@@ -133,16 +160,16 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
           submodules: false
-      - uses: actions/setup-node@v1
+      - uses: actions/setup-node@v6
         with:
-          node-version: 12
+          node-version: 16
           # https://docs.github.com/en/actions/publishing-packages/publishing-nodejs-packages#publishing-packages-to-the-npm-registry
           registry-url: https://registry.npmjs.org/
       - name: Download webmscore package tarball
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v8
         with:
           name: npm-pack
       - run: |

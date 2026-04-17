@@ -173,12 +173,12 @@ class WebMscore {
     static async setSoundFont(data) {
         if (WebMscore.hasSoundfont) {
             // remove the old soundfont file
-            Module['FS_unlink']('/MuseScore_General.sf3')
+            Module['FS_unlink']('/MS Basic.sf3')
         }
 
         // put the soundfont file into the virtual file system
         // side effects: the soundfont is shared across all instances
-        Module['FS_createDataFile']('/', 'MuseScore_General.sf3', data, true, true)
+        Module['FS_createDataFile']('/', 'MS Basic.sf3', data, true, true)
 
         WebMscore.hasSoundfont = true
     }

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2023 MuseScore BVBA and others
+ * Copyright (C) 2023 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -62,7 +62,7 @@ QString CapoSettingsModel::userCapoText() const
         return QString();
     }
 
-    return m_item ? m_item->getProperty(mu::engraving::Pid::TEXT).value<String>().toQString() : QString();
+    return m_item ? m_item->getProperty(mu::engraving::Pid::TEXT).value<muse::String>().toQString() : QString();
 }
 
 void CapoSettingsModel::init()
@@ -90,7 +90,7 @@ void CapoSettingsModel::init()
     for (mu::engraving::string_idx_t i = 0; i < stringData->strings(); ++i) {
         StringItem* item = new StringItem(this);
         item->blockSignals(true);
-        item->setApplyCapo(!mu::contains(params().ignoredStrings, i));
+        item->setApplyCapo(!muse::contains(params().ignoredStrings, i));
         item->blockSignals(false);
 
         m_strings.push_back(item);
@@ -128,12 +128,12 @@ void CapoSettingsModel::toggleCapoForString(int stringIndex)
 QVariantList CapoSettingsModel::possibleCapoPlacements() const
 {
     QVariantMap above {
-        { "text", qtrc("notation", "Above") },
+        { "text", muse::qtrc("notation", "Above") },
         { "value", static_cast<int>(mu::engraving::PlacementV::ABOVE) }
     };
 
     QVariantMap below {
-        { "text", qtrc("notation", "Below") },
+        { "text", muse::qtrc("notation", "Below") },
         { "value", static_cast<int>(mu::engraving::PlacementV::BELOW) }
     };
 
@@ -193,7 +193,7 @@ void CapoSettingsModel::setUserCapoText(const QString& text)
         return;
     }
 
-    changeItemProperty(mu::engraving::Pid::TEXT, String::fromQString(text));
+    changeItemProperty(mu::engraving::Pid::TEXT, muse::String::fromQString(text));
     emit userCapoTextChanged(text);
 }
 

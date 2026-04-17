@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -28,8 +28,7 @@
 
 #include "modularity/ioc.h"
 #include "async/asyncable.h"
-#include "audio/itracks.h"
-#include "audio/iplayback.h"
+#include "audio/main/iplayback.h"
 #include "context/iglobalcontext.h"
 #include "ui/view/navigationsection.h"
 #include "playback/iplaybackconfiguration.h"
@@ -38,17 +37,18 @@
 #include "internal/mixerchannelitem.h"
 
 namespace mu::playback {
-class MixerPanelModel : public QAbstractListModel, public async::Asyncable
+class MixerPanelModel : public QAbstractListModel, public muse::async::Asyncable
 {
     Q_OBJECT
 
-    INJECT(audio::IPlayback, playback)
+    INJECT(muse::audio::IPlayback, playback)
     INJECT(IPlaybackController, controller)
     INJECT(context::IGlobalContext, context)
     INJECT(IPlaybackConfiguration, configuration)
 
     Q_PROPERTY(
-        mu::ui::NavigationSection * navigationSection READ navigationSection WRITE setNavigationSection NOTIFY navigationSectionChanged)
+        muse::ui::NavigationSection * navigationSection READ navigationSection WRITE setNavigationSection NOTIFY navigationSectionChanged)
+    Q_PROPERTY(int navigationOrderStart READ navigationOrderStart WRITE setNavigationOrderStart NOTIFY navigationOrderStartChanged)
 
     Q_PROPERTY(int count READ rowCount NOTIFY rowCountChanged)
 
@@ -62,11 +62,15 @@ public:
     int rowCount(const QModelIndex& parent = QModelIndex()) const override;
     QHash<int, QByteArray> roleNames() const override;
 
-    ui::NavigationSection* navigationSection() const;
-    void setNavigationSection(ui::NavigationSection* navigationSection);
+    muse::ui::NavigationSection* navigationSection() const;
+    void setNavigationSection(muse::ui::NavigationSection* navigationSection);
+
+    int navigationOrderStart() const;
+    void setNavigationOrderStart(int navigationOrderStart);
 
 signals:
     void navigationSectionChanged();
+    void navigationOrderStartChanged();
     void rowCountChanged();
 
 private:
@@ -75,26 +79,26 @@ private:
     };
 
     void loadItems();
-    void onTrackAdded(const audio::TrackId& trackId);
+    void onTrackAdded(const muse::audio::TrackId& trackId);
     void addItem(MixerChannelItem* item, int index);
-    void removeItem(const audio::TrackId trackId);
+    void removeItem(const muse::audio::TrackId trackId);
     void updateItemsPanelsOrder();
     void clear();
     void setupConnections();
 
     int resolveInsertIndex(const engraving::InstrumentTrackId& instrumentTrackId) const;
-    int indexOf(const audio::TrackId trackId) const;
+    int indexOf(const muse::audio::TrackId trackId) const;
 
-    MixerChannelItem* buildInstrumentChannelItem(const audio::TrackId trackId, const engraving::InstrumentTrackId& instrumentTrackId,
+    MixerChannelItem* buildInstrumentChannelItem(const muse::audio::TrackId trackId, const engraving::InstrumentTrackId& instrumentTrackId,
                                                  bool isPrimary = true);
-    MixerChannelItem* buildAuxChannelItem(audio::aux_channel_idx_t index, const audio::TrackId trackId);
+    MixerChannelItem* buildAuxChannelItem(muse::audio::aux_channel_idx_t index, const muse::audio::TrackId trackId);
     MixerChannelItem* buildMasterChannelItem();
 
     int masterChannelIndex() const;
 
-    MixerChannelItem* findChannelItem(const audio::TrackId& trackId) const;
+    MixerChannelItem* findChannelItem(const muse::audio::TrackId& trackId) const;
 
-    void loadOutputParams(MixerChannelItem* item, audio::AudioOutputParams&& params);
+    void loadOutputParams(MixerChannelItem* item, muse::audio::AudioOutputParams&& params);
     void updateOutputResourceItemCount();
 
     project::INotationProjectPtr currentProject() const;
@@ -104,9 +108,10 @@ private:
 
     QList<MixerChannelItem*> m_mixerChannelList;
     MixerChannelItem* m_masterChannelItem = nullptr;
-    audio::TrackSequenceId m_currentTrackSequenceId = -1;
+    muse::audio::TrackSequenceId m_currentTrackSequenceId = -1;
 
-    ui::NavigationSection* m_navigationSection = nullptr;
+    muse::ui::NavigationSection* m_navigationSection = nullptr;
+    int m_navigationOrderStart = 1;
 };
 }
 

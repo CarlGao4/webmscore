@@ -21,9 +21,14 @@
  */
 #include <gtest/gtest.h>
 
+#include <map>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "containers.h"
 
-using namespace mu;
+using namespace muse;
 
 class Global_Types_ContainersTests : public ::testing::Test
 {

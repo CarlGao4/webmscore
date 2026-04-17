@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -30,33 +30,62 @@
 
 using namespace mu::inspector;
 
-using IconCode = mu::ui::IconCode::Code;
+using IconCode = muse::ui::IconCode::Code;
 
 HairpinLineSettingsModel::HairpinLineSettingsModel(QObject* parent, IElementRepositoryService* repository, HairpinLineType lineType)
     : TextLineSettingsModel(parent, repository)
 {
     if (lineType == Diminuendo) {
         setModelType(InspectorModelType::TYPE_DIMINUENDO);
-        setTitle(qtrc("inspector", "Diminuendo"));
-        setIcon(ui::IconCode::Code::DIMINUENDO);
+        setTitle(muse::qtrc("inspector", "Diminuendo"));
+        setIcon(muse::ui::IconCode::Code::DIMINUENDO);
     } else {
         setModelType(InspectorModelType::TYPE_CRESCENDO);
-        setTitle(qtrc("inspector", "Crescendo"));
-        setIcon(ui::IconCode::Code::CRESCENDO);
+        setTitle(muse::qtrc("inspector", "Crescendo"));
+        setIcon(muse::ui::IconCode::Code::CRESCENDO);
     }
 
-    m_hairpinType = lineType == Crescendo ? engraving::HairpinType::CRESC_LINE : engraving::HairpinType::DECRESC_LINE;
+    m_hairpinType = lineType == Crescendo ? engraving::HairpinType::CRESC_LINE : engraving::HairpinType::DIM_LINE;
 
     createProperties();
+}
+
+PropertyItem* HairpinLineSettingsModel::snapBefore() const
+{
+    return m_snapBefore;
+}
+
+PropertyItem* HairpinLineSettingsModel::snapAfter() const
+{
+    return m_snapAfter;
 }
 
 void HairpinLineSettingsModel::createProperties()
 {
     TextLineSettingsModel::createProperties();
 
+    m_snapBefore = buildPropertyItem(mu::engraving::Pid::SNAP_BEFORE);
+    m_snapAfter = buildPropertyItem(mu::engraving::Pid::SNAP_AFTER);
+
     isLineVisible()->setIsVisible(true);
     allowDiagonal()->setIsVisible(false);
     placement()->setIsVisible(true);
+}
+
+void HairpinLineSettingsModel::loadProperties()
+{
+    TextLineSettingsModel::loadProperties();
+
+    loadPropertyItem(m_snapBefore);
+    loadPropertyItem(m_snapAfter);
+}
+
+void HairpinLineSettingsModel::resetProperties()
+{
+    TextLineSettingsModel::resetProperties();
+
+    m_snapBefore->resetToDefault();
+    m_snapAfter->resetToDefault();
 }
 
 void HairpinLineSettingsModel::requestElements()

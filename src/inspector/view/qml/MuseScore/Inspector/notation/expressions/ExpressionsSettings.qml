@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -21,8 +21,8 @@
  */
 import QtQuick 2.15
 
-import MuseScore.Ui 1.0
-import MuseScore.UiComponents 1.0
+import Muse.Ui 1.0
+import Muse.UiComponents 1.0
 import MuseScore.Inspector 1.0
 
 import "../../common"
@@ -43,46 +43,23 @@ Column {
         snapExpression.navigation.requestActive()
     }
 
-    InspectorPropertyView {
-        id: layoutSection
-        titleText: ""
-        propertyItem: root.model ? root.model.snapExpression : null
+    CheckBoxPropertyView {
+        id: snapExpression
 
-        navigationName: "LayoutMenu"
+        navigationName: "Snap expression"
         navigationPanel: root.navigationPanel
-        navigationRowStart: size.navigationRowEnd + 1
-        navigationRowEnd: verticalAlignmentButtonList.navigationRowEnd
+        navigationRowStart: root.navigationRowStart
 
-        isModified: root.model ? root.model.snapExpression.isModified : false
+        titleText: qsTrc("inspector", "Align with preceding dynamic")
+        propertyItem: root.model?.snapExpression ?? null
+    }
 
-        onRequestResetToDefault: {
-            if (root.model) {
-                root.model.snapExpression.resetToDefault()
-            }
-        }
+    VoicesAndPositionSection {
+        id: voicesAndPositionSection
 
-        onRequestApplyToStyle: {
-            if (root.model) {
-                root.model.snapExpression.applyToStyle()
-            }
-        }
+        navigationPanel: root.navigationPanel
+        navigationRowStart: snapExpression.navigationRowEnd + 1
 
-        Item {
-            anchors.right: root.right
-            anchors.left: root.left
-            height: childrenRect.height
-
-            PropertyCheckBox {
-                id: snapExpression
-
-                navigation.name: "SnapExpressionCheckBox"
-                navigation.panel: root.navigationPanel
-                navigation.row: root.navigationRowStart
-
-                text: qsTrc("inspector", "Snap to dynamic")
-                propertyItem: root.model ? root.model.snapExpression : null
-            }
-        }
-
+        model: root.model
     }
 }

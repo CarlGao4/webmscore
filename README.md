@@ -116,33 +116,36 @@ WebAssembly vs native C++ program!
 
 ## Compiling
 
+> [!TIP]
+> You can use [act](https://github.com/nektos/act) to download these dependencies and handle the build process for you, in a container.
+
 1. Install essential tools like `make`, `cmake`, `llvm`, etc.
 
 2. Install `emscripten` v2.0.6 using `emsdk`
 https://emscripten.org/docs/getting_started/downloads.html
 
-3. Get Qt5 for WebAssembly and apply patches
+3. Get Qt6 for WebAssembly and apply patches
 
 ```sh
-AQT_PREFIX=$PWD/build.qt5
-Qt5_VER=5.15.2
-Qt5_DIR=${AQT_PREFIX}/${Qt5_VER}/wasm_32
+AQT_PREFIX=$PWD/build.qt6
+Qt6_VER=6.8.3
+Qt6_DIR=${AQT_PREFIX}/${Qt6_VER}/wasm_32
 # if you change the install directory or Qt version, remember to also change the `PREFIX_PATH` variable in `web/Makefile` file
 
 # Download Qt using aqtinstall (https://github.com/miurahr/aqtinstall)
 pip install aqtinstall==2.1.*
-aqt install-qt linux desktop ${Qt5_VER} wasm_32 --outputdir ${AQT_PREFIX} --archives qtbase
+aqt install-qt linux desktop ${Qt6_VER} wasm_32 --outputdir ${AQT_PREFIX} --archives qtbase
 
 # # Compile the `offscreen` platform plugin
-# aqt install-src linux desktop ${Qt5_VER} --outputdir ${AQT_PREFIX} --archives qtbase
-# cd ${AQT_PREFIX}/${Qt5_VER}/Src/qtbase/src/plugins/platforms/offscreen
-# ${Qt5_DIR}/bin/qmake offscreen.pro && make
-# cd - && cp -r ${AQT_PREFIX}/${Qt5_VER}/Src/qtbase/plugins build/qt/
+# aqt install-src linux desktop ${Qt6_VER} --outputdir ${AQT_PREFIX} --archives qtbase
+# cd ${AQT_PREFIX}/${Qt6_VER}/Src/qtbase/src/plugins/platforms/offscreen
+# ${Qt6_DIR}/bin/qmake offscreen.pro && make
+# cd - && cp -r ${AQT_PREFIX}/${Qt6_VER}/Src/qtbase/plugins build/qt/
 
 # Apply patches, which 
-#   enable the prebuilt `offscreen` QPA platform plugin (https://doc.qt.io/qt-5/qpa.html), and
-#   exclude other Qt5Gui plugins
-cp -r build/qt/* ${Qt5_DIR}
+#   enable the prebuilt `offscreen` QPA platform plugin (https://doc.qt.io/qt-6/qpa.html), and
+#   exclude other Qt6Gui plugins
+cp -r build/qt/* ${Qt6_DIR}
 
 # Patch emcc.py to emit separate .mem files regardless of MEM_INIT_METHOD settings (MEM_INIT_METHOD won't work with wasm)
 sed -i -r "s/(shared.Settings.MEM_INIT_IN_WASM = )True/\1False/" "$(which emcc).py"

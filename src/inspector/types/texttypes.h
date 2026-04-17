@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -74,6 +74,8 @@ public:
         TEXT_TYPE_INSTRUMENT_CHANGE,
         TEXT_TYPE_HEADER,
         TEXT_TYPE_FOOTER,
+        TEXT_TYPE_COPYRIGHT,
+        TEXT_TYPE_PAGE_NUMBER,
         TEXT_TYPE_MEASURE_NUMBER,
         TEXT_TYPE_MMREST_RANGE,
         TEXT_TYPE_TEMPO,
@@ -158,11 +160,13 @@ static const QList<mu::engraving::ElementType> TEXT_ELEMENT_TYPES = {
     mu::engraving::ElementType::STICKING,
     mu::engraving::ElementType::TEMPO_TEXT,
     mu::engraving::ElementType::TUPLET,
+    mu::engraving::ElementType::PLAY_COUNT_TEXT,
     mu::engraving::ElementType::PLAYTECH_ANNOTATION,
     mu::engraving::ElementType::CAPO,
     mu::engraving::ElementType::STRING_TUNINGS,
     mu::engraving::ElementType::HARP_DIAGRAM,
-    mu::engraving::ElementType::SOUND_FLAG
+    mu::engraving::ElementType::SOUND_FLAG,
+    mu::engraving::ElementType::HAMMER_ON_PULL_OFF_TEXT,
 };
 }
 

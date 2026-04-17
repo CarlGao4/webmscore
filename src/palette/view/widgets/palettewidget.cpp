@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -58,18 +58,20 @@
 #include "engraving/dom/factory.h"
 #include "engraving/style/defaultstyle.h"
 #include "engraving/style/style.h"
-#include "engraving/compat/dummyelement.h"
+
+#include "notation/utilities/engravingitempreviewpainter.h"
 
 #include "internal/palettecelliconengine.h"
 
 #include "log.h"
 
 using namespace mu;
-using namespace mu::io;
+using namespace muse;
+using namespace muse::io;
 using namespace mu::palette;
 using namespace mu::engraving;
-using namespace mu::framework;
-using namespace mu::draw;
+using namespace muse::draw;
+using namespace muse::actions;
 
 PaletteWidget::PaletteWidget(QWidget* parent)
     : QWidget(parent)
@@ -176,7 +178,7 @@ PaletteCellPtr PaletteWidget::appendElement(ElementPtr element, const QString& n
     return cell;
 }
 
-PaletteCellPtr PaletteWidget::appendActionIcon(mu::engraving::ActionIconType type, actions::ActionCode code)
+PaletteCellPtr PaletteWidget::appendActionIcon(mu::engraving::ActionIconType type, ActionCode code)
 {
     PaletteCellPtr cell = m_palette->appendActionIcon(type, code);
 
@@ -284,12 +286,12 @@ bool PaletteWidget::setFilterText(const QString& text)
     m_filteredCells.clear();
     // if palette name is searched for, display all elements in the palette
     if (name().startsWith(t, Qt::CaseInsensitive)) {
-        PaletteCellPtr c = cells().front();
-        for (PaletteCellPtr cell : cells()) {
+        const PaletteCellPtr& c = cells().front();
+        for (const PaletteCellPtr& cell : cells()) {
             m_filteredCells.push_back(cell);
         }
 
-        bool contains = t.isEmpty() || c;
+        const bool contains = t.isEmpty() || c;
         if (!contains) {
             m_isFilterActive = true;
         }
@@ -298,12 +300,12 @@ bool PaletteWidget::setFilterText(const QString& text)
         }
     }
 
-    for (PaletteCellPtr cell : cells()) {
-        QStringList h = cell->name.toLower().split(" ");
-        bool c        = false;
-        QStringList n = t.split(" ");
-        for (QString hs : h) {
-            for (QString ns : n) {
+    for (const PaletteCellPtr& cell : cells()) {
+        const QStringList h = cell->name.toLower().split(" ");
+        const QStringList n = t.split(" ");
+        bool c = false;
+        for (const QString& hs : h) {
+            for (const QString& ns : n) {
                 if (!ns.trimmed().isEmpty()) {
                     c = hs.trimmed().startsWith(ns.trimmed());
                 }
@@ -315,7 +317,7 @@ bool PaletteWidget::setFilterText(const QString& text)
         if (t.isEmpty() || c) {
             m_filteredCells.push_back(cell);
         }
-        bool contains = t.isEmpty() || c;
+        const bool contains = t.isEmpty() || c;
         if (!contains) {
             m_isFilterActive = true;
         }
@@ -433,7 +435,7 @@ void PaletteWidget::applyCurrentElementToScore()
     applyElementAtIndex(m_currentIdx);
 }
 
-void PaletteWidget::applyElementAtPosition(QPoint pos, Qt::KeyboardModifiers modifiers)
+void PaletteWidget::applyElementAtPosition(const QPointF& pos, Qt::KeyboardModifiers modifiers)
 {
     applyElementAtIndex(cellIndexForPoint(pos), modifiers);
 }
@@ -455,6 +457,7 @@ void PaletteWidget::applyElementAtIndex(int index, Qt::KeyboardModifiers modifie
     }
 
     notation->interaction()->applyPaletteElement(cell->element.get(), modifiers);
+    mainWindow()->qWindow()->requestActivate();
 }
 
 // ====================================================
@@ -500,35 +503,16 @@ int PaletteWidget::rows() const
     return (actualCellCount() + c - 1) / c;
 }
 
-int PaletteWidget::cellIndexForPoint(const QPoint& p) const
+int PaletteWidget::cellIndexForPoint(const QPointF& p) const
 {
-    int hgridM = gridWidthScaled();
-    int vgridM = gridHeightScaled();
-    if (columns() == 0) {
-        return -1;
-    }
-    int rightBorder = width() % hgridM;
-    int hhgrid      = hgridM + (rightBorder / columns());
-
-    int x = p.x();
-    int y = p.y();
-
-    int row = y / vgridM;
-    int col = x / hhgrid;
-
-    int nc = columns();
-    if (col > nc) {
-        return -1;
-    }
-
-    int idx = row * nc + col;
+    int idx = theoreticalCellIndexForPoint(p);
     if (idx < 0 || idx >= actualCellCount()) {
         return -1;
     }
     return idx;
 }
 
-int PaletteWidget::theoreticalCellIndexForPoint(const QPoint& p) const
+int PaletteWidget::theoreticalCellIndexForPoint(const QPointF& p) const
 {
     int hgridM = gridWidthScaled();
     int vgridM = gridHeightScaled();
@@ -538,11 +522,8 @@ int PaletteWidget::theoreticalCellIndexForPoint(const QPoint& p) const
     int rightBorder = width() % hgridM;
     int hhgrid      = hgridM + (rightBorder / columns());
 
-    int x = p.x();
-    int y = p.y();
-
-    int row = y / vgridM;
-    int col = x / hhgrid;
+    int col = p.x() / hhgrid;
+    int row = p.y() / vgridM;
 
     int nc = columns();
     if (col > nc) {
@@ -608,7 +589,7 @@ QPixmap PaletteWidget::pixmapForCellAt(int paletteIdx) const
     QPixmap pm(w, h);
     pm.fill(configuration()->elementsBackgroundColor());
 
-    mu::draw::Painter painter(&pm, "palette");
+    muse::draw::Painter painter(&pm, "palette");
     painter.setAntialiasing(true);
 
     painter.scale(cellMag, cellMag);
@@ -631,10 +612,11 @@ QPixmap PaletteWidget::pixmapForCellAt(int paletteIdx) const
 
     painter.setPen(Pen(color));
 
-    PaletteCellIconEngine::PaintContext ctx;
-    ctx.painter = &painter;
+    notation::EngravingItemPreviewPainter::PaintParams params;
+    params.painter = &painter;
+    params.color = configuration()->elementsColor();
 
-    element->scanElements(&ctx, PaletteCellIconEngine::paintPaletteItem);
+    notation::EngravingItemPreviewPainter::paintItem(element.get(), params);
 
     element->setPos(pos);
     return pm;
@@ -792,7 +774,7 @@ void PaletteWidget::mouseReleaseEvent(QMouseEvent* event)
     update();
 
     if (!m_useDoubleClickForApplyingElements) {
-        applyElementAtPosition(event->pos(), event->modifiers());
+        applyElementAtPosition(event->position(), event->modifiers());
     }
 }
 
@@ -818,6 +800,7 @@ void PaletteWidget::dragEnterEvent(QDragEnterEvent* event)
             QFileInfo fi(u.path());
             QString suffix(fi.suffix().toLower());
             if (suffix == "svg"
+                || suffix == "svgz"
                 || suffix == "jpg"
                 || suffix == "jpeg"
                 || suffix == "png"
@@ -846,7 +829,7 @@ void PaletteWidget::dragMoveEvent(QDragMoveEvent* event)
 {
     if (event->source() == this) {
         if (m_currentIdx != -1 && event->proposedAction() == Qt::MoveAction) {
-            int targetIdx = cellIndexForPoint(event->pos());
+            int targetIdx = cellIndexForPoint(event->position());
             if (targetIdx != -1 && targetIdx != m_currentIdx) {
                 PaletteCellPtr cell = m_palette->takeCell(m_currentIdx);
                 m_palette->insertCell(targetIdx, cell);
@@ -874,14 +857,14 @@ void PaletteWidget::dropEvent(QDropEvent* event)
         if (u.scheme() == "file") {
             auto image = std::make_shared<Image>(gpaletteScore->dummy());
             QString filePath(u.toLocalFile());
-            image->load(filePath);
+            image->loadFromFile(filePath);
             element = image;
             QFileInfo file(filePath);
             name = file.completeBaseName();
         }
     } else if (datap->hasFormat(mu::commonscene::MIME_SYMBOL_FORMAT)) {
         QByteArray dta(event->mimeData()->data(mu::commonscene::MIME_SYMBOL_FORMAT));
-        ByteArray ba = ByteArray::fromQByteArrayNoCopy(dta);
+        muse::ByteArray ba = muse::ByteArray::fromQByteArrayNoCopy(dta);
         XmlReader xml(ba);
         PointF dragOffset;
         Fraction duration;
@@ -899,7 +882,7 @@ void PaletteWidget::dropEvent(QDropEvent* event)
 
                 if (element->isActionIcon()) {
                     ActionIcon* icon = toActionIcon(element.get());
-                    const mu::ui::UiAction& actionItem = actionsRegister()->action(icon->actionCode());
+                    const muse::ui::UiAction& actionItem = actionsRegister()->action(icon->actionCode());
                     if (actionItem.isValid()) {
                         icon->setAction(icon->actionCode(), static_cast<char16_t>(actionItem.iconCode));
                     }
@@ -928,7 +911,8 @@ void PaletteWidget::dropEvent(QDropEvent* event)
     }
 
     element->setSelected(false);
-    int i = cellIndexForPoint(event->pos());
+
+    int i = cellIndexForPoint(event->position());
     if (i == -1 || cells()[i]) {
         appendElement(element, name);
     } else {
@@ -954,7 +938,7 @@ void PaletteWidget::paintEvent(QPaintEvent* /*event*/)
     qreal mag      = magS / _spatium;
     gpaletteScore->style().setSpatium(SPATIUM20);
 
-    mu::draw::Painter painter(this, "palette");
+    muse::draw::Painter painter(this, "palette");
     painter.setAntialiasing(true);
 
     if (m_paintOptions.backgroundColor.isValid()) {
@@ -1011,10 +995,10 @@ void PaletteWidget::paintEvent(QPaintEvent* /*event*/)
         }
 
         if (currentCell->focused) {
-            painter.setPen(QColor(uiConfiguration()->currentTheme().values[ui::FONT_PRIMARY_COLOR].toString()));
+            painter.setPen(QColor(uiConfiguration()->currentTheme().values[muse::ui::FONT_PRIMARY_COLOR].toString()));
             painter.setBrush(QColor(Qt::transparent));
 
-            int borderWidth = uiConfiguration()->currentTheme().values[ui::NAVIGATION_CONTROL_BORDER_WIDTH].toInt();
+            int borderWidth = uiConfiguration()->currentTheme().values[muse::ui::NAVIGATION_CONTROL_BORDER_WIDTH].toInt();
             qreal border = borderWidth / 2;
 
             painter.drawRoundedRect(r.adjusted(border, border, -border, -border), borderWidth, borderWidth);
@@ -1022,13 +1006,13 @@ void PaletteWidget::paintEvent(QPaintEvent* /*event*/)
         }
 
         if (idx == m_selectedIdx) {
-            c.setAlphaF(0.5);
+            c.setAlphaF(0.5f);
             painter.fillRect(r, c);
         } else if (idx == m_pressedIndex) {
-            c.setAlphaF(0.75);
+            c.setAlphaF(0.75f);
             painter.fillRect(r, c);
         } else if (idx == m_currentIdx) {
-            c.setAlphaF(0.2);
+            c.setAlphaF(0.2f);
             painter.fillRect(r, c);
         }
 
@@ -1036,12 +1020,12 @@ void PaletteWidget::paintEvent(QPaintEvent* /*event*/)
         if (!tag.isEmpty()) {
             painter.setPen(QColor(Qt::darkGray));
             Font font(painter.font());
-            font.setPixelSize(uiConfiguration()->fontSize(ui::FontSizeType::BODY));
+            font.setPixelSize(uiConfiguration()->fontSize(muse::ui::FontSizeType::BODY));
             painter.setFont(font);
             painter.drawText(rShift, Qt::AlignLeft | Qt::AlignTop, tag);
         }
 
-        draw::Pen pen(linesColor);
+        muse::draw::Pen pen(linesColor);
         pen.setWidthF(engraving::DefaultStyle::defaultStyle().styleS(Sid::staffLineWidth).val() * magS);
         painter.setPen(pen);
 
@@ -1109,12 +1093,15 @@ void PaletteWidget::paintEvent(QPaintEvent* /*event*/)
 
         painter.setPen(Pen(color));
 
-        PaletteCellIconEngine::PaintContext ctx;
-        ctx.painter = &painter;
-        ctx.useElementColors = m_paintOptions.useElementColors;
-        ctx.colorsInversionEnabled = m_paintOptions.colorsInverionsEnabled;
+        notation::EngravingItemPreviewPainter::PaintParams params;
+        params.painter = &painter;
+        params.color = configuration()->elementsColor();
 
-        el->scanElements(&ctx, PaletteCellIconEngine::paintPaletteItem);
+        params.useElementColors = m_paintOptions.useElementColors;
+        params.colorsInversionEnabled = m_paintOptions.colorsInversionEnabled;
+
+        notation::EngravingItemPreviewPainter::paintItem(el.get(), params);
+
         painter.restore();
     }
 }
@@ -1131,8 +1118,8 @@ void PaletteWidget::contextMenuEvent(QContextMenuEvent* event)
     }
 
     QMenu menu;
-    QAction* deleteCellAction = menu.addAction(mu::qtrc("palette", "Delete"));
-    QAction* contextAction = menu.addAction(mu::qtrc("palette", "Properties…"));
+    QAction* deleteCellAction = menu.addAction(muse::qtrc("palette", "Delete"));
+    QAction* contextAction = menu.addAction(muse::qtrc("palette", "Properties…"));
     deleteCellAction->setEnabled(!m_isReadOnly);
     contextAction->setEnabled(!m_isReadOnly);
 
@@ -1149,35 +1136,36 @@ void PaletteWidget::contextMenuEvent(QContextMenuEvent* event)
     if (action == deleteCellAction) {
         PaletteCellPtr cell = cellAt(i);
         if (cell) {
-            std::string title = mu::trc("palette", "Delete palette cell");
-            std::string question
-                = mu::qtrc("palette", "Are you sure you want to delete palette cell “%1”?").arg(cell->name).toStdString();
+            std::string title = muse::trc("palette", "Delete palette cell");
+            std::string question = muse::qtrc("palette", "Are you sure you want to delete palette cell “%1”?")
+                                   .arg(cell->name).toStdString();
 
-            IInteractive::Result result = interactive()->question(title, question, {
-                IInteractive::Button::Yes,
-                IInteractive::Button::No
-            }, IInteractive::Button::Yes);
+            auto promise = interactive()->question(title, question, {
+                muse::IInteractive::Button::Yes,
+                muse::IInteractive::Button::No
+            }, muse::IInteractive::Button::Yes);
 
-            if (result.standardButton() != IInteractive::Button::Yes) {
-                return;
+            promise.onResolve(this, [this, i](const IInteractive::Result& res) {
+                if (res.isButton(IInteractive::Button::Yes)) {
+                    m_palette->takeCell(i);
+                    emit changed();
+                }
+            });
+        }
+    } else {
+        bool sizeChanged = false;
+        for (size_t j = 0; j < cells().size(); ++j) {
+            if (!cellAt(j)) {
+                m_palette->takeCells(i, 1);
+                sizeChanged = true;
             }
-            m_palette->takeCell(i);
-            emit changed();
         }
-    }
-
-    bool sizeChanged = false;
-    for (size_t j = 0; j < cells().size(); ++j) {
-        if (!cellAt(j)) {
-            m_palette->takeCells(i, 1);
-            sizeChanged = true;
+        if (sizeChanged) {
+            setFixedHeight(heightForWidth(width()));
+            updateGeometry();
         }
+        update();
     }
-    if (sizeChanged) {
-        setFixedHeight(heightForWidth(width()));
-        updateGeometry();
-    }
-    update();
 }
 
 // ====================================================

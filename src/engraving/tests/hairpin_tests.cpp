@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -37,13 +37,13 @@ class Engraving_HairpinTests : public ::testing::Test
 
 TEST_F(Engraving_HairpinTests, hairpin)
 {
-    MasterScore* score = compat::ScoreAccess::createMasterScore();
+    MasterScore* score = compat::ScoreAccess::createMasterScore(nullptr);
     Hairpin* hp = new Hairpin(score->dummy()->segment());
 
     // subtype
-    hp->setHairpinType(HairpinType::DECRESC_HAIRPIN);
+    hp->setHairpinType(HairpinType::DIM_HAIRPIN);
     Hairpin* hp2 = static_cast<Hairpin*>(ScoreRW::writeReadElement(hp));
-    EXPECT_EQ(hp2->hairpinType(), HairpinType::DECRESC_HAIRPIN);
+    EXPECT_EQ(hp2->hairpinType(), HairpinType::DIM_HAIRPIN);
     delete hp2;
 
     hp->setHairpinType(HairpinType::CRESC_HAIRPIN);

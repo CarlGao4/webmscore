@@ -21,12 +21,12 @@
  */
 #include "zipwriter.h"
 
+#include "global/io/file.h"
 #include "internal/zipcontainer.h"
-#include "io/file.h"
 
 #include "log.h"
 
-using namespace mu;
+using namespace muse;
 
 struct ZipWriter::Impl
 {

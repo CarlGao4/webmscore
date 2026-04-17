@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -40,11 +40,14 @@
 #include "view/mixerpanelcontextmenumodel.h"
 #include "view/soundprofilesmodel.h"
 #include "view/internal/soundflag/soundflagsettingsmodel.h"
+#include "view/internal/onlinesoundsstatusmodel.h"
+#include "view/internal/notationregionsbeingprocessedmodel.h"
 
 using namespace mu::playback;
-using namespace mu::modularity;
-using namespace mu::ui;
-using namespace mu::actions;
+using namespace muse;
+using namespace muse::modularity;
+using namespace muse::ui;
+using namespace muse::actions;
 
 static void playback_init_qrc()
 {
@@ -96,15 +99,18 @@ void PlaybackModule::registerUiTypes()
     qmlRegisterType<SoundProfilesModel>("MuseScore.Playback", 1, 0, "SoundProfilesModel");
 
     qmlRegisterType<SoundFlagSettingsModel>("MuseScore.Playback", 1, 0, "SoundFlagSettingsModel");
+    qmlRegisterType<OnlineSoundsStatusModel>("MuseScore.Playback", 1, 0, "OnlineSoundsStatusModel");
+
+    qmlRegisterType<NotationRegionsBeingProcessedModel>("MuseScore.Playback", 1, 0, "NotationRegionsBeingProcessedModel");
 
     qmlRegisterUncreatableType<MixerChannelItem>("MuseScore.Playback", 1, 0, "MixerChannelItem", "Cannot create a MixerChannelItem");
 
     ioc()->resolve<IUiEngine>(moduleName())->addSourceImportPath(playback_QML_IMPORT);
 }
 
-void PlaybackModule::onInit(const framework::IApplication::RunMode& mode)
+void PlaybackModule::onInit(const IApplication::RunMode& mode)
 {
-    if (mode == framework::IApplication::RunMode::AudioPluginRegistration) {
+    if (mode == IApplication::RunMode::AudioPluginRegistration) {
         return;
     }
 
@@ -112,16 +118,16 @@ void PlaybackModule::onInit(const framework::IApplication::RunMode& mode)
     m_soundProfileRepo->init();
     m_playbackController->init();
 
-    if (mode != framework::IApplication::RunMode::GuiApp) {
+    if (mode != IApplication::RunMode::GuiApp) {
         return;
     }
 
     m_playbackUiActions->init();
 }
 
-void PlaybackModule::onAllInited(const framework::IApplication::RunMode& mode)
+void PlaybackModule::onAllInited(const IApplication::RunMode& mode)
 {
-    if (mode == framework::IApplication::RunMode::AudioPluginRegistration) {
+    if (mode == IApplication::RunMode::AudioPluginRegistration) {
         return;
     }
 

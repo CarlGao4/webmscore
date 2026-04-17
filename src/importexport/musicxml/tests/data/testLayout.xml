@@ -78,17 +78,17 @@
       </score-part>
     </part-list>
   <part id="P1">
-    <measure number="1" width="235.41">
+    <measure number="1" width="241.5">
       <print>
         <system-layout>
           <system-margins>
-            <left-margin>50.00</left-margin>
-            <right-margin>743.62</right-margin>
+            <left-margin>50</left-margin>
+            <right-margin>0</right-margin>
             </system-margins>
-          <top-system-distance>170.00</top-system-distance>
+          <top-system-distance>169.98</top-system-distance>
           </system-layout>
         <staff-layout number="2">
-          <staff-distance>65.00</staff-distance>
+          <staff-distance>65</staff-distance>
           </staff-layout>
         </print>
       <attributes>
@@ -110,7 +110,7 @@
           <line>4</line>
           </clef>
         </attributes>
-      <note default-x="134.94" default-y="-10.00">
+      <note default-x="137.99" default-y="-10">
         <rest measure="yes"/>
         <duration>4</duration>
         <voice>1</voice>
@@ -125,7 +125,7 @@
           </direction-type>
         <staff>2</staff>
         </direction>
-      <note default-x="83.18" default-y="-130.00">
+      <note default-x="83.17" default-y="-130">
         <pitch>
           <step>C</step>
           <octave>4</octave>
@@ -138,11 +138,11 @@
         </note>
       <direction placement="below">
         <direction-type>
-          <pedal type="resume" line="yes" sign="yes" default-y="-78.93"/>
+          <pedal type="resume" line="yes" sign="yes" default-y="-69.77"/>
           </direction-type>
         <staff>2</staff>
         </direction>
-      <note default-x="107.08" default-y="-115.00">
+      <note default-x="100.67" default-y="-115">
         <grace slash="yes"/>
         <pitch>
           <step>F</step>
@@ -151,11 +151,11 @@
           </pitch>
         <voice>5</voice>
         <type>eighth</type>
-        <accidental>sharp</accidental>
+        <accidental size="cue">sharp</accidental>
         <stem>up</stem>
         <staff>2</staff>
         </note>
-      <note default-x="128.52" default-y="-110.00">
+      <note default-x="120.8" default-y="-110">
         <pitch>
           <step>G</step>
           <octave>4</octave>
@@ -166,7 +166,7 @@
         <stem>down</stem>
         <staff>2</staff>
         </note>
-      <note default-x="158.92" default-y="-135.00">
+      <note default-x="155.8" default-y="-135">
         <pitch>
           <step>B</step>
           <octave>3</octave>
@@ -183,7 +183,7 @@
           </direction-type>
         <staff>2</staff>
         </direction>
-      <note default-x="189.31" default-y="-125.00">
+      <note default-x="190.8" default-y="-125">
         <pitch>
           <step>D</step>
           <octave>3</octave>

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -24,10 +24,11 @@
 
 #include <QAbstractListModel>
 
+#include "async/asyncable.h"
 #include "settings.h"
 
 namespace mu::appshell {
-class AdvancedPreferencesModel : public QAbstractListModel
+class AdvancedPreferencesModel : public QAbstractListModel, public muse::async::Asyncable
 {
     Q_OBJECT
 
@@ -53,10 +54,12 @@ private:
         MaxValueRole
     };
 
-    void changeVal(int index, QVariant newVal);
-    QString typeToString(Val::Type type) const;
+    QModelIndex findIndex(const muse::Settings::Key& key);
+    void changeVal(int index, const muse::Val& newVal);
+    void changeModelVal(muse::Settings::Item& item, const muse::Val& newVal);
+    QString typeToString(muse::Val::Type type) const;
 
-    QList<framework::Settings::Item> m_items;
+    QList<muse::Settings::Item> m_items;
 };
 }
 

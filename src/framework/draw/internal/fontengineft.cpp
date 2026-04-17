@@ -23,7 +23,8 @@
 
 #include <QHash>
 
-#include "io/file.h"
+#include "global/io/file.h"
+#include "global/types/bytearray.h"
 
 #include "ft2build.h"
 #include FT_FREETYPE_H
@@ -34,8 +35,8 @@
 
 static FT_Library ftlib = nullptr;
 
-using namespace mu::io;
-using namespace mu::draw;
+using namespace muse::io;
+using namespace muse::draw;
 
 static bool _init_ft()
 {
@@ -49,13 +50,13 @@ static bool _init_ft()
     return error == 0;
 }
 
-struct mu::draw::FTGlyphMetrics
+struct muse::draw::FTGlyphMetrics
 {
     FT_BBox bb;
     double linearHoriAdvance = 0.0;
 };
 
-struct mu::draw::FTData
+struct muse::draw::FTData
 {
     ByteArray fontData;
     FT_Face face = nullptr;

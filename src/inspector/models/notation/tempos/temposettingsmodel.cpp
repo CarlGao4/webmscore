@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -39,19 +39,19 @@ TempoSettingsModel::TempoSettingsModel(QObject* parent, IElementRepositoryServic
 
     switch (modelType) {
     case InspectorModelType::TYPE_TEMPO:
-        setTitle(qtrc("inspector", "Tempo"));
+        setTitle(muse::qtrc("inspector", "Tempo"));
         break;
     case InspectorModelType::TYPE_A_TEMPO:
-        setTitle(qtrc("inspector", "A tempo"));
+        setTitle(muse::qtrc("inspector", "A tempo"));
         break;
     case InspectorModelType::TYPE_TEMPO_PRIMO:
-        setTitle(qtrc("inspector", "Tempo primo"));
+        setTitle(muse::qtrc("inspector", "Tempo primo"));
         break;
     default:
         break;
     }
 
-    setIcon(ui::IconCode::Code::METRONOME);
+    setIcon(muse::ui::IconCode::Code::METRONOME);
     createProperties();
 }
 

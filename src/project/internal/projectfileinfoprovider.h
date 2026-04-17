@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -31,18 +31,18 @@ namespace mu::project {
 class NotationProject;
 class ProjectFileInfoProvider : public engraving::IFileInfoProvider
 {
-    INJECT(io::IFileSystem, filesystem)
+    INJECT(muse::io::IFileSystem, filesystem)
 public:
     explicit ProjectFileInfoProvider(NotationProject* project);
 
-    io::path_t path() const override;
-    io::path_t fileName(bool includingExtension = true) const override;
-    io::path_t absoluteDirPath() const override;
+    muse::io::path_t path() const override;
+    muse::io::path_t fileName(bool includingExtension = true) const override;
+    muse::io::path_t absoluteDirPath() const override;
 
-    String displayName() const override;
+    muse::String displayName() const override;
 
-    DateTime birthTime() const override;
-    DateTime lastModified() const override;
+    muse::DateTime birthTime() const override;
+    muse::DateTime lastModified() const override;
 
 private:
     NotationProject* m_project = nullptr;

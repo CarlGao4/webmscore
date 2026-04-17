@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2024 MuseScore BVBA and others
+ * Copyright (C) 2025 MuseScore BVBA and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -24,32 +24,18 @@
 #include <winrt/Windows.System.h>
 #include <winrt/Windows.Foundation.h>
 
-using namespace mu;
-using namespace mu::framework;
-using namespace mu::async;
+#include "platform/win/async.h"
+#include "types/uri.h"
 
-async::Promise<Ret> WinInteractiveHelper::openApp(const Uri& uri)
+using namespace muse;
+using namespace muse::async;
+
+using namespace winrt;
+using namespace Windows::System;
+
+async::Promise<Ret> WinInteractiveHelper::openApp(const UriQuery& uri)
 {
-    return Promise<Ret>([&uri](auto resolve, auto reject) {
-        using namespace winrt::Windows;
-        using namespace winrt::Windows::System;
+    const Windows::Foundation::Uri wUri(winrt::to_hstring(uri.toString()));
 
-        std::string sUri = uri.toString();
-        std::wstring wsUri = std::wstring(sUri.begin(), sUri.end());
-
-        Foundation::Uri wUri(wsUri.c_str());
-
-        auto asyncOperation = Launcher::LaunchUriAsync(wUri);
-        asyncOperation.Completed([=](Foundation::IAsyncOperation<bool> const&,
-                                     Foundation::AsyncStatus const asyncStatus) {
-            if (asyncStatus == Foundation::AsyncStatus::Error) {
-                Ret ret = make_ret(Ret::Code::InternalError);
-                (void)reject(ret.code(), ret.text());
-            } else {
-                (void)resolve(make_ok());
-            }
-        });
-
-        return Promise<Ret>::Result::unchecked();
-    });
+    return toPromise<Ret>(Launcher::LaunchUriAsync(wUri));
 }

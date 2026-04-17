@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -29,20 +29,23 @@
 #include "notation/notationtypes.h"
 
 namespace mu::instrumentsscene {
-class StaffSettingsModel : public QObject
+class StaffSettingsModel : public QObject, public muse::Injectable
 {
     Q_OBJECT
-
-    INJECT(context::IGlobalContext, context)
 
     Q_PROPERTY(int staffType READ staffType WRITE setStaffType NOTIFY staffTypeChanged)
     Q_PROPERTY(bool isSmallStaff READ isSmallStaff WRITE setIsSmallStaff NOTIFY isSmallStaffChanged)
     Q_PROPERTY(bool cutawayEnabled READ cutawayEnabled WRITE setCutawayEnabled NOTIFY cutawayEnabledChanged)
+    Q_PROPERTY(int hideWhenEmpty READ hideWhenEmpty WRITE setHideWhenEmpty NOTIFY hideWhenEmptyChanged)
+    Q_PROPERTY(
+        bool showIfEntireSystemEmpty READ showIfEntireSystemEmpty WRITE setShowIfEntireSystemEmpty NOTIFY showIfEntireSystemEmptyChanged)
 
     Q_PROPERTY(QVariantList voices READ voices NOTIFY voicesChanged)
     Q_PROPERTY(QVariantList allStaffTypes READ allStaffTypes NOTIFY allStaffTypesChanged)
 
     Q_PROPERTY(bool isMainScore READ isMainScore NOTIFY isMainScoreChanged)
+
+    muse::Inject<context::IGlobalContext> context = { this };
 
 public:
     explicit StaffSettingsModel(QObject* parent = nullptr);
@@ -50,6 +53,8 @@ public:
     int staffType() const;
     bool isSmallStaff() const;
     bool cutawayEnabled() const;
+    int hideWhenEmpty() const;
+    bool showIfEntireSystemEmpty() const;
 
     QVariantList voices() const;
     QVariantList allStaffTypes() const;
@@ -65,6 +70,8 @@ public slots:
     void setStaffType(int type);
     void setIsSmallStaff(bool value);
     void setCutawayEnabled(bool value);
+    void setHideWhenEmpty(int value);
+    void setShowIfEntireSystemEmpty(bool value);
 
 signals:
     void staffTypeChanged();
@@ -72,6 +79,8 @@ signals:
     void voiceVisibilityChanged(int voiceIndex, bool visible);
     void isSmallStaffChanged();
     void cutawayEnabledChanged();
+    void hideWhenEmptyChanged();
+    void showIfEntireSystemEmptyChanged();
     void allStaffTypesChanged();
 
     void isMainScoreChanged(bool isMainScore);
@@ -82,9 +91,8 @@ private:
     notation::INotationPartsPtr notationParts() const;
     notation::INotationPartsPtr masterNotationParts() const;
 
-    ID m_staffId;
+    muse::ID m_staffId;
     QList<bool> m_voicesVisibility;
-    notation::StaffTypeId m_type = notation::StaffTypeId::STANDARD;
     notation::StaffConfig m_config;
 };
 }

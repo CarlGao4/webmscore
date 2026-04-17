@@ -20,8 +20,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_UI_QMLACCESSIBLE_H
-#define MU_UI_QMLACCESSIBLE_H
+#ifndef MUSE_UI_QMLACCESSIBLE_H
+#define MUSE_UI_QMLACCESSIBLE_H
 
 #include <QObject>
 #include <QQmlParserStatus>
@@ -37,7 +37,7 @@
     bool P() const { return m_state.value(S, false); } \
     void set_##P(bool arg) { setState(S, arg); } \
 
-namespace mu::ui {
+namespace muse::ui {
 class MUAccessible
 {
     Q_GADGET
@@ -52,6 +52,7 @@ public:
         Panel,
         StaticText,
         EditableText,
+        SilentRole,
         Button,
         CheckBox,
         RadioButton,
@@ -59,18 +60,21 @@ public:
         List,
         ListItem,
         MenuItem,
+        SpinBox,
         Range,
-        Information
+        Group,
+        Information,
+        ElementOnScore
     };
     Q_ENUM(Role)
 };
 
-class AccessibleItem : public QObject, public QQmlParserStatus, public accessibility::IAccessible
+class AccessibleItem : public QObject, public QQmlParserStatus, public accessibility::IAccessible, public Injectable
 {
     Q_OBJECT
 
     Q_PROPERTY(AccessibleItem * accessibleParent READ accessibleParent_property WRITE setAccessibleParent NOTIFY accessiblePrnChanged)
-    Q_PROPERTY(mu::ui::MUAccessible::Role role READ role WRITE setRole NOTIFY roleChanged)
+    Q_PROPERTY(muse::ui::MUAccessible::Role role READ role WRITE setRole NOTIFY roleChanged)
     Q_PROPERTY(QString name READ name WRITE setName NOTIFY nameChanged)
     Q_PROPERTY(QString description READ description WRITE setDescription NOTIFY descriptionChanged)
 
@@ -94,7 +98,7 @@ class AccessibleItem : public QObject, public QQmlParserStatus, public accessibi
 
     Q_INTERFACES(QQmlParserStatus)
 
-    INJECT(accessibility::IAccessibilityController, accessibilityController)
+    Inject<accessibility::IAccessibilityController> accessibilityController = { this };
 
 public:
     STATE_PROPERTY(enabled, State::Enabled)
@@ -108,8 +112,9 @@ public:
     // IAccessible
     const IAccessible* accessibleParent() const override;
     size_t accessibleChildCount() const override;
-    const IAccessible* accessibleChild(size_t i) const override;
+    IAccessible* accessibleChild(size_t i) const override;
     QWindow* accessibleWindow() const override;
+    muse::modularity::ContextPtr iocContext() const override;
 
     IAccessible::Role accessibleRole() const override;
     QString accessibleName() const override;
@@ -173,7 +178,7 @@ public:
     QWindow* window() const;
 
 public slots:
-    void setAccessibleParent(mu::ui::AccessibleItem* p);
+    void setAccessibleParent(ui::AccessibleItem* p);
     void setRole(MUAccessible::Role role);
     void setName(QString name);
     void setDescription(QString description);
@@ -244,4 +249,4 @@ private:
 };
 }
 
-#endif // MU_UI_QMLACCESSIBLE_H
+#endif // MUSE_UI_QMLACCESSIBLE_H

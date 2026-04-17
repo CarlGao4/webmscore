@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -20,37 +20,38 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_NOTATION_EDITSTAFF_H
-#define MU_NOTATION_EDITSTAFF_H
+#pragma once
 
 #include <QDialog>
 
 #include "ui_editstaff.h"
 #include "engraving/dom/stafftype.h"
 
+#include "global/async/asyncable.h"
+
 #include "modularity/ioc.h"
 #include "context/iglobalcontext.h"
 #include "global/iinteractive.h"
+#include "engraving/iengravingconfiguration.h"
 #include "iselectinstrumentscenario.h"
 
 namespace mu::notation {
 class EditStaffType;
 
-class EditStaff : public QDialog, private Ui::EditStaffBase
+class EditStaff : public QDialog, private Ui::EditStaffBase, public muse::Injectable, public muse::async::Asyncable
 {
     Q_OBJECT
 
-    INJECT(context::IGlobalContext, globalContext)
-    INJECT(framework::IInteractive, interactive)
-    INJECT(ISelectInstrumentsScenario, selectInstrumentsScenario)
+    muse::Inject<context::IGlobalContext> globalContext = { this };
+    muse::Inject<muse::IInteractive> interactive = { this };
+    muse::Inject<ISelectInstrumentsScenario> selectInstrumentsScenario = { this };
+    muse::Inject<engraving::IEngravingConfiguration> engravingConfiguration = { this };
 
 public:
     EditStaff(QWidget* parent = nullptr);
-    EditStaff(const EditStaff&);
-
-    static int metaTypeId();
 
 private:
+    void showEvent(QShowEvent*) override;
     void hideEvent(QHideEvent*) override;
     void apply();
     void setStaff(mu::engraving::Staff*, const mu::engraving::Fraction& tick);
@@ -78,7 +79,6 @@ private slots:
     void invisibleChanged();
     void colorChanged();
     void magChanged(double newValue);
-    void isSmallChanged();
     void transpositionChanged();
 
 signals:
@@ -111,7 +111,3 @@ private:
     EditStaffType* editStaffTypeDialog = nullptr;
 };
 }
-
-Q_DECLARE_METATYPE(mu::notation::EditStaff)
-
-#endif

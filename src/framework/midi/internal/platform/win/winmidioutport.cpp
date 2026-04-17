@@ -26,17 +26,17 @@
 #include <mmsystem.h>
 
 #include "midierrors.h"
-#include "stringutils.h"
-#include "translation.h"
-#include "defer.h"
+#include "global/translation.h"
+#include "global/defer.h"
 #include "log.h"
 
-struct mu::midi::WinMidiOutPort::Win {
+struct muse::midi::WinMidiOutPort::Win {
     HMIDIOUT midiOut;
     int deviceID;
 };
 
-using namespace mu::midi;
+using namespace muse;
+using namespace muse::midi;
 
 static std::string errorString(MMRESULT ret)
 {
@@ -88,7 +88,7 @@ MidiDeviceList WinMidiOutPort::availableDevices() const
     std::lock_guard lock(m_devicesMutex);
     MidiDeviceList ret;
 
-    ret.push_back({ NONE_DEVICE_ID, trc("midi", "No device") });
+    ret.push_back({ NONE_DEVICE_ID, muse::trc("midi", "No device") });
 
     int numDevs = midiOutGetNumDevs();
     if (numDevs == 0) {
@@ -116,12 +116,12 @@ MidiDeviceList WinMidiOutPort::availableDevices() const
     return ret;
 }
 
-mu::async::Notification WinMidiOutPort::availableDevicesChanged() const
+async::Notification WinMidiOutPort::availableDevicesChanged() const
 {
     return m_availableDevicesChanged;
 }
 
-mu::Ret WinMidiOutPort::connect(const MidiDeviceID& deviceID)
+Ret WinMidiOutPort::connect(const MidiDeviceID& deviceID)
 {
     DEFER {
         m_deviceChanged.notify();
@@ -148,7 +148,7 @@ mu::Ret WinMidiOutPort::connect(const MidiDeviceID& deviceID)
 
     LOGD() << "Connected to " << m_deviceID;
 
-    return make_ok();
+    return muse::make_ok();
 }
 
 void WinMidiOutPort::disconnect()
@@ -174,7 +174,7 @@ MidiDeviceID WinMidiOutPort::deviceID() const
     return m_deviceID;
 }
 
-mu::async::Notification WinMidiOutPort::deviceChanged() const
+async::Notification WinMidiOutPort::deviceChanged() const
 {
     return m_deviceChanged;
 }
@@ -184,7 +184,7 @@ bool WinMidiOutPort::supportsMIDI20Output() const
     return false;
 }
 
-mu::Ret WinMidiOutPort::sendEvent(const Event& e)
+Ret WinMidiOutPort::sendEvent(const Event& e)
 {
     if (!isConnected()) {
         return make_ret(Err::MidiNotConnected);
@@ -192,7 +192,7 @@ mu::Ret WinMidiOutPort::sendEvent(const Event& e)
 
     auto events = e.toMIDI10();
     for (auto& event : events) {
-        uint32_t msg = event.to_MIDI10Package();
+        uint32_t msg = event.toMidi10Package();
         MMRESULT ret = midiOutShortMsg(m_win->midiOut, (DWORD)msg);
         if (ret != MMSYSERR_NOERROR) {
             return make_ret(Err::MidiFailedConnect, "failed send event, error: " + errorString(ret));

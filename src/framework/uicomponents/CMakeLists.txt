@@ -18,11 +18,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-set(MODULE uicomponents)
+declare_module(muse_uicomponents)
+set(MODULE_ALIAS muse::uicomponents)
 
-set(MODULE_QRC uicomponents.qrc)
+set(MODULE_QRC uicomponents.qrc graphicaleffects.qrc)
 
 set(MODULE_QML_IMPORT ${CMAKE_CURRENT_LIST_DIR}/qml )
+set(MODULE_QMLAPI_IMPORT ${CMAKE_CURRENT_LIST_DIR}/api )
+
+include(${CMAKE_CURRENT_LIST_DIR}/view/treeview/treeview.cmake)
 
 set(MODULE_SRC
     ${CMAKE_CURRENT_LIST_DIR}/uicomponentsmodule.cpp
@@ -65,12 +69,16 @@ set(MODULE_SRC
     ${CMAKE_CURRENT_LIST_DIR}/view/filepickermodel.h
     ${CMAKE_CURRENT_LIST_DIR}/view/colorpickermodel.cpp
     ${CMAKE_CURRENT_LIST_DIR}/view/colorpickermodel.h
-    ${CMAKE_CURRENT_LIST_DIR}/view/textinputfieldmodel.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/view/textinputfieldmodel.h
+    ${CMAKE_CURRENT_LIST_DIR}/view/textinputmodel.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/view/textinputmodel.h
     ${CMAKE_CURRENT_LIST_DIR}/view/abstractmenumodel.cpp
     ${CMAKE_CURRENT_LIST_DIR}/view/abstractmenumodel.h
     ${CMAKE_CURRENT_LIST_DIR}/view/menuitem.cpp
     ${CMAKE_CURRENT_LIST_DIR}/view/menuitem.h
+    ${CMAKE_CURRENT_LIST_DIR}/view/abstracttoolbarmodel.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/view/abstracttoolbarmodel.h
+    ${CMAKE_CURRENT_LIST_DIR}/view/toolbaritem.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/view/toolbaritem.h
     ${CMAKE_CURRENT_LIST_DIR}/view/internal/popupviewclosecontroller.cpp
     ${CMAKE_CURRENT_LIST_DIR}/view/internal/popupviewclosecontroller.h
     ${CMAKE_CURRENT_LIST_DIR}/view/widgets/radiobuttongroupbox.cpp
@@ -83,6 +91,7 @@ set(MODULE_SRC
     ${CMAKE_CURRENT_LIST_DIR}/view/widgetview.h
     ${CMAKE_CURRENT_LIST_DIR}/view/buttonboxmodel.h
     ${CMAKE_CURRENT_LIST_DIR}/view/buttonboxmodel.cpp
+    ${TREEVIEW_SRC}
     )
 
 if (OS_IS_MAC)
@@ -106,10 +115,39 @@ if (OS_IS_WIN)
         )
 endif(OS_IS_WIN)
 
-if (MUE_DISABLE_UI_MODALITY)
-    set(MODULE_DEF ${MODULE_DEF} -DMUE_DISABLE_UI_MODALITY)
+if (MUSE_MODULE_UI_DISABLE_MODALITY)
+    set(MODULE_DEF ${MODULE_DEF} -DMUSE_MODULE_UI_DISABLE_MODALITY)
 endif()
 
-include(SetupModule)
+if(QT_SUPPORT)
+    list(APPEND MODULE_LINK Qt::Widgets Qt::Quick)
+endif()
 
+set(MODULE_USE_UNITY OFF)
 
+setup_module()
+
+qt_add_shaders(${MODULE} "${MODULE}_shaders"
+    FILES
+        "qml/Muse/GraphicalEffects/shaders/roundcorners.frag"
+)
+
+if (${Qt6_VERSION} VERSION_GREATER_EQUAL 6.9)
+    qt_add_resources(${MODULE} "${MODULE}"
+        PREFIX "/"
+        FILES "qml/Muse/UiComponents/StyledRectangularShadow.qml"
+    )
+else()
+    set_source_files_properties("qml/Muse/UiComponents/StubStyledRectangularShadow.qml"
+        PROPERTIES
+        QT_RESOURCE_ALIAS "qml/Muse/UiComponents/StyledRectangularShadow.qml"
+    )
+    qt_add_resources(${MODULE} "${MODULE}"
+        PREFIX "/"
+        FILES "qml/Muse/UiComponents/StubStyledRectangularShadow.qml"
+    )
+endif()
+
+if (MUSE_MODULE_UI_TESTS)
+    add_subdirectory(tests)
+endif()

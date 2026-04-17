@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -30,7 +30,7 @@ using namespace mu::engraving;
 PartsSettingsModel::PartsSettingsModel(QObject* parent, IElementRepositoryService* repository)
     : AbstractInspectorModel(parent, repository)
 {
-    setTitle(qtrc("inspector", "Score and part synchronization"));
+    setTitle(muse::qtrc("inspector", "Score and part synchronization"));
     setSectionType(InspectorSectionType::SECTION_PARTS);
 
     createProperties();
@@ -65,7 +65,7 @@ void PartsSettingsModel::requestElements()
     m_elementsForTextLinkingOption.clear();
 
     for (EngravingItem* item : m_elementList) {
-        if (!item->score()->isMaster() && !item->isLayoutBreak()) {
+        if (!item->score()->isMaster() && !item->isLayoutBreak() && !item->isFBox()) {
             m_elementsForPartLinkingOption.push_back(item);
         }
         if (item->canBeExcludedFromOtherParts()) {
@@ -101,6 +101,13 @@ void PartsSettingsModel::onNotationChanged(const PropertyIdSet&, const StyleIdSe
     loadProperties();
 }
 
+void PartsSettingsModel::onCurrentNotationChanged()
+{
+    emit isMasterScoreChanged(isMasterNotation());
+
+    AbstractInspectorModel::onCurrentNotationChanged();
+}
+
 PropertyItem* PartsSettingsModel::positionLinkedToMaster() const
 {
     return m_positionLinkedToMaster;
@@ -134,6 +141,11 @@ bool PartsSettingsModel::showExcludeOption() const
 bool PartsSettingsModel::showTextLinkingOption() const
 {
     return m_showTextLinkingOption;
+}
+
+bool PartsSettingsModel::isMasterScore() const
+{
+    return isMasterNotation();
 }
 
 void PartsSettingsModel::updateShowPartLinkingOption()

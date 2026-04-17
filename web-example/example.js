@@ -1,7 +1,7 @@
 
 import WebMscore from 'webmscore4'
 import fs from 'fs'
-import * as FRONTS from '@librescore/fonts'
+import * as FONTS from '@librescore/fonts'
 
 Error.stackTraceLimit = 100;
 
@@ -17,8 +17,8 @@ WebMscore.ready.then(async () => {
     console.log('supported file format version:', await WebMscore.version())
 
     const score = await WebMscore.load('mscz', filedata, [
-        fs.readFileSync(FRONTS.CN),  // only contains the CN variation (style) of Chinese characters (the range of GB18030), including traditional and simplified
-        fs.readFileSync(FRONTS.KR),  // to support hangul syllables
+        fs.readFileSync(FONTS.CN),  // only contains the CN variation (style) of Chinese characters (the range of GB18030), including traditional and simplified
+        fs.readFileSync(FONTS.KR),  // to support hangul syllables
     ])
     console.log(score)
     console.log()

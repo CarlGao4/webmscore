@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,10 +22,10 @@
 import QtQuick 2.15
 import QtQuick.Window 2.15
 import QtQuick.Layouts 1.15
-import QtGraphicalEffects 1.15
 
-import MuseScore.Ui 1.0
-import MuseScore.UiComponents 1.0
+import Muse.Ui 1.0
+import Muse.UiComponents 1.0
+import Muse.GraphicalEffects 1.0
 import MuseScore.AppShell 1.0
 
 Page {
@@ -55,20 +55,15 @@ Page {
 
                 anchors.centerIn: parent
 
-                // Approx 40% of the image height is empty space
-                height: parent.height * 1.4
+                height: parent.height
                 width: implicitWidth
 
                 fillMode: Image.PreserveAspectFit
                 source: "resources/VideoTutorials.png"
 
-                layer.enabled: true
-                layer.effect: OpacityMask {
-                    maskSource: Rectangle {
-                        width: image.width
-                        height: image.height
-                        radius: 3
-                    }
+                layer.enabled: ui.isEffectsAllowed
+                layer.effect: RoundedCornersEffect {
+                    radius: 3
                 }
             }
         }

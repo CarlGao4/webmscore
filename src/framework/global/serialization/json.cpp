@@ -26,13 +26,13 @@
 
 #define PICOJSON_USE_LOCALE 1
 #define PICOJSON_ASSERT assert
-#include "thirdparty/picojson/picojson.h"
+#include "../thirdparty/picojson/picojson.h"
 
 #include "log.h"
 
-using namespace mu;
+using namespace muse;
 
-struct mu::JsonData
+struct muse::JsonData
 {
     picojson::value val;
 };
@@ -412,6 +412,11 @@ void JsonArray::resize(size_t i)
     array_mut(m_data).resize(i);
 }
 
+bool JsonArray::empty() const
+{
+    return array_const(m_data).size() == 0;
+}
+
 JsonValue JsonArray::at(size_t i) const
 {
     std::shared_ptr<JsonData> d = std::make_shared<JsonData>();
@@ -597,22 +602,38 @@ bool JsonObject::isValid() const
 
 bool JsonObject::empty() const
 {
+    if (!isValid()) {
+        return true;
+    }
+
     return object_const(m_data).size() == 0;
 }
 
 size_t JsonObject::size() const
 {
+    if (!isValid()) {
+        return 0;
+    }
+
     return object_const(m_data).size();
 }
 
 bool JsonObject::contains(const std::string& key) const
 {
+    if (!isValid()) {
+        return false;
+    }
+
     const picojson::object& o = object_const(m_data);
     return o.find(key) != o.cend();
 }
 
-JsonValue JsonObject::value(const std::string& key) const
+JsonValue JsonObject::value(const std::string& key, JsonValue def) const
 {
+    if (!isValid()) {
+        return def;
+    }
+
     const picojson::object& o = object_const(m_data);
     auto it = o.find(key);
     if (it != o.cend()) {
@@ -620,7 +641,7 @@ JsonValue JsonObject::value(const std::string& key) const
         d->val = it->second;
         return JsonValue(d);
     }
-    return JsonValue();
+    return def;
 }
 
 JsonObject& JsonObject::set(const std::string& key, bool v)

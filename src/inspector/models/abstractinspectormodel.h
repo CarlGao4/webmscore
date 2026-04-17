@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -19,11 +19,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_INSPECTOR_ABSTRACTINSPECTORMODEL_H
-#define MU_INSPECTOR_ABSTRACTINSPECTORMODEL_H
+#pragma once
+
+#include <functional>
+#include <set>
 
 #include <QList>
-#include <functional>
 
 #include "async/asyncable.h"
 
@@ -38,15 +39,13 @@
 #include "models/propertyitem.h"
 #include "models/pointfpropertyitem.h"
 #include "ui/view/iconcodes.h"
+#include "ui/iuiactionsregister.h"
 #include "types/commontypes.h"
 
 namespace mu::inspector {
-class AbstractInspectorModel : public QObject, public async::Asyncable
+class AbstractInspectorModel : public QObject, public muse::async::Asyncable
 {
     Q_OBJECT
-
-    INJECT(context::IGlobalContext, context)
-    INJECT(actions::IActionsDispatcher, dispatcher)
 
     Q_PROPERTY(QString title READ title NOTIFY titleChanged)
     Q_PROPERTY(int icon READ icon CONSTANT)
@@ -54,11 +53,19 @@ class AbstractInspectorModel : public QObject, public async::Asyncable
     Q_PROPERTY(InspectorModelType modelType READ modelType CONSTANT)
     Q_PROPERTY(bool isEmpty READ isEmpty NOTIFY isEmptyChanged)
 
+    Q_PROPERTY(bool isSystemObjectBelowBottomStaff READ isSystemObjectBelowBottomStaff NOTIFY isSystemObjectBelowBottomStaffChanged)
+
+public:
+    INJECT(context::IGlobalContext, context)
+    INJECT(muse::actions::IActionsDispatcher, dispatcher)
+    INJECT(muse::ui::IUiActionsRegister, uiActionsRegister)
+
 public:
     enum class InspectorSectionType {
         SECTION_UNDEFINED = -1,
         SECTION_GENERAL,
         SECTION_MEASURES,
+        SECTION_EMPTY_STAVES,
         SECTION_NOTATION,
         SECTION_TEXT,
         SECTION_SCORE_DISPLAY,
@@ -82,7 +89,6 @@ public:
         TYPE_GLISSANDO,
         TYPE_BARLINE,
         TYPE_BREATH,
-        TYPE_STAFF,
         TYPE_MARKER,
         TYPE_SECTIONBREAK,
         TYPE_JUMP,
@@ -100,15 +106,22 @@ public:
         TYPE_VOLTA,
         TYPE_VIBRATO,
         TYPE_SLUR,
+        TYPE_HAMMER_ON_PULL_OFF,
         TYPE_TIE,
+        TYPE_LAISSEZ_VIB,
+        TYPE_PARTIAL_TIE,
         TYPE_CRESCENDO,
         TYPE_DIMINUENDO,
         TYPE_STAFF_TYPE_CHANGES,
         TYPE_TEXT_FRAME,
         TYPE_VERTICAL_FRAME,
         TYPE_HORIZONTAL_FRAME,
+        TYPE_FRET_FRAME,
+        TYPE_FRET_FRAME_CHORDS,
+        TYPE_FRET_FRAME_SETTINGS,
         TYPE_ARTICULATION,
         TYPE_ORNAMENT,
+        TYPE_TAPPING,
         TYPE_AMBITUS,
         TYPE_IMAGE,
         TYPE_CHORD_SYMBOL,
@@ -128,7 +141,11 @@ public:
         TYPE_LYRICS,
         TYPE_REST,
         TYPE_REST_BEAM,
+        TYPE_REST_REST,
         TYPE_STRING_TUNINGS,
+        TYPE_SYMBOL,
+        TYPE_NOTELINE,
+        TYPE_PLAY_COUNT_TEXT
     };
     Q_ENUM(InspectorModelType)
 
@@ -146,11 +163,9 @@ public:
 
     static ElementKey makeKey(const mu::engraving::EngravingItem* item);
     static InspectorModelType modelTypeByElementKey(const ElementKey& elementKey);
-    static QSet<InspectorModelType> modelTypesByElementKeys(const ElementKeySet& elementKeySet);
-    static QSet<InspectorSectionType> sectionTypesByElementKeys(const ElementKeySet& elementKeySet, bool isRange,
-                                                                const QList<mu::engraving::EngravingItem*>& selectedElementList = {});
-    static bool showPartsSection(const QList<mu::engraving::EngravingItem*>& selectedElementList);
-
+    static std::set<InspectorModelType> modelTypesByElementKeys(const ElementKeySet& elementKeySet);
+    static std::set<InspectorSectionType> sectionTypesByElementKeys(const ElementKeySet& elementKeySet, bool isRange,
+                                                                    const QList<mu::engraving::EngravingItem*>& selectedElementList = {});
     virtual bool isEmpty() const;
 
     virtual void createProperties() = 0;
@@ -161,9 +176,18 @@ public:
 
     virtual void onCurrentNotationChanged();
 
+    virtual void onNotationChanged(const mu::engraving::PropertyIdSet& changedPropertyIdSet,
+                                   const mu::engraving::StyleIdSet& changedStyleIdSet);
+
+    bool isSystemObjectBelowBottomStaff() const;
+    bool shouldUpdateOnScoreChange() const;
+    virtual bool shouldUpdateOnEmptyPropertyAndStyleIdSets() const;
+
+    mu::engraving::PropertyIdSet propertyIdSetFromStyleIdSet(const mu::engraving::StyleIdSet& styleIdSet) const;
+
 public slots:
     void setTitle(QString title);
-    void setIcon(ui::IconCode::Code icon);
+    void setIcon(muse::ui::IconCode::Code icon);
     void setSectionType(InspectorSectionType sectionType);
     void setModelType(InspectorModelType modelType);
 
@@ -175,16 +199,25 @@ signals:
 
     void requestReloadPropertyItems();
 
+    void requestReloadInspectorListModel();
+
+    void isSystemObjectBelowBottomStaffChanged(bool isSystemObjectBelowBottomStaff);
+
 protected:
     void setElementType(mu::engraving::ElementType type);
 
     PropertyItem* buildPropertyItem(const mu::engraving::Pid& pid, std::function<void(const mu::engraving::Pid propertyId,
-                                                                                      const QVariant& newValue)> onPropertyChangedCallBack = nullptr, std::function<void(const mu::engraving::Sid styleId,
-                                                                                                                                                                         const QVariant& newValue)> onStyleChangedCallBack = nullptr);
+                                                                                      const QVariant& newValue)> onPropertyChangedCallBack =
+                                    nullptr, std::function<void(const mu::engraving::Sid styleId,
+                                                                const
+                                                                QVariant& newValue)> onStyleChangedCallBack = nullptr,
+                                    std::function<void(const mu::engraving::Pid propertyId)> onPropertyResetCallBack = nullptr);
     PointFPropertyItem* buildPointFPropertyItem(const mu::engraving::Pid& pid, std::function<void(const mu::engraving::Pid propertyId,
-                                                                                                  const QVariant& newValue)> onPropertyChangedCallBack = nullptr);
+                                                                                                  const QVariant& newValue)>
+                                                onPropertyChangedCallBack = nullptr,
+                                                std::function<void(const mu::engraving::Pid propertyId)> onPropertyResetCallBack = nullptr);
 
-    using ConvertPropertyValueFunc = std::function<QVariant(const QVariant&)>;
+    using ConvertPropertyValueFunc = std::function<QVariant (const QVariant&)>;
     void loadPropertyItem(PropertyItem* propertyItem, ConvertPropertyValueFunc convertElementPropertyValueFunc = nullptr);
     void loadPropertyItem(PropertyItem* propertyItem, const QList<engraving::EngravingItem*>& elements,
                           ConvertPropertyValueFunc convertElementPropertyValueFunc = nullptr);
@@ -201,59 +234,54 @@ protected:
     QVariant styleValue(const mu::engraving::Sid& sid) const;
 
     notation::INotationUndoStackPtr undoStack() const;
-    void beginCommand();
+    void beginCommand(const muse::TranslatableString& actionName);
     void endCommand();
 
     void updateNotation();
     notation::INotationPtr currentNotation() const;
-    async::Notification currentNotationChanged() const;
     bool isMasterNotation() const;
 
     notation::INotationSelectionPtr selection() const;
-
-    virtual void onNotationChanged(const mu::engraving::PropertyIdSet& changedPropertyIdSet,
-                                   const mu::engraving::StyleIdSet& changedStyleIdSet);
 
     IElementRepositoryService* m_repository = nullptr;
 
     QList<mu::engraving::EngravingItem*> m_elementList;
 
+    QString shortcutsForActionCode(std::string code) const;
+
 protected slots:
     void onPropertyValueChanged(const mu::engraving::Pid pid, const QVariant& newValue);
     void setPropertyValue(const QList<mu::engraving::EngravingItem*>& items, const mu::engraving::Pid pid, const QVariant& newValue);
+    void onPropertyValueReset(const mu::engraving::Pid pid);
+    void resetPropertyValue(const QList<mu::engraving::EngravingItem*>& items, const mu::engraving::Pid pid);
     void updateProperties();
+    void updateIsSystemObjectBelowBottomStaff();
 
 private:
+    static bool showPartsSection(const QList<mu::engraving::EngravingItem*>& selectedElementList);
+
     void initPropertyItem(PropertyItem* propertyItem, std::function<void(const mu::engraving::Pid propertyId,
                                                                          const QVariant& newValue)> onPropertyChangedCallBack = nullptr,
                           std::function<void(const mu::engraving::Sid styleId,
-                                             const QVariant& newValue)> onStyleChangedCallBack = nullptr);
+                                             const
+                                             QVariant
+                                             & newValue)> onStyleChangedCallBack = nullptr,
+                          std::function<void(const mu::engraving::Pid propertyId)> onPropertyResetCallBack = nullptr);
 
     mu::engraving::Sid styleIdByPropertyId(const mu::engraving::Pid pid) const;
-    mu::engraving::PropertyIdSet propertyIdSetFromStyleIdSet(const mu::engraving::StyleIdSet& styleIdSet) const;
 
     QString m_title;
-    ui::IconCode::Code m_icon = ui::IconCode::Code::NONE;
+    muse::ui::IconCode::Code m_icon = muse::ui::IconCode::Code::NONE;
     InspectorSectionType m_sectionType = InspectorSectionType::SECTION_UNDEFINED;
     InspectorModelType m_modelType = InspectorModelType::TYPE_UNDEFINED;
     mu::engraving::ElementType m_elementType = mu::engraving::ElementType::INVALID;
-    bool m_updatePropertiesAllowed = false;
+    bool m_shouldUpdateOnScoreChange = true;
+
+    bool m_isSystemObjectBelowBottomStaff = false;
 };
 
 using InspectorModelType = AbstractInspectorModel::InspectorModelType;
 using InspectorSectionType = AbstractInspectorModel::InspectorSectionType;
-using InspectorModelTypeSet = QSet<InspectorModelType>;
-using InspectorSectionTypeSet = QSet<InspectorSectionType>;
-
-inline uint qHash(InspectorSectionType key)
-{
-    return ::qHash(QString::number(static_cast<int>(key)));
+using InspectorModelTypeSet = std::set<InspectorModelType>;
+using InspectorSectionTypeSet = std::set<InspectorSectionType>;
 }
-
-inline uint qHash(InspectorModelType key)
-{
-    return ::qHash(QString::number(static_cast<int>(key)));
-}
-}
-
-#endif // MU_INSPECTOR_ABSTRACTINSPECTORMODEL_H

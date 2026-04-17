@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2023 MuseScore BVBA and others
+ * Copyright (C) 2023 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -21,10 +21,10 @@
  */
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
-import QtGraphicalEffects 1.0
 
-import MuseScore.Ui 1.0
-import MuseScore.UiComponents 1.0
+import Muse.Ui 1.0
+import Muse.UiComponents 1.0
+import Muse.GraphicalEffects 1.0
 import MuseScore.Project 1.0
 
 FocusScope {
@@ -63,9 +63,9 @@ FocusScope {
 
     MouseArea {
         id: mouseArea
-
         anchors.fill: parent
 
+        enabled: root.enabled
         hoverEnabled: true
 
         onClicked: {
@@ -108,13 +108,9 @@ FocusScope {
                         return scoreItemComp
                     }
 
-                    layer.enabled: true
-                    layer.effect: OpacityMask {
-                        maskSource: Rectangle {
-                            width: thumbnail.width
-                            height: thumbnail.height
-                            radius: thumbnail.radius
-                        }
+                    layer.enabled: ui.isEffectsAllowed
+                    layer.effect: RoundedCornersEffect {
+                        radius: thumbnail.radius
                     }
                 }
 
@@ -167,7 +163,7 @@ FocusScope {
                     }
                 ]
 
-                RectangularGlow {
+                EffectRectangularGlow {
                     anchors.fill: thumbnail
                     z: -1
 

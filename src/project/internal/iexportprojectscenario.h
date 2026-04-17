@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -36,11 +36,11 @@ class IExportProjectScenario : MODULE_EXPORT_INTERFACE
 public:
     virtual std::vector<INotationWriter::UnitType> supportedUnitTypes(const ExportType& exportType) const = 0;
 
-    virtual RetVal<io::path_t> askExportPath(const notation::INotationPtrList& notations, const ExportType& exportType,
-                                             INotationWriter::UnitType unitType = INotationWriter::UnitType::PER_PART,
-                                             io::path_t defaultPath = "") const = 0;
+    virtual muse::RetVal<muse::io::path_t> askExportPath(const notation::INotationPtrList& notations, const ExportType& exportType,
+                                                         INotationWriter::UnitType unitType = INotationWriter::UnitType::PER_PART,
+                                                         muse::io::path_t defaultPath = "") const = 0;
 
-    virtual bool exportScores(const notation::INotationPtrList& notations, const io::path_t destinationPath,
+    virtual bool exportScores(const notation::INotationPtrList& notations, const muse::io::path_t destinationPath,
                               INotationWriter::UnitType unitType = INotationWriter::UnitType::PER_PART,
                               bool openDestinationFolderOnExport = false) const = 0;
 

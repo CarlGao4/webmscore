@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -29,10 +29,6 @@
 #include "async/notification.h"
 #include "engraving/types/types.h"
 
-namespace mu::draw {
-class Color;
-}
-
 namespace mu::engraving {
 class IEngravingConfiguration : MODULE_EXPORT_INTERFACE
 {
@@ -40,42 +36,65 @@ class IEngravingConfiguration : MODULE_EXPORT_INTERFACE
 public:
     virtual ~IEngravingConfiguration() = default;
 
-    virtual io::path_t appDataPath() const = 0;
+    virtual muse::io::path_t appDataPath() const = 0;
 
-    virtual io::path_t defaultStyleFilePath() const = 0;
-    virtual void setDefaultStyleFilePath(const io::path_t& path) = 0;
+    virtual muse::io::path_t defaultStyleFilePath() const = 0;
+    virtual void setDefaultStyleFilePath(const muse::io::path_t& path) = 0;
+    virtual muse::async::Channel<muse::io::path_t> defaultStyleFilePathChanged() const = 0;
 
-    virtual io::path_t partStyleFilePath() const = 0;
-    virtual void setPartStyleFilePath(const io::path_t& path) = 0;
+    virtual muse::io::path_t partStyleFilePath() const = 0;
+    virtual void setPartStyleFilePath(const muse::io::path_t& path) = 0;
+    virtual muse::async::Channel<muse::io::path_t> partStyleFilePathChanged() const = 0;
 
     virtual SizeF defaultPageSize() const = 0;
 
     virtual String iconsFontFamily() const = 0;
 
-    virtual draw::Color defaultColor() const = 0;
-    virtual draw::Color scoreInversionColor() const = 0;
-    virtual draw::Color invisibleColor() const = 0;
-    virtual draw::Color lassoColor() const = 0;
-    virtual draw::Color warningColor() const = 0;
-    virtual draw::Color warningSelectedColor() const = 0;
-    virtual draw::Color criticalColor() const = 0;
-    virtual draw::Color criticalSelectedColor() const = 0;
-    virtual draw::Color formattingMarksColor() const = 0;
-    virtual draw::Color thumbnailBackgroundColor() const = 0;
-    virtual draw::Color noteBackgroundColor() const = 0;
-    virtual draw::Color fontPrimaryColor() const = 0;
+    virtual Color defaultColor() const = 0;
+    virtual Color scoreInversionColor() const = 0;
+    virtual Color lassoColor() const = 0;
+    virtual Color warningColor() const = 0;
+    virtual Color warningSelectedColor() const = 0;
+    virtual Color criticalColor() const = 0;
+    virtual Color criticalSelectedColor() const = 0;
+    virtual Color thumbnailBackgroundColor() const = 0;
+    virtual Color noteBackgroundColor() const = 0;
+    virtual Color fontPrimaryColor() const = 0;
+    virtual Color voiceColor(voice_idx_t voiceIdx) const = 0;
 
     virtual double guiScaling() const = 0;
 
-    virtual draw::Color selectionColor(voice_idx_t voiceIndex = 0, bool itemVisible = true, bool itemIsUnlinkedFromScore = false) const = 0;
-    virtual void setSelectionColor(voice_idx_t voiceIndex, draw::Color color) = 0;
-    virtual async::Channel<voice_idx_t, draw::Color> selectionColorChanged() const = 0;
+    virtual Color selectionColor(voice_idx_t voiceIndex = 0, bool itemVisible = true, bool itemIsUnlinkedFromScore = false) const = 0;
+    virtual void setSelectionColor(voice_idx_t voiceIndex, Color color) = 0;
+    virtual muse::async::Channel<voice_idx_t, Color> selectionColorChanged() const = 0;
 
     virtual bool scoreInversionEnabled() const = 0;
     virtual void setScoreInversionEnabled(bool value) = 0;
-    virtual async::Notification scoreInversionChanged() const = 0;
+    virtual muse::async::Notification scoreInversionChanged() const = 0;
 
-    virtual draw::Color highlightSelectionColor(voice_idx_t voiceIndex = 0) const = 0;
+    virtual bool dynamicsApplyToAllVoices() const = 0;
+    virtual void setDynamicsApplyToAllVoices(bool v) = 0;
+    virtual muse::async::Channel<bool> dynamicsApplyToAllVoicesChanged() const = 0;
+
+    virtual bool autoUpdateFretboardDiagrams() const = 0;
+    virtual void setAutoUpdateFretboardDiagrams(bool v) = 0;
+    virtual muse::async::Channel<bool> autoUpdateFretboardDiagramsChanged() const = 0;
+
+    virtual Color formattingColor() const = 0;
+    virtual muse::async::Channel<Color> formattingColorChanged() const = 0;
+
+    virtual Color invisibleColor() const = 0;
+    virtual muse::async::Channel<Color> invisibleColorChanged() const = 0;
+
+    virtual Color unlinkedColor() const = 0;
+    virtual muse::async::Channel<Color> unlinkedColorChanged() const = 0;
+
+    virtual Color frameColor() const = 0;
+    virtual muse::async::Channel<Color> frameColorChanged() const = 0;
+
+    virtual Color scoreGreyColor() const = 0;
+
+    virtual Color highlightSelectionColor(voice_idx_t voiceIndex = 0) const = 0;
 
     struct DebuggingOptions {
         bool showElementBoundingRects = false;
@@ -84,7 +103,10 @@ public:
         bool colorSegmentShapes = false;
         bool showSkylines = false;
         bool showSystemBoundingRects = false;
-        bool showCorruptedMeasures = true;
+        bool showElementMasks = false;
+        bool showLineAttachPoints = false;
+        bool markEmptyStaffVisibilityOverrides = false;
+        bool markCorruptedMeasures = true;
 
         bool anyEnabled() const
         {
@@ -94,28 +116,34 @@ public:
                    || colorSegmentShapes
                    || showSkylines
                    || showSystemBoundingRects
-#ifndef NDEBUG
-                   || showCorruptedMeasures
-#endif
+                   || showElementMasks
+                   || showLineAttachPoints
+                   || markEmptyStaffVisibilityOverrides
+                   || markCorruptedMeasures
             ;
         }
     };
 
     virtual const DebuggingOptions& debuggingOptions() const = 0;
     virtual void setDebuggingOptions(const DebuggingOptions& options) = 0;
-    virtual async::Notification debuggingOptionsChanged() const = 0;
+    virtual muse::async::Notification debuggingOptionsChanged() const = 0;
 
     virtual bool isAccessibleEnabled() const = 0;
 
+    virtual bool doNotSaveEIDsForBackCompat() const = 0;
+    virtual void setDoNotSaveEIDsForBackCompat(bool doNotSave) = 0;
+
+    virtual bool allowReadingImagesFromOutsideMscz() const = 0;
+
     /// these configurations will be removed after solving https://github.com/musescore/MuseScore/issues/14294
     virtual bool guitarProImportExperimental() const = 0;
+    virtual bool shouldAddParenthesisOnStandardStaff() const = 0;
     virtual bool negativeFretsAllowed() const = 0;
-    virtual bool tablatureParenthesesZIndexWorkaround() const = 0;
     virtual bool crossNoteHeadAlwaysBlack() const = 0;
-    virtual bool enableExperimentalFretCircle() const = 0;
     virtual void setGuitarProMultivoiceEnabled(bool multiVoice) = 0;
     virtual bool guitarProMultivoiceEnabled() const = 0;
     virtual bool minDistanceForPartialSkylineCalculated() const = 0;
+    virtual bool specificSlursLayoutWorkaround() const = 0;
 };
 }
 

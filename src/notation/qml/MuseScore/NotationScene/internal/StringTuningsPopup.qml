@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2023 MuseScore BVBA and others
+ * Copyright (C) 2023 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,23 +22,26 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 
-import MuseScore.Ui 1.0
-import MuseScore.UiComponents 1.0
+import Muse.Ui 1.0
+import Muse.UiComponents 1.0
 import MuseScore.NotationScene 1.0
 
-StyledPopupView {
+AbstractElementPopup {
     id: root
 
-    property NavigationSection notationViewNavigationSection: null
-    property int navigationOrderStart: 0
-    property int navigationOrderEnd: navPanel.order
+    property alias notationViewNavigationSection: navPanel.section
+    property alias navigationOrderStart: navPanel.order
+    readonly property alias navigationOrderEnd: navPanel.order
 
     contentWidth: content.width
     contentHeight: content.height
 
+    placementPolicies: PopupView.PreferRight
     showArrow: false
 
-    signal elementRectChanged(var elementRect)
+    model: StringTuningsSettingsModel {
+        id: stringTuningsModel
+    }
 
     function updatePosition() {
         var h = Math.max(root.contentHeight, 360)
@@ -53,18 +56,6 @@ StyledPopupView {
 
         spacing: 12
 
-        StringTuningsSettingsModel {
-            id: stringTuningsModel
-
-            onItemRectChanged: function(rect) {
-                root.elementRectChanged(rect)
-            }
-        }
-
-        Component.onCompleted: {
-            stringTuningsModel.init()
-        }
-
         NavigationPanel {
             id: navPanel
             name: "StringTuningsSettings"
@@ -72,6 +63,12 @@ StyledPopupView {
             section: root.notationViewNavigationSection
             order: root.navigationOrderStart
             accessible.name: qsTrc("notation", "String tunings settings")
+
+            onNavigationEvent: function(event) {
+                if (event.type === NavigationEvent.Escape) {
+                    root.close()
+                }
+            }
         }
 
         StyledTextLabel {
@@ -132,6 +129,12 @@ StyledPopupView {
             section: root.notationViewNavigationSection
             order: navPanel.order + 1
             accessible.name: qsTrc("notation", "Strings")
+
+            onNavigationEvent: function(event) {
+                if (event.type === NavigationEvent.Escape) {
+                    root.close()
+                }
+            }
         }
 
         GridLayout {
@@ -211,7 +214,8 @@ StyledPopupView {
                             Layout.preferredHeight: parent.height - ui.theme.borderWidth * 2
                             Layout.preferredWidth: 64
 
-                            currentValue: modelData["valueStr"]
+                            currentValue: modelData["value"]
+                            currentText: modelData["valueStr"]
 
                             minValue: 0
                             maxValue: 127
@@ -220,12 +224,10 @@ StyledPopupView {
                             navigation.row: index
                             navigation.column: 3
 
-                            canIncrease: modelData["value"] < maxValue
                             onIncrement: function() {
                                 return stringTuningsModel.increaseStringValue(currentValue)
                             }
 
-                            canDecrease: modelData["value"] > minValue
                             onDecrement: function() {
                                 return stringTuningsModel.decreaseStringValue(currentValue)
                             }
@@ -234,8 +236,8 @@ StyledPopupView {
                                 var ok = stringTuningsModel.setStringValue(index, newValue)
                                 if (!ok) {
                                     //! NOTE: reset the text entered by the user
-                                    currentValue = modelData["valueStr"]
-                                    currentValue = Qt.binding( function() { return modelData["valueStr"] } )
+                                    currentText = modelData["valueStr"]
+                                    currentText = Qt.binding( function() { return modelData["valueStr"] } )
                                 }
                             }
                         }

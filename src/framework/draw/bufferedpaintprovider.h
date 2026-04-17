@@ -19,18 +19,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_DRAW_BUFFEREDPAINTPROVIDER_H
-#define MU_DRAW_BUFFEREDPAINTPROVIDER_H
-
-#include <vector>
-#include <stack>
+#ifndef MUSE_DRAW_BUFFEREDPAINTPROVIDER_H
+#define MUSE_DRAW_BUFFEREDPAINTPROVIDER_H
 
 #include "ipaintprovider.h"
 #include "types/drawdata.h"
 #include "types/pen.h"
 #include "types/brush.h"
 
-namespace mu::draw {
+namespace muse::draw {
 class DrawObjectsLogger;
 class BufferedPaintProvider : public IPaintProvider
 {
@@ -88,6 +85,7 @@ public:
     bool hasClipping() const override;
 
     void setClipRect(const RectF& rect) override;
+    void setMask(const RectF& background, const std::vector<RectF>& maskRects) override;
     void setClipping(bool enable) override;
 
     // ---
@@ -117,4 +115,4 @@ private:
 };
 }
 
-#endif // MU_DRAW_BUFFEREDPAINTPROVIDER_H
+#endif // MUSE_DRAW_BUFFEREDPAINTPROVIDER_H

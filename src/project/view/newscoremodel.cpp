@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -25,12 +25,13 @@
 
 using namespace mu::project;
 using namespace mu::notation;
-using namespace mu::ui;
+using namespace muse;
+using namespace muse::ui;
 
 using PreferredScoreCreationMode = IProjectConfiguration::PreferredScoreCreationMode;
 
 NewScoreModel::NewScoreModel(QObject* parent)
-    : QObject(parent)
+    : QObject(parent), muse::Injectable(muse::iocCtxForQmlObject(this))
 {
 }
 
@@ -48,7 +49,7 @@ bool NewScoreModel::createScore(const QVariant& info)
 {
     ProjectCreateOptions options = parseOptions(info.toMap());
 
-    auto project = notationCreator()->newProject();
+    auto project = notationCreator()->newProject(iocContext());
     Ret ret = project->createNew(options);
 
     if (!ret) {
@@ -87,17 +88,21 @@ ProjectCreateOptions NewScoreModel::parseOptions(const QVariantMap& info) const
 
     QVariantMap timeSignature = info["timeSignature"].toMap();
     scoreOptions.timesigType = static_cast<TimeSigType>(info["timeSignatureType"].toInt());
-    scoreOptions.timesigNumerator = timeSignature["numerator"].toInt();
-    scoreOptions.timesigDenominator = timeSignature["denominator"].toInt();
+
+    const int timesigNumerator = timeSignature["numerator"].toInt();
+    const int timesigDenominator = timeSignature["denominator"].toInt();
+    scoreOptions.globalTimesig = Fraction(timesigNumerator, timesigDenominator);
 
     QVariantMap keySignature = info["keySignature"].toMap();
     scoreOptions.key = static_cast<Key>(keySignature["key"].toInt());
 
     QVariantMap measuresPickup = info["pickupTimeSignature"].toMap();
+    scoreOptions.totalMeasures = info["measureCount"].toInt();
+
     scoreOptions.withPickupMeasure = info["withPickupMeasure"].toBool();
-    scoreOptions.measures = info["measureCount"].toInt();
-    scoreOptions.measureTimesigNumerator = measuresPickup["numerator"].toInt();
-    scoreOptions.measureTimesigDenominator = measuresPickup["denominator"].toInt();
+    const int pickupNumerator = measuresPickup["numerator"].toInt();
+    const int pickupDenominator = measuresPickup["denominator"].toInt();
+    scoreOptions.pickupTimesig = Fraction(pickupNumerator, pickupDenominator);
 
     QVariantList instruments = info["instruments"].toList();
 

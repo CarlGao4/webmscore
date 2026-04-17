@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -19,18 +19,28 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
-#ifndef MU_ENGRAVING_GUITARBEND_H
-#define MU_ENGRAVING_GUITARBEND_H
+#pragma once
 
 #include "engravingitem.h"
 #include "line.h"
 #include "property.h"
 #include "textbase.h"
-#include "types.h"
 
 namespace mu::engraving {
-enum class QuarterOffset {
+enum class GuitarBendType : unsigned char {
+    BEND,
+    PRE_BEND,
+    GRACE_NOTE_BEND,
+    SLIGHT_BEND,
+};
+
+enum class GuitarBendShowHoldLine : unsigned char {
+    AUTO,
+    SHOW,
+    HIDE,
+};
+
+enum class QuarterOffset : unsigned char {
     QUARTER_FLAT,
     NONE,
     QUARTER_SHARP
@@ -58,6 +68,8 @@ public:
     GuitarBend* clone() const override { return new GuitarBend(*this); }
 
     LineSegment* createLineSegment(System* parent) override;
+
+    bool allowTimeAnchor() const override { return false; }
 
     Note* startNote() const;
     Note* startNoteOfChain() const;
@@ -92,7 +104,7 @@ public:
 
     double lineWidth() const;
 
-    mu::draw::Color uiColor() const;
+    Color uiColor() const;
 
     static void adaptBendsFromTabToStandardStaff(const Staff* staff);
 
@@ -158,7 +170,7 @@ public:
 
     bool isUserModified() const override;
 
-    mu::draw::Color uiColor() const { return guitarBend()->uiColor(); }
+    Color uiColor() const { return guitarBend()->uiColor(); }
 
     struct LayoutData : public LineSegment::LayoutData
     {
@@ -200,6 +212,8 @@ public:
     GuitarBendHold* clone() const override { return new GuitarBendHold(*this); }
 
     LineSegment* createLineSegment(System* parent) override;
+
+    bool allowTimeAnchor() const override { return false; }
 
     Note* startNote() const;
     Note* endNote() const;
@@ -247,7 +261,7 @@ class GuitarBendText final : public TextBase
 public:
     GuitarBendText(GuitarBendSegment* parent);
     GuitarBendText* clone() const override { return new GuitarBendText(*this); }
-};
-} // namespace mu::engraving
 
-#endif // MU_ENGRAVING_GUITARBEND_H
+    bool isEditable() const override { return false; }
+};
+}

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -58,12 +58,12 @@ void Mei_Tests::meiReadTest(const char* file)
 {
     String fileName = String::fromUtf8(file);
 
-    auto importFunc = [](MasterScore* score, const io::path_t& path) -> Err {
+    auto importFunc = [](MasterScore* score, const muse::io::path_t& path) -> Err {
         MeiReader meiReader;
         return meiReader.import(score, path);
     };
 
-    auto exportFunc = [](Score* score, const io::path_t& path) -> Err {
+    auto exportFunc = [](Score* score, const muse::io::path_t& path) -> Err {
         MeiWriter meiWriter;
         return meiWriter.writeScore(score, path);
     };
@@ -167,6 +167,14 @@ TEST_F(Mei_Tests, mei_fig_bass_01) {
     meiReadTest("fig-bass-01");
 }
 
+TEST_F(Mei_Tests, mei_fingering_01) {
+    meiReadTest("fingering-01");
+}
+
+TEST_F(Mei_Tests, mei_glisss_01) {
+    meiReadTest("gliss-01");
+}
+
 TEST_F(Mei_Tests, mei_gracenote_01) {
     meiReadTest("gracenote-01");
 }
@@ -177,6 +185,10 @@ TEST_F(Mei_Tests, mei_gracenote_02) {
 
 TEST_F(Mei_Tests, mei_hairpin_01) {
     meiReadTest("hairpin-01");
+}
+
+TEST_F(Mei_Tests, mei_harp_01) {
+    meiReadTest("harp-01");
 }
 
 TEST_F(Mei_Tests, mei_jump_01) {
@@ -191,8 +203,16 @@ TEST_F(Mei_Tests, mei_key_signature_01) {
     meiReadTest("key-signature-01");
 }
 
+TEST_F(Mei_Tests, mei_midi_01) {
+    meiReadTest("midi-01");
+}
+
 TEST_F(Mei_Tests, mei_label_01) {
     meiReadTest("label-01");
+}
+
+TEST_F(Mei_Tests, laissez_vibrer_01) {
+    meiReadTest("laissez-vibrer-01");
 }
 
 TEST_F(Mei_Tests, mei_lyric_01) {
@@ -207,12 +227,20 @@ TEST_F(Mei_Tests, mei_lyric_03) {
     meiReadTest("lyric-03");
 }
 
+TEST_F(Mei_Tests, mei_lyric_04) {
+    meiReadTest("lyric-04");
+}
+
 TEST_F(Mei_Tests, mei_measure_01) {
     meiReadTest("measure-01");
 }
 
 TEST_F(Mei_Tests, mei_measure_02) {
     meiReadTest("measure-02");
+}
+
+TEST_F(Mei_Tests, mei_mrpt_01) {
+    meiReadTest("measure-repeat-01");
 }
 
 TEST_F(Mei_Tests, mei_metadata_01) {
@@ -243,6 +271,10 @@ TEST_F(Mei_Tests, mei_pedal_01) {
     meiReadTest("pedal-01");
 }
 
+TEST_F(Mei_Tests, mei_reh_01) {
+    meiReadTest("reh-01");
+}
+
 TEST_F(Mei_Tests, mei_roman_numeral_01) {
     meiReadTest("roman-numeral-01");
 }
@@ -253,6 +285,10 @@ TEST_F(Mei_Tests, mei_score_01) {
 
 TEST_F(Mei_Tests, mei_score_02) {
     meiReadTest("score-02");
+}
+
+TEST_F(Mei_Tests, mei_score_03) {
+    meiReadTest("score-03");
 }
 
 TEST_F(Mei_Tests, mei_slur_01) {
@@ -285,6 +321,10 @@ TEST_F(Mei_Tests, mei_time_signature_02) {
 
 TEST_F(Mei_Tests, mei_transpose_01) {
     meiReadTest("transpose-01");
+}
+
+TEST_F(Mei_Tests, mei_trill_01) {
+    meiReadTest("trill-01");
 }
 
 TEST_F(Mei_Tests, mei_tuplet_01) {

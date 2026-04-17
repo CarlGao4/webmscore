@@ -8,7 +8,7 @@
 #include "global/io/buffer.h"
 #include "global/types/ret.h"
 #include "global/types/string.h"
-using namespace mu;
+using namespace muse;
 
 typedef const uint8_t* WasmResBytes;
 

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -23,6 +23,7 @@
 #ifndef MU_BRAILLE_NOTATIONBRAILLE_H
 #define MU_BRAILLE_NOTATIONBRAILLE_H
 
+#include "accessibility/iaccessibilitycontroller.h"
 #include "async/asyncable.h"
 #include "async/notification.h"
 #include "context/iglobalcontext.h"
@@ -30,9 +31,9 @@
 #include "ibrailleconfiguration.h"
 #include "inotationbraille.h"
 #include "modularity/ioc.h"
-#include "notation/inotationconfiguration.h"
 #include "notation/notationtypes.h"
 #include "playback/iplaybackcontroller.h"
+#include "actions/iactionsdispatcher.h"
 
 #include "braille.h"
 #include "brailleinput.h"
@@ -41,15 +42,19 @@ namespace mu::engraving {
 class Score;
 class Selection;
 
-class NotationBraille : public mu::braille::INotationBraille, public async::Asyncable
+class NotationBraille : public mu::braille::INotationBraille, public muse::Injectable, public muse::async::Asyncable
 {
-    INJECT(framework::IGlobalConfiguration, globalConfiguration)
-    INJECT(context::IGlobalContext, globalContext)
-    INJECT(notation::INotationConfiguration, notationConfiguration)
-    INJECT(braille::IBrailleConfiguration, brailleConfiguration)
-    INJECT(playback::IPlaybackController, playbackController)
+    muse::Inject<muse::accessibility::IAccessibilityController> accessibilityController = { this };
+    muse::Inject<muse::IGlobalConfiguration> globalConfiguration = { this };
+    muse::Inject<context::IGlobalContext> globalContext = { this };
+    muse::Inject<braille::IBrailleConfiguration> brailleConfiguration = { this };
+    muse::Inject<playback::IPlaybackController> playbackController = { this };
+    muse::Inject<muse::actions::IActionsDispatcher> dispatcher = { this };
 
 public:
+    NotationBraille(const muse::modularity::ContextPtr& iocCtx)
+        : muse::Injectable(iocCtx) {}
+
     void init();
     void doBraille(bool force = false);
 
@@ -67,15 +72,15 @@ public:
     void setInputNoteDuration(notation::Duration d);
     void setTupletDuration(int tuplet, notation::Duration d);
 
-    ValCh<std::string> brailleInfo() const override;
-    ValCh<int> cursorPosition() const override;
-    ValCh<int> currentItemPositionStart() const override;
-    ValCh<int> currentItemPositionEnd() const override;
-    ValCh<std::string> keys() const override;
-    ValCh<bool> enabled() const override;
-    ValCh<braille::BrailleIntervalDirection> intervalDirection() const override;
-    ValCh<int> mode() const override;
-    ValCh<std::string> cursorColor() const override;
+    muse::ValCh<std::string> brailleInfo() const override;
+    muse::ValCh<int> cursorPosition() const override;
+    muse::ValCh<int> currentItemPositionStart() const override;
+    muse::ValCh<int> currentItemPositionEnd() const override;
+    muse::ValCh<std::string> keys() const override;
+    muse::ValCh<bool> enabled() const override;
+    muse::ValCh<braille::BrailleIntervalDirection> intervalDirection() const override;
+    muse::ValCh<int> mode() const override;
+    muse::ValCh<std::string> cursorColor() const override;
 
     void setEnabled(const bool enabled) override;
     void setIntervalDirection(const braille::BrailleIntervalDirection direction) override;
@@ -110,7 +115,7 @@ private:
     void setCurrentEngravingItem(EngravingItem* el, bool select);
 
     void updateTableForLyricsFromPreferences();
-    io::path_t tablesDefaultDirPath() const;
+    muse::io::path_t tablesDefaultDirPath() const;
 
     IntervalDirection currentIntervalDirection();
 
@@ -120,17 +125,17 @@ private:
     BrailleEngravingItemList m_beil;
     BrailleInputState m_braille_input;
 
-    ValCh<std::string> m_brailleInfo;
-    ValCh<int> m_cursorPosition;
-    ValCh<int> m_currentItemPositionStart;
-    ValCh<int> m_currentItemPositionEnd;
-    ValCh<std::string> m_keys;
-    ValCh<bool> m_enabled;
-    ValCh<int> m_mode;
-    ValCh<braille::BrailleIntervalDirection> m_intervalDirection;
-    ValCh<std::string> m_cursorColor;
+    muse::ValCh<std::string> m_brailleInfo;
+    muse::ValCh<int> m_cursorPosition;
+    muse::ValCh<int> m_currentItemPositionStart;
+    muse::ValCh<int> m_currentItemPositionEnd;
+    muse::ValCh<std::string> m_keys;
+    muse::ValCh<bool> m_enabled;
+    muse::ValCh<int> m_mode;
+    muse::ValCh<braille::BrailleIntervalDirection> m_intervalDirection;
+    muse::ValCh<std::string> m_cursorColor;
 
-    async::Notification m_selectionChanged;
+    muse::async::Notification m_selectionChanged;
 };
 }
 

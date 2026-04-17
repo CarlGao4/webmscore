@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -27,8 +27,7 @@
 
 #include "types/flags.h"
 #include "types/string.h"
-
-#include "draw/types/geometry.h"
+#include "../types/types.h"
 
 namespace mu::engraving {
 enum KeyboardModifier {
@@ -193,7 +192,9 @@ enum KeyboardKey {
     Key_BraceRight = 0x7d,
     Key_AsciiTilde = 0x7e,
 
+    Key_nobreakspace = 0x0a0,
     Key_periodcentered = 0x0b7,
+    Key_ydiaeresis = 0x0ff,
 };
 
 enum MouseButton {
@@ -209,9 +210,10 @@ DECLARE_OPERATORS_FOR_FLAGS(MouseButtons)
 //   Grip
 //---------------------------------------------------------
 
-enum class Grip {
+enum class Grip : signed char {
     NO_GRIP = -1,
     START = 0, END = 1,                           // arpeggio etc.
+    LEFT = START, RIGHT = END,                    // aliases for dynamic
     MIDDLE = 2, APERTURE = 3,                     // Line
     /*START, END , */
     BEZIER1 = 2, SHOULDER = 3, BEZIER2 = 4, DRAG = 5,       // Slur
@@ -247,6 +249,7 @@ public:
     PointF moveDelta;           ///< Mouse offset from the start of mouse move
     bool hRaster = false;
     bool vRaster = false;
+    bool isHairpinDragCreatedFromDynamic = false;
 
     int key = 0;
     KeyboardModifiers modifiers  { /*0*/ };   // '0' initialized via default constructor, doing it here too results in compiler warning with Qt 5.15
@@ -269,8 +272,8 @@ public:
     void addData(std::shared_ptr<ElementEditData>);
     bool control(bool textEditing = false) const;
     bool shift() const { return modifiers & ShiftModifier; }
-    bool isStartEndGrip() { return curGrip == Grip::START || curGrip == Grip::END; }
-    bool hasCurrentGrip() { return curGrip != Grip::NO_GRIP; }
+    bool isStartEndGrip() const { return curGrip == Grip::START || curGrip == Grip::END; }
+    bool hasCurrentGrip() const { return curGrip != Grip::NO_GRIP; }
 
 private:
     std::list<std::shared_ptr<ElementEditData> > m_data;

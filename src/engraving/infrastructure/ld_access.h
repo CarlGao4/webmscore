@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2023 MuseScore BVBA and others
+ * Copyright (C) 2023 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -28,7 +28,7 @@
 
 namespace mu::engraving {
 //! NOTE Enum for detect layoutdata bad access errors
-enum class LD_ACCESS {
+enum class LD_ACCESS : unsigned char {
     CHECK = 0,          // should be correct; assert if still not
     BAD,                // known to be bad; don’t assert, we’ll fix it later
     MAYBE_NOTINITED,    // in this case it’s okay if we access it before it’s been inited
@@ -40,7 +40,7 @@ enum class LD_ACCESS {
 //! TODO Using this macro, we can collect and output debugging information to show the dependency tree
 #define LD_CONDITION(val) \
     if (!val) { \
-        LOGE_T("LD_ACCESS")() << "BAD ACCESS to: " << #val; \
+        LOGE_T("LD_ACCESS")() << "BAD ACCESS to: " << #val << ", file: " << __FILE__ << ", line: " << __LINE__; \
     } \
 
 #else
@@ -112,7 +112,8 @@ class ld_field_prod
 {
 public:
 
-    ld_field_prod(const char*, T = T()) {}
+    ld_field_prod(const char*, T def = T())
+        : m_val(def) {}
 
     inline void reset() { m_val = T(); }
 

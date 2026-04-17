@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -32,22 +32,22 @@ static constexpr size_t VOICES = 4;
 
 inline constexpr track_idx_t staff2track(staff_idx_t staffIdx, voice_idx_t voiceIdx = 0)
 {
-    return staffIdx != mu::nidx ? staffIdx * VOICES + voiceIdx : mu::nidx;
+    return staffIdx != muse::nidx ? staffIdx * VOICES + voiceIdx : muse::nidx;
 }
 
 inline constexpr staff_idx_t track2staff(track_idx_t track)
 {
-    return track != mu::nidx ? track / VOICES : mu::nidx;
+    return track != muse::nidx ? track / VOICES : muse::nidx;
 }
 
 inline constexpr voice_idx_t track2voice(track_idx_t track)
 {
-    return track != mu::nidx ? track % VOICES : mu::nidx;
+    return track != muse::nidx ? track % VOICES : muse::nidx;
 }
 
 inline constexpr track_idx_t trackZeroVoice(track_idx_t track)
 {
-    return track != mu::nidx ? (track / VOICES) * VOICES : mu::nidx;
+    return track != muse::nidx ? (track / VOICES) * VOICES : muse::nidx;
 }
 
 inline constexpr bool isUpVoice(voice_idx_t voiceIdx)
@@ -60,8 +60,6 @@ inline constexpr bool isDownVoice(voice_idx_t voiceIdx)
     return voiceIdx & 1;
 }
 
-static constexpr int MAX_TAGS = 32;
-
 static constexpr int MAX_HEADERS = 3;
 static constexpr int MAX_FOOTERS = 3;
 
@@ -72,9 +70,9 @@ static constexpr double DPI       = 72.0 * DPI_F;
 static constexpr double SPATIUM20 = 5.0 * (DPI / 72.0);
 static constexpr double DPMM      = DPI / INCH;
 
-// NOTE: the Smufl default is actually 20pt. We use 10 for historical reasons
-// and back-compatibility, but this will be multiplied x2 during dynamic layout.
-static constexpr double DYNAMICS_DEFAULT_FONT_SIZE = 10.0;
+// NOTE: the SMuFL default is actually 20pt. We use 10 for historical reasons
+// and back-compatibility, but this will be multiplied x2 during layout.
+static constexpr double MUSICAL_SYMBOLS_DEFAULT_FONT_SIZE = 10.0;
 
 static constexpr int MAX_STAVES = 4;
 
@@ -85,7 +83,7 @@ static constexpr char mimeStaffListFormat[]  = "application/musescore/stafflist"
 static constexpr int INVALID_STRING_INDEX = -1; // no ordinal for a physical string (0 = topmost in instrument)
 static constexpr int INVALID_FRET_INDEX   = -1; // no ordinal for a fret
 
-static constexpr ID INVALID_ID = 0;
+static constexpr muse::ID INVALID_ID = 0;
 
 //---------------------------------------------------------
 //   TransposeDirection
@@ -112,16 +110,6 @@ enum class SelectType : char {
 };
 
 //---------------------------------------------------------
-//    KeySigNaturals (positions of naturals in key sig. changes)
-//---------------------------------------------------------
-
-enum class KeySigNatural : char {
-    NONE   = 0,               // no naturals, except for change to CMaj/Amin
-    BEFORE = 1,               // naturals before accidentals
-    AFTER  = 2                // naturals after accidentals (but always before if going sharps <=> flats)
-};
-
-//---------------------------------------------------------
 //   UpDownMode
 //---------------------------------------------------------
 
@@ -130,10 +118,19 @@ enum class UpDownMode : char {
 };
 
 //---------------------------------------------------------
+//   OffsetType
+//---------------------------------------------------------
+
+enum class OffsetType : unsigned char {
+    ABS,         ///< offset in point units
+    SPATIUM      ///< offset in staff space units
+};
+
+//---------------------------------------------------------
 //   MScoreError
 //---------------------------------------------------------
 
-enum class MsError {
+enum class MsError : unsigned char {
     MS_NO_ERROR,
     NO_NOTE_SELECTED,
     NO_CHORD_REST_SELECTED,
@@ -162,6 +159,7 @@ enum class MsError {
     CANNOT_CHANGE_LOCAL_TIMESIG_HAS_EXCERPTS,
     CORRUPTED_MEASURE,
     CANNOT_REMOVE_KEY_SIG,
+    CANNOT_JOIN_MEASURE_STAFFTYPE_CHANGE,
 };
 
 /// \cond PLUGIN_API \private \endcond
@@ -185,7 +183,6 @@ public:
 
     static MsError _error;
 
-    static void init();
     static void registerUiTypes();
 
     static double hRaster() { return _hRaster; }
@@ -206,7 +203,6 @@ public:
     static double nudgeStep;
     static double nudgeStep10;
     static double nudgeStep50;
-    static int defaultPlayDuration;
 
 // #ifndef NDEBUG
     static bool noHorizontalStretch;
@@ -217,9 +213,6 @@ public:
     static bool testMode;
     static bool testWriteStyleToScore;
     static bool useRead302InTestMode;
-
-    static int sampleRate;
-    static int mtcType;
 
     static bool saveTemplateMode;
     static bool noGui;

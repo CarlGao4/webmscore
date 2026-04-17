@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,8 +22,8 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 
-import MuseScore.Ui 1.0
-import MuseScore.UiComponents 1.0
+import Muse.Ui 1.0
+import Muse.UiComponents 1.0
 import MuseScore.Inspector 1.0
 
 import "../../common"
@@ -69,5 +69,50 @@ Column {
         navigation.name: "SmallAccidentalBox"
         navigation.panel: root.navigationPanel
         navigation.row: bracketType.navigation.row + 1
+    }
+
+    InspectorPropertyView {
+        id: stackingOrderOffset
+        visible: root.model ? root.model.isStackingOrderAvailable : false
+
+        navigationName: "Stacking order"
+        navigationPanel: root.navigationPanel
+        navigationRowStart: smallAccidentalCheckBox.navigationRowEnd + 1
+        navigationRowEnd: moveRight.navigation.row
+
+        titleText: qsTrc("inspector", "Horizontal order")
+        propertyItem: root.model ? root.model.stackingOrderOffset : null
+
+        Row {
+            spacing: 4
+            width: parent.width
+            enabled: root.model ? root.model.isStackingOrderEnabled : false
+
+            FlatRadioButton {
+                id: moveLeft
+                width: 0.5 * parent.width - 2
+                iconCode: IconCode.ARROW_LEFT
+                checked: root.model ? root.model.stackingOrderOffset.value > 0 : false
+                onClicked: {
+                    root.model.stackingOrderOffset.value += 1
+                }
+
+                navigation.panel: root.navigationPanel
+                navigation.row: stackingOrderOffset.navigationRowStart + 1
+            }
+
+            FlatRadioButton {
+                id: moveRight
+                width: 0.5 * parent.width - 2
+                iconCode: IconCode.ARROW_RIGHT
+                checked: root.model ? root.model.stackingOrderOffset.value < 0 : false
+                onClicked: {
+                    root.model.stackingOrderOffset.value -= 1
+                }
+
+                navigation.panel: root.navigationPanel
+                navigation.row: moveLeft.navigation.row + 1
+            }
+        }
     }
 }

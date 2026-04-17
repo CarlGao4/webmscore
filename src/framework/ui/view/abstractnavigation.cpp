@@ -27,11 +27,12 @@
 
 #include "log.h"
 
-using namespace mu::ui;
-using namespace mu::accessibility;
+using namespace muse;
+using namespace muse::ui;
+using namespace muse::accessibility;
 
 AbstractNavigation::AbstractNavigation(QObject* parent)
-    : QObject(parent)
+    : QObject(parent), Injectable(muse::iocCtxForQmlObject(this))
 {
 }
 
@@ -39,8 +40,17 @@ void AbstractNavigation::classBegin()
 {
 }
 
+bool AbstractNavigation::isComponentCompleted() const
+{
+    return m_isComponentCompleted;
+}
+
 void AbstractNavigation::componentComplete()
 {
+    IF_ASSERT_FAILED(!isComponentCompleted()) {
+        return;
+    }
+
     if (m_accessible) {
         m_accessible->setState(IAccessible::State::Enabled, enabled());
         m_accessible->setState(IAccessible::State::Active, active());
@@ -50,6 +60,8 @@ void AbstractNavigation::componentComplete()
     navigationController()->highlightChanged().onNotify(this, [this](){
         emit highlightChanged();
     });
+
+    m_isComponentCompleted = true;
 }
 
 void AbstractNavigation::setName(QString name)
@@ -80,6 +92,7 @@ void AbstractNavigation::setIndex(const INavigation::Index& index)
 
     bool _rowChanged = m_index.row != index.row;
     bool _columnChanged = m_index.column != index.column;
+    bool _orderChanged = m_index.order() != index.order();
 
     m_index = index;
 
@@ -94,9 +107,13 @@ void AbstractNavigation::setIndex(const INavigation::Index& index)
     if (_columnChanged) {
         emit columnChanged(m_index.column);
     }
+
+    if (_orderChanged) {
+        emit orderChanged(m_index.order());
+    }
 }
 
-mu::async::Channel<INavigation::Index> AbstractNavigation::indexChanged() const
+async::Channel<INavigation::Index> AbstractNavigation::indexChanged() const
 {
     return m_indexChanged;
 }
@@ -181,7 +198,7 @@ bool AbstractNavigation::enabled() const
     return m_enabled;
 }
 
-mu::async::Channel<bool> AbstractNavigation::enabledChanged() const
+async::Channel<bool> AbstractNavigation::enabledChanged() const
 {
     return m_enabledChanged;
 }
@@ -206,7 +223,7 @@ bool AbstractNavigation::active() const
     return m_active;
 }
 
-mu::async::Channel<bool> AbstractNavigation::activeChanged() const
+async::Channel<bool> AbstractNavigation::activeChanged() const
 {
     return m_activeChanged;
 }
@@ -219,11 +236,17 @@ void AbstractNavigation::onEvent(INavigation::EventPtr e)
 
 QWindow* AbstractNavigation::window() const
 {
+    QQuickItem* visualItem = this->visualItem();
+    return visualItem ? visualItem->window() : nullptr;
+}
+
+QQuickItem* AbstractNavigation::visualItem() const
+{
     QObject* prn = parent();
     while (prn) {
         QQuickItem* vitem = qobject_cast<QQuickItem*>(prn);
         if (vitem) {
-            return vitem->window();
+            return vitem;
         }
 
         prn = prn->parent();

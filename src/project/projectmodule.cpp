@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -64,9 +64,12 @@
 
 #include "ui/iuiactionsregister.h"
 #include "ui/iinteractiveuriregister.h"
+#include "extensions/iextensionsexecpointsregister.h"
+#include "projectextensionpoints.h"
 
 using namespace mu::project;
-using namespace mu::modularity;
+using namespace muse;
+using namespace muse::modularity;
 
 static void project_init_qrc()
 {
@@ -81,7 +84,7 @@ std::string ProjectModule::moduleName() const
 void ProjectModule::registerExports()
 {
     m_configuration = std::make_shared<ProjectConfiguration>();
-    m_actionsController = std::make_shared<ProjectActionsController>();
+    m_actionsController = std::make_shared<ProjectActionsController>(iocContext());
     m_projectAutoSaver = std::make_shared<ProjectAutoSaver>();
 
 #ifdef Q_OS_MAC
@@ -95,6 +98,7 @@ void ProjectModule::registerExports()
     ioc()->registerExport<IProjectConfiguration>(moduleName(), m_configuration);
     ioc()->registerExport<IProjectCreator>(moduleName(), new ProjectCreator());
     ioc()->registerExport<IProjectFilesController>(moduleName(), m_actionsController);
+    ioc()->registerExport<mi::IProjectProvider>(moduleName(), m_actionsController);
     ioc()->registerExport<IOpenSaveProjectScenario>(moduleName(), new OpenSaveProjectScenario());
     ioc()->registerExport<IExportProjectScenario>(moduleName(), new ExportProjectScenario());
     ioc()->registerExport<IRecentFilesController>(moduleName(), m_recentFilesController);
@@ -111,12 +115,12 @@ void ProjectModule::registerExports()
 
 void ProjectModule::resolveImports()
 {
-    auto ar = ioc()->resolve<ui::IUiActionsRegister>(moduleName());
+    auto ar = ioc()->resolve<muse::ui::IUiActionsRegister>(moduleName());
     if (ar) {
         ar->reg(std::make_shared<ProjectUiActions>(m_actionsController));
     }
 
-    auto ir = ioc()->resolve<ui::IInteractiveUriRegister>(moduleName());
+    auto ir = ioc()->resolve<muse::ui::IInteractiveUriRegister>(moduleName());
     if (ir) {
         ir->registerQmlUri(Uri("musescore://project/newscore"), "MuseScore/Project/NewScoreDialog.qml");
         ir->registerQmlUri(Uri("musescore://project/asksavelocationtype"), "MuseScore/Project/AskSaveLocationTypeDialog.qml");
@@ -128,6 +132,18 @@ void ProjectModule::resolveImports()
         ir->registerQmlUri(Uri("musescore://project/upload/progress"), "MuseScore/Project/UploadProgressDialog.qml");
         ir->registerQmlUri(Uri("musescore://project/upload/success"), "MuseScore/Project/ProjectUploadedDialog.qml");
         ir->registerQmlUri(Uri("musescore://project/audiogenerationsettings"), "MuseScore/Project/AudioGenerationSettingsDialog.qml");
+    }
+
+    auto er = ioc()->resolve<muse::extensions::IExtensionsExecPointsRegister>(moduleName());
+    if (er) {
+        er->reg(moduleName(), { EXEC_ONPOST_PROJECT_CREATED,
+                                TranslatableString::untranslatable("On post project created") });
+        er->reg(moduleName(), { EXEC_ONPOST_PROJECT_OPENED,
+                                TranslatableString::untranslatable("On post project opened") });
+        er->reg(moduleName(), { EXEC_ONPRE_PROJECT_SAVE,
+                                TranslatableString::untranslatable("On pre project save") });
+        er->reg(moduleName(), { EXEC_ONPOST_PROJECT_SAVED,
+                                TranslatableString::untranslatable("On post project saved") });
     }
 }
 
@@ -166,9 +182,9 @@ void ProjectModule::registerUiTypes()
                                           "Not creatable as it is an enum type");
 }
 
-void ProjectModule::onInit(const framework::IApplication::RunMode& mode)
+void ProjectModule::onInit(const IApplication::RunMode& mode)
 {
-    if (framework::IApplication::RunMode::GuiApp != mode) {
+    if (IApplication::RunMode::GuiApp != mode) {
         return;
     }
 

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -377,7 +377,7 @@ TEST_F(Engraving_SpannersTests, spanners09)
     EXPECT_TRUE(msr);
     msr = msr->nextMeasure();
     EXPECT_TRUE(msr);
-    score->startCmd();
+    score->startCmd(TranslatableString::untranslatable("Engraving spanners tests"));
     score->select(msr);
     score->cmdTimeDelete();
     score->endCmd();
@@ -410,7 +410,7 @@ TEST_F(Engraving_SpannersTests, spanners10)
     EXPECT_TRUE(msr);
     msr = msr->nextMeasure();
     EXPECT_TRUE(msr);
-    score->startCmd();
+    score->startCmd(TranslatableString::untranslatable("Engraving spanners tests"));
     score->select(msr);
     score->cmdTimeDelete();
     score->endCmd();
@@ -443,7 +443,7 @@ TEST_F(Engraving_SpannersTests, spanners11)
     EXPECT_TRUE(msr);
     msr = msr->nextMeasure();
     EXPECT_TRUE(msr);
-    score->startCmd();
+    score->startCmd(TranslatableString::untranslatable("Engraving spanners tests"));
     score->select(msr);
     score->cmdTimeDelete();
     score->endCmd();
@@ -476,7 +476,7 @@ TEST_F(Engraving_SpannersTests, spanners12)
     EXPECT_TRUE(msr);
     msr = msr->nextMeasure();
     EXPECT_TRUE(msr);
-    score->startCmd();
+    score->startCmd(TranslatableString::untranslatable("Engraving spanners tests"));
     score->select(msr);
     score->cmdTimeDelete();
     score->endCmd();
@@ -511,7 +511,7 @@ TEST_F(Engraving_SpannersTests, DISABLED_spanners13)
     brk->setLayoutBreakType(LayoutBreakType::LINE);
     dropData.pos      = msr->pagePos();
     dropData.dropElement  = brk;
-    score->startCmd();
+    score->startCmd(TranslatableString::untranslatable("Engraving spanners tests"));
     msr->drop(dropData);
     score->endCmd();
     // VERIFY SEGMENTS IN SYSTEMS AND THEN SCORE
@@ -569,7 +569,7 @@ TEST_F(Engraving_SpannersTests, spanners15)
     for (auto it = score->spanner().cbegin(); it != score->spanner().cend(); ++it) {
         Spanner* spanner = (*it).second;
         SLine* sl = static_cast<SLine*>(spanner);
-        sl->setProperty(Pid::COLOR, mu::draw::Color(255, 0, 0, 255));
+        sl->setProperty(Pid::COLOR, Color(255, 0, 0, 255));
         for (auto ss : sl->spannerSegments()) {
             ss->setProperty(Pid::MIN_DISTANCE, 0.0);
             ss->setPropertyFlags(Pid::MIN_DISTANCE, PropertyFlags::UNSTYLED);

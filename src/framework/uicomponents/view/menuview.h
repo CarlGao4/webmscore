@@ -19,13 +19,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
-#ifndef MU_UICOMPONENTS_MENUVIEW_H
-#define MU_UICOMPONENTS_MENUVIEW_H
+#pragma once
 
 #include "popupview.h"
 
-namespace mu::uicomponents {
+namespace muse::uicomponents {
 class MenuView : public PopupView
 {
     Q_OBJECT
@@ -78,5 +76,3 @@ private:
     int m_contentHeight = -1;
 };
 }
-
-#endif // MU_UICOMPONENTS_MENUVIEW_H

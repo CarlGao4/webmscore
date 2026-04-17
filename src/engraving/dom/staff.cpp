@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -30,6 +30,7 @@
 #include "chord.h"
 #include "clef.h"
 #include "cleflist.h"
+#include "excerpt.h"
 #include "factory.h"
 #include "instrtemplate.h"
 #include "linkedobjects.h"
@@ -66,6 +67,7 @@ namespace mu::engraving {
 Staff::Staff(Part* parent)
     : EngravingItem(ElementType::STAFF, parent)
 {
+    m_color = configuration()->defaultColor();
     initFromStaffType(0);
 }
 
@@ -95,7 +97,7 @@ Staff* Staff::clone() const
 
 staff_idx_t Staff::idx() const
 {
-    return mu::indexOf(score()->staves(), (Staff*)this);
+    return muse::indexOf(score()->staves(), (Staff*)this);
 }
 
 //---------------------------------------------------------
@@ -104,7 +106,7 @@ staff_idx_t Staff::idx() const
 
 void Staff::triggerLayout() const
 {
-    score()->setLayoutAll(idx());
+    score()->setLayoutAll(idx(), this);
 }
 
 void Staff::triggerLayout(const Fraction& tick)
@@ -121,6 +123,144 @@ Staff* Staff::findLinkedInScore(const Score* score) const
     }
 
     return nullptr;
+}
+
+track_idx_t Staff::getLinkedTrackInStaff(const Staff* linkedStaff, const track_idx_t originalTrack) const
+{
+    IF_ASSERT_FAILED(linkedStaff && originalTrack != muse::nidx) {
+        return muse::nidx;
+    }
+
+    Score* thisScore = score();
+    Score* linkedStaffScore = linkedStaff->score();
+    staff_idx_t linkedStaffIdx = linkedStaff->idx();
+
+    if (thisScore == linkedStaffScore) {
+        // For staves linked within the same score, voices are always mapped 1 to 1
+        voice_idx_t voice = track2voice(originalTrack);
+        return staff2track(linkedStaffIdx, voice);
+    }
+
+    // NOTE 1: if linkedStaff has a different id than *this, it means that there isn't direct voice mapping between
+    // the two. Example: if we have guitar+TAB in the score, with corresponding guitar+TAB in the part, *this
+    // may be the notation-staff of the score and linkedStaff may be the TAB-staff of the part. In that case, the
+    // correct voice mapping must be obtained by looking for the staff with same id in thisScore.
+
+    track_idx_t refTrack = originalTrack;
+    if (linkedStaff->id() != id()) {
+        Staff* correspondingStaffInThisScore = linkedStaff->findLinkedInScore(thisScore);
+        if (!correspondingStaffInThisScore) {
+            return muse::nidx;
+        }
+        voice_idx_t originalVoice = track2voice(originalTrack);
+        refTrack = staff2track(correspondingStaffInThisScore->idx(), originalVoice);
+    }
+
+    // NOTE 2: TracksMap is a map from a track in the *score* to track(s) in the *part*.
+    // If we are in the master score, refTrack corresponds to one of the keys in the map, so we can retrieve
+    // the linked tracks by simply querying the map by key. However, if we are in a part, we need to search for
+    // refTrack among the *values* of the map, and the corresponding key gives us the linked track in the score.
+    // If linkedStaff is *also* in a part, we need to do it in two steps: first find the linked track in the score,
+    // then use it to find the linked track in linkeStaff's part.
+
+    if (thisScore->isMaster()) {
+        const TracksMap& tracksMap = linkedStaffScore->excerpt()->tracksMapping();
+        std::vector<track_idx_t> linkedTracks = muse::values(tracksMap, refTrack);
+        for (track_idx_t track : linkedTracks) {
+            if (track2staff(track) == linkedStaffIdx) {
+                return track;
+            }
+        }
+
+        return muse::nidx;
+    }
+
+    const TracksMap& thisTracksMap = thisScore->excerpt()->tracksMapping();
+    track_idx_t linkedTrackInScore = muse::nidx;
+    for (auto pair : thisTracksMap) {
+        track_idx_t trackInScore = pair.first;
+        std::vector<track_idx_t> tracksInPart = muse::values(thisTracksMap, trackInScore);
+        for (track_idx_t trackInPart : tracksInPart) {
+            if (trackInPart == refTrack) {
+                linkedTrackInScore = trackInScore;
+                break;
+            }
+        }
+        if (linkedTrackInScore != muse::nidx) {
+            break;
+        }
+    }
+
+    if (linkedStaffScore->isMaster() || linkedTrackInScore == muse::nidx) {
+        return linkedTrackInScore;
+    }
+
+    const TracksMap& linkedTracksMap = linkedStaffScore->excerpt()->tracksMapping();
+    std::vector<track_idx_t> linkedTracks = muse::values(linkedTracksMap, linkedTrackInScore);
+    for (track_idx_t track : linkedTracks) {
+        if (track2staff(track) == linkedStaffIdx) {
+            return track;
+        }
+    }
+
+    return muse::nidx;
+}
+
+bool Staff::trackHasLinksInVoiceZero(track_idx_t track)
+{
+    for (Staff* linkedStaff : staffList()) {
+        track_idx_t linkedTrack = getLinkedTrackInStaff(linkedStaff, track);
+        if (linkedTrack != muse::nidx && track2voice(linkedTrack) == 0) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void Staff::undoSetShowMeasureNumbers(bool show)
+{
+    bool isTopStave = score()->staves().front() == this;
+    if (show) {
+        undoChangeProperty(Pid::SHOW_MEASURE_NUMBERS, isTopStave ? AutoOnOff::AUTO : AutoOnOff::ON);
+    } else {
+        undoChangeProperty(Pid::SHOW_MEASURE_NUMBERS, isTopStave ? AutoOnOff::OFF : AutoOnOff::AUTO);
+    }
+}
+
+bool Staff::shouldShowMeasureNumbers() const
+{
+    MeasureNumberPlacement placementMode = style().styleV(Sid::measureNumberPlacementMode).value<MeasureNumberPlacement>();
+    switch (placementMode) {
+    case MeasureNumberPlacement::ABOVE_SYSTEM:
+        return score()->staves().front() == this;
+    case MeasureNumberPlacement::BELOW_SYSTEM:
+        return score()->staves().back() == this;
+    case MeasureNumberPlacement::ON_SYSTEM_OBJECT_STAVES:
+    {
+        bool isTopStave = score()->staves().front() == this;
+        return (isTopStave && m_showMeasureNumbers != AutoOnOff::OFF) || (isSystemObjectStaff() && m_showMeasureNumbers == AutoOnOff::ON);
+    }
+    case MeasureNumberPlacement::ON_ALL_STAVES:
+        return show();
+    }
+
+    return false;
+}
+
+bool Staff::isLastOfScore() const
+{
+    return score()->staves().empty() ? false : score()->staves().back() == this;
+}
+
+bool Staff::isSystemObjectStaff() const
+{
+    return score() && muse::contains(score()->systemObjectStaves(), const_cast<Staff*>(this));
+}
+
+bool Staff::hasSystemObjectsBelowBottomStaff() const
+{
+    return isSystemObjectStaff() && isLastOfScore() && style().styleB(Sid::systemObjectsBelowBottomStaff);
 }
 
 //---------------------------------------------------------
@@ -146,7 +286,7 @@ void Staff::fillBrackets(size_t idx)
 void Staff::cleanBrackets()
 {
     while (!m_brackets.empty() && (m_brackets.back()->bracketType() == BracketType::NO_BRACKET)) {
-        BracketItem* bi = mu::takeLast(m_brackets);
+        BracketItem* bi = muse::takeLast(m_brackets);
         delete bi;
     }
 }
@@ -196,7 +336,7 @@ void Staff::swapBracket(size_t oldIdx, size_t newIdx)
     fillBrackets(idx);
     m_brackets[oldIdx]->setColumn(newIdx);
     m_brackets[newIdx]->setColumn(oldIdx);
-    mu::swapItemsAt(m_brackets, oldIdx, newIdx);
+    muse::swapItemsAt(m_brackets, oldIdx, newIdx);
     cleanBrackets();
 }
 
@@ -214,7 +354,7 @@ void Staff::changeBracketColumn(size_t oldColumn, size_t newColumn)
         size_t newIdx = i + step;
         m_brackets[oldIdx]->setColumn(newIdx);
         m_brackets[newIdx]->setColumn(oldIdx);
-        mu::swapItemsAt(m_brackets, oldIdx, newIdx);
+        muse::swapItemsAt(m_brackets, oldIdx, newIdx);
     }
     cleanBrackets();
 }
@@ -348,8 +488,8 @@ void Staff::updateVisibilityVoices(const Staff* masterStaff, const TracksMap& tr
 
     voice_idx_t voiceIndex = 0;
     for (voice_idx_t voice = 0; voice < VOICES; voice++) {
-        std::vector<track_idx_t> masterStaffTracks = mu::values(tracks, masterStaffIdx * VOICES + voice % VOICES);
-        bool isVoiceVisible = mu::contains(masterStaffTracks, staffIdx * VOICES + voiceIndex % VOICES);
+        std::vector<track_idx_t> masterStaffTracks = muse::values(tracks, masterStaffIdx * VOICES + voice % VOICES);
+        bool isVoiceVisible = muse::contains(masterStaffTracks, staffIdx * VOICES + voiceIndex % VOICES);
         if (isVoiceVisible) {
             voices[voice] = true;
             voiceIndex++;
@@ -821,6 +961,11 @@ double Staff::staffHeight() const
     return (lines(tick) - 1) * spatium(tick) * staffType(tick)->lineDistance().val();
 }
 
+double Staff::staffHeight(const Fraction& tick) const
+{
+    return (lines(tick) - 1) * spatium(tick) * staffType(tick)->lineDistance().val();
+}
+
 //---------------------------------------------------------
 //   spatium
 //---------------------------------------------------------
@@ -862,7 +1007,7 @@ SwingParameters Staff::swing(const Fraction& tick) const
 {
     SwingParameters sp;
     int swingUnit = 0;
-    ByteArray ba = style().styleSt(Sid::swingUnit).toAscii();
+    muse::ByteArray ba = style().styleSt(Sid::swingUnit).toAscii();
     DurationType unit = TConv::fromXml(ba.constChar(), DurationType::V_INVALID);
     int swingRatio = style().styleI(Sid::swingRatio);
     if (unit == DurationType::V_EIGHTH) {
@@ -878,7 +1023,7 @@ SwingParameters Staff::swing(const Fraction& tick) const
         return sp;
     }
 
-    std::vector<int> ticks = mu::keys(m_swingList);
+    std::vector<int> ticks = muse::keys(m_swingList);
     auto it = std::upper_bound(ticks.cbegin(), ticks.cend(), tick.ticks());
     if (it == ticks.cbegin()) {
         return sp;
@@ -895,7 +1040,7 @@ const CapoParams& Staff::capo(const Fraction& tick) const
         return dummy;
     }
 
-    std::vector<int> ticks = mu::keys(m_capoMap);
+    std::vector<int> ticks = muse::keys(m_capoMap);
     auto it = std::upper_bound(ticks.cbegin(), ticks.cend(), tick.ticks());
     if (it == ticks.cbegin()) {
         return dummy;
@@ -914,6 +1059,12 @@ void Staff::clearCapoParams()
     m_capoMap.clear();
 }
 
+bool Staff::shouldMergeMatchingRests() const
+{
+    return mergeMatchingRests() == AutoOnOff::ON
+           || (mergeMatchingRests() == AutoOnOff::AUTO && style().value(Sid::mergeMatchingRests).toBool());
+}
+
 //---------------------------------------------------------
 //   channel
 //---------------------------------------------------------
@@ -924,7 +1075,7 @@ int Staff::channel(const Fraction& tick, voice_idx_t voice) const
         return 0;
     }
 
-    std::vector<int> ticks = mu::keys(m_channelList[voice]);
+    std::vector<int> ticks = muse::keys(m_channelList[voice]);
     auto it = std::upper_bound(ticks.cbegin(), ticks.cend(), tick.ticks());
     if (it == ticks.cbegin()) {
         return 0;
@@ -1050,6 +1201,11 @@ void Staff::moveStaffType(const Fraction& from, const Fraction& to)
     staffTypeListChanged(from);
 }
 
+std::pair<int, int> Staff::staffTypeRange(const Fraction& tick) const
+{
+    return m_staffTypeList.staffTypeRange(tick);
+}
+
 //---------------------------------------------------------
 //   staffTypeListChanged
 //    Signal that the staffTypeList has changed at
@@ -1083,7 +1239,9 @@ void Staff::staffTypeListChanged(const Fraction& tick)
 
 StaffType* Staff::setStaffType(const Fraction& tick, const StaffType& nst)
 {
-    return m_staffTypeList.setStaffType(tick, nst);
+    StaffType* stt = m_staffTypeList.setStaffType(tick, nst);
+    stt->setScore(score());
+    return stt;
 }
 
 //---------------------------------------------------------
@@ -1132,13 +1290,20 @@ void Staff::init(const InstrumentTemplate* t, const StaffType* staffType, int ci
 void Staff::init(const Staff* s)
 {
     m_id                = s->m_id;
-    m_staffTypeList     = s->m_staffTypeList;
+
+    setStaffType(Fraction(0, 1), s->m_staffTypeList.staffType(Fraction(0, 1)));
+    for (const auto& stPair : s->m_staffTypeList.staffTypeChanges()) {
+        const StaffType& st = stPair.second;
+        StaffType newStaffType(st);
+        setStaffType(Fraction::fromTicks(stPair.first), newStaffType);
+    }
+
     setDefaultClefType(s->defaultClefType());
     m_barLineFrom       = s->m_barLineFrom;
     m_barLineTo         = s->m_barLineTo;
     m_hideWhenEmpty     = s->m_hideWhenEmpty;
     m_cutaway           = s->m_cutaway;
-    m_showIfEmpty       = s->m_showIfEmpty;
+    m_showIfEntireSystemEmpty = s->m_showIfEntireSystemEmpty;
     m_hideSystemBarLine = s->m_hideSystemBarLine;
     m_mergeMatchingRests = s->m_mergeMatchingRests;
     m_color             = s->m_color;
@@ -1181,15 +1346,6 @@ void Staff::initFromStaffType(const StaffType* staffType)
 }
 
 //---------------------------------------------------------
-//   spatiumChanged
-//---------------------------------------------------------
-
-void Staff::spatiumChanged(double oldValue, double newValue)
-{
-    m_userDist = (m_userDist / oldValue) * newValue;
-}
-
-//---------------------------------------------------------
 //   show
 //---------------------------------------------------------
 
@@ -1224,7 +1380,7 @@ bool Staff::showLedgerLines(const Fraction& tick) const
 //   color
 //---------------------------------------------------------
 
-mu::draw::Color Staff::color(const Fraction& tick) const
+Color Staff::color(const Fraction& tick) const
 {
     return staffType(tick)->color();
 }
@@ -1233,7 +1389,7 @@ mu::draw::Color Staff::color(const Fraction& tick) const
 //   setColor
 //---------------------------------------------------------
 
-void Staff::setColor(const Fraction& tick, const mu::draw::Color& val)
+void Staff::setColor(const Fraction& tick, const Color& val)
 {
     staffType(tick)->setColor(val);
 }
@@ -1248,8 +1404,8 @@ void Staff::updateOttava()
     m_pitchOffsets.clear();
     for (auto i : score()->spanner()) {
         const Spanner* s = i.second;
-        if (s->type() == ElementType::OTTAVA && s->staffIdx() == staffIdx) {
-            const Ottava* o = static_cast<const Ottava*>(s);
+        if (s->isOttava() && s->staffIdx() == staffIdx && s->playSpanner()) {
+            const Ottava* o = toOttava(s);
             m_pitchOffsets.setPitchOffset(o->tick().ticks(), o->pitchShift());
             m_pitchOffsets.setPitchOffset(o->tick2().ticks(), 0);
         }
@@ -1260,7 +1416,7 @@ void Staff::updateOttava()
 //   undoSetColor
 //---------------------------------------------------------
 
-void Staff::undoSetColor(const mu::draw::Color& /*val*/)
+void Staff::undoSetColor(const Color& /*val*/)
 {
 //      undoChangeProperty(Pid::COLOR, val);
 }
@@ -1287,8 +1443,12 @@ void Staff::insertTime(const Fraction& tick, const Fraction& len)
     for (auto i = m_keys.lower_bound(tick.ticks()); i != m_keys.end();) {
         KeySigEvent kse = i->second;
         Fraction t = Fraction::fromTicks(i->first);
-        m_keys.erase(i++);
-        kl2[(t + len).ticks()] = kse;
+        if (t + len < score()->endTick()) {
+            m_keys.erase(i++);
+            kl2[(t + len).ticks()] = kse;
+        } else {
+            ++i;
+        }
     }
     m_keys.insert(kl2.begin(), kl2.end());
 
@@ -1371,7 +1531,7 @@ Staff* Staff::primaryStaff() const
 
 staff_idx_t Staff::rstaff() const
 {
-    return mu::indexOf(m_part->staves(), this);
+    return muse::indexOf(m_part->staves(), this);
 }
 
 //---------------------------------------------------------
@@ -1400,6 +1560,8 @@ PropertyValue Staff::getProperty(Pid id) const
         return staffType(Fraction(0, 1))->userMag();
     case Pid::STAFF_INVISIBLE:
         return staffType(Fraction(0, 1))->invisible();
+    case Pid::HIDE_WHEN_EMPTY:
+        return m_hideWhenEmpty;
     case Pid::STAFF_COLOR:
         return PropertyValue::fromValue(staffType(Fraction(0, 1))->color());
     case Pid::PLAYBACK_VOICE1:
@@ -1420,6 +1582,10 @@ PropertyValue Staff::getProperty(Pid id) const
         return userDist();
     case Pid::GENERATED:
         return false;
+    case Pid::SHOW_MEASURE_NUMBERS:
+        return m_showMeasureNumbers;
+    case Pid::SHOW_IF_ENTIRE_SYSTEM_EMPTY:
+        return m_showIfEntireSystemEmpty;
     default:
         LOGD("unhandled id <%s>", propertyName(id));
         return PropertyValue();
@@ -1445,8 +1611,11 @@ bool Staff::setProperty(Pid id, const PropertyValue& v)
         setLocalSpatium(_spatium, spatium(Fraction(0, 1)), Fraction(0, 1));
     }
     break;
+    case Pid::HIDE_WHEN_EMPTY:
+        setHideWhenEmpty(v.value<AutoOnOff>());
+        break;
     case Pid::STAFF_COLOR:
-        setColor(Fraction(0, 1), v.value<mu::draw::Color>());
+        setColor(Fraction(0, 1), v.value<Color>());
         break;
     case Pid::PLAYBACK_VOICE1:
         setPlaybackVoice(0, v.toBool());
@@ -1491,7 +1660,13 @@ bool Staff::setProperty(Pid id, const PropertyValue& v)
         setBarLineTo(v.toInt());
         break;
     case Pid::STAFF_USERDIST:
-        setUserDist(v.value<Millimetre>());
+        setUserDist(v.value<Spatium>());
+        break;
+    case Pid::SHOW_MEASURE_NUMBERS:
+        m_showMeasureNumbers = v.value<AutoOnOff>();
+        break;
+    case Pid::SHOW_IF_ENTIRE_SYSTEM_EMPTY:
+        m_showIfEntireSystemEmpty = v.toBool();
         break;
     default:
         LOGD("unhandled id <%s>", propertyName(id));
@@ -1512,8 +1687,10 @@ PropertyValue Staff::propertyDefault(Pid id) const
         return false;
     case Pid::MAG:
         return 1.0;
+    case Pid::HIDE_WHEN_EMPTY:
+        return AutoOnOff::AUTO;
     case Pid::STAFF_COLOR:
-        return PropertyValue::fromValue(engravingConfiguration()->defaultColor());
+        return PropertyValue::fromValue(configuration()->defaultColor());
     case Pid::PLAYBACK_VOICE1:
     case Pid::PLAYBACK_VOICE2:
     case Pid::PLAYBACK_VOICE3:
@@ -1525,7 +1702,11 @@ PropertyValue Staff::propertyDefault(Pid id) const
     case Pid::STAFF_BARLINE_SPAN_TO:
         return 0;
     case Pid::STAFF_USERDIST:
-        return Millimetre(0.0);
+        return Spatium(0.0);
+    case Pid::SHOW_MEASURE_NUMBERS:
+        return AutoOnOff::AUTO;
+    case Pid::SHOW_IF_ENTIRE_SYSTEM_EMPTY:
+        return false;
     default:
         LOGD("unhandled id <%s>", propertyName(id));
         return PropertyValue();

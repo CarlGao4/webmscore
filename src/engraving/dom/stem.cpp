@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -25,12 +25,13 @@
 
 #include "chord.h"
 #include "hook.h"
-#include "tremolo.h"
+
+#include "tremolosinglechord.h"
 
 #include "log.h"
 
 using namespace mu;
-using namespace mu::draw;
+using namespace muse::draw;
 using namespace mu::engraving;
 
 static const ElementStyle stemStyle {
@@ -59,16 +60,14 @@ bool Stem::up() const
     return chord() ? chord()->up() : true;
 }
 
-void Stem::setBaseLength(Millimetre baseLength)
+void Stem::setBaseLength(Spatium baseLength)
 {
-    m_baseLength = Millimetre(std::abs(baseLength.val()));
-    renderer()->layoutItem(this);
+    m_baseLength = Spatium(std::abs(baseLength.val()));
 }
 
-void Stem::spatiumChanged(double oldValue, double newValue)
+double Stem::lineWidthMag() const
 {
-    m_userLength = (m_userLength / oldValue) * newValue;
-    renderer()->layoutItem(this);
+    return absoluteFromSpatium(m_lineWidth) * chord()->intrinsicMag();
 }
 
 //! In chord coordinates
@@ -77,7 +76,7 @@ PointF Stem::flagPosition() const
     return pos() + PointF(ldata()->bbox().left(), up() ? -length() : length());
 }
 
-std::vector<mu::PointF> Stem::gripsPositions(const EditData&) const
+std::vector<PointF> Stem::gripsPositions(const EditData&) const
 {
     return { pagePos() + ldata()->line.p2() };
 }
@@ -98,27 +97,31 @@ void Stem::startEditDrag(EditData& ed)
 
 void Stem::editDrag(EditData& ed)
 {
-    double yDelta = ed.delta.y();
-    m_userLength += up() ? Millimetre(-yDelta) : Millimetre(yDelta);
-    renderer()->layoutItem(this);
+    double yDelta = up() ? -ed.delta.y() : ed.delta.y();
+    m_userLength += Spatium::fromMM(yDelta, spatium());
     Chord* c = chord();
     if (c->hook()) {
-        c->hook()->move(PointF(0.0, yDelta));
+        c->hook()->move(PointF(0.0, ed.delta.y()));
     }
+    triggerLayout();
 }
 
 void Stem::reset()
 {
-    undoChangeProperty(Pid::USER_LEN, Millimetre(0.0));
+    undoChangeProperty(Pid::USER_LEN, Spatium(0.0));
     EngravingItem::reset();
 }
 
 bool Stem::acceptDrop(EditData& data) const
 {
-    EngravingItem* e = data.dropElement;
-    if ((e->type() == ElementType::TREMOLO) && (toTremolo(e)->tremoloType() <= TremoloType::R64)) {
-        return true;
+    const EngravingItem* e = data.dropElement;
+    switch (e->type()) {
+    case ElementType::TREMOLO_SINGLECHORD:
+        return item_cast<const TremoloSingleChord*>(e)->tremoloType() <= TremoloType::R64;
+    default:
+        break;
     }
+
     return false;
 }
 
@@ -128,8 +131,8 @@ EngravingItem* Stem::drop(EditData& data)
     Chord* ch  = chord();
 
     switch (e->type()) {
-    case ElementType::TREMOLO:
-        toTremolo(e)->setParent(ch);
+    case ElementType::TREMOLO_SINGLECHORD:
+        item_cast<TremoloSingleChord*>(e)->setParent(ch);
         undoAddElement(e);
         return e;
     default:
@@ -159,10 +162,10 @@ bool Stem::setProperty(Pid propertyId, const PropertyValue& v)
 {
     switch (propertyId) {
     case Pid::LINE_WIDTH:
-        setLineWidth(v.value<Millimetre>());
+        setLineWidth(v.value<Spatium>());
         break;
     case Pid::USER_LEN:
-        setUserLength(v.value<Millimetre>());
+        setUserLength(v.value<Spatium>());
         break;
     case Pid::STEM_DIRECTION:
         chord()->setStemDirection(v.value<DirectionV>());

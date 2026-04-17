@@ -20,33 +20,35 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_VST_VSTFXRESOLVER_H
-#define MU_VST_VSTFXRESOLVER_H
+#ifndef MUSE_VST_VSTFXRESOLVER_H
+#define MUSE_VST_VSTFXRESOLVER_H
 
-#include "audio/abstractfxresolver.h"
+#include "audio/worker/internal/fx/abstractfxresolver.h"
 
 #include "modularity/ioc.h"
-#include "ivstpluginsregister.h"
-#include "ivstmodulesrepository.h"
+#include "../../ivstinstancesregister.h"
+#include "../../ivstmodulesrepository.h"
 
-namespace mu::vst {
-class VstFxResolver : public audio::fx::AbstractFxResolver
+namespace muse::vst {
+class VstFxResolver : public muse::audio::fx::AbstractFxResolver
 {
-    INJECT(IVstModulesRepository, pluginModulesRepo)
-    INJECT(IVstPluginsRegister, pluginsRegister)
+    muse::Inject<IVstModulesRepository> pluginModulesRepo;
+    muse::Inject<IVstInstancesRegister> instancesRegister;
 public:
     // IFxResolver::IResolver interface
-    audio::AudioResourceMetaList resolveResources() const override;
+    muse::audio::AudioResourceMetaList resolveResources() const override;
     void refresh() override;
     void clearAllFx() override;
 
 private:
-    audio::IFxProcessorPtr createMasterFx(const audio::AudioFxParams& fxParams) const override;
-    audio::IFxProcessorPtr createTrackFx(const audio::TrackId trackId, const audio::AudioFxParams& fxParams) const override;
+    muse::audio::IFxProcessorPtr createMasterFx(const muse::audio::AudioFxParams& fxParams) const override;
+    muse::audio::IFxProcessorPtr createTrackFx(const muse::audio::TrackId trackId,
+                                               const muse::audio::AudioFxParams& fxParams) const override;
 
-    void removeMasterFx(const audio::AudioResourceId& resoureId, audio::AudioFxChainOrder order) override;
-    void removeTrackFx(const audio::TrackId trackId, const audio::AudioResourceId& resoureId, audio::AudioFxChainOrder order) override;
+    void removeMasterFx(const muse::audio::AudioResourceId& resoureId, muse::audio::AudioFxChainOrder order) override;
+    void removeTrackFx(const muse::audio::TrackId trackId, const muse::audio::AudioResourceId& resoureId,
+                       muse::audio::AudioFxChainOrder order) override;
 };
 }
 
-#endif // MU_VST_VSTFXRESOLVER_H
+#endif // MUSE_VST_VSTFXRESOLVER_H

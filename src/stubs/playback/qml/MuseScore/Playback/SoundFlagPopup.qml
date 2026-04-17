@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2024 MuseScore BVBA and others
+ * Copyright (C) 2024 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -21,25 +21,23 @@
  */
 import QtQuick 2.15
 
-import MuseScore.Ui 1.0
-import MuseScore.UiComponents 1.0
+import Muse.Ui 1.0
+import Muse.UiComponents 1.0
 
 import MuseScore.Playback 1.0
 
-StyledPopupView {
+AbstractElementPopup {
     id: root
 
-    property var notationViewNavigationSection
+    property NavigationSection notationViewNavigationSection
     property int navigationOrderStart
     property int navigationOrderEnd
 
     contentWidth: content.width
     contentHeight: content.height
 
-    function updatePosition(elementRect) {
-        var h = Math.max(root.contentHeight, 360)
-        root.x = elementRect.x + elementRect.width + 12
-        root.y = elementRect.y - h / 2
+    function updatePosition() {
+        root.x = (root.parent.width / 2) - (root.width / 2) + root.margins
     }
 
     Rectangle {

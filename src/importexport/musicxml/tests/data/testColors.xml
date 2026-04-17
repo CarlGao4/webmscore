@@ -35,7 +35,7 @@
   <part id="P1">
     <measure number="1">
       <attributes>
-        <divisions>1</divisions>
+        <divisions>4</divisions>
         <key color="#00FDFF">
           <fifths>-1</fifths>
           </key>
@@ -48,12 +48,17 @@
           <line>2</line>
           </clef>
         </attributes>
+      <direction placement="below">
+        <direction-type>
+          <words color="#BB00AA" font-style="italic">colourful</words>
+          </direction-type>
+        </direction>
       <note>
         <pitch>
           <step>D</step>
           <octave>4</octave>
           </pitch>
-        <duration>1</duration>
+        <duration>4</duration>
         <voice>1</voice>
         <type>quarter</type>
         <stem>down</stem>
@@ -66,7 +71,7 @@
           <step>G</step>
           <octave>4</octave>
           </pitch>
-        <duration>1</duration>
+        <duration>4</duration>
         <voice>1</voice>
         <type>quarter</type>
         <stem>down</stem>
@@ -83,7 +88,7 @@
           <step>E</step>
           <octave>4</octave>
           </pitch>
-        <duration>1</duration>
+        <duration>4</duration>
         <voice>1</voice>
         <type>quarter</type>
         <stem>down</stem>
@@ -96,13 +101,14 @@
           <step>A</step>
           <octave>4</octave>
           </pitch>
-        <duration>1</duration>
+        <duration>4</duration>
         <voice>1</voice>
         <type>quarter</type>
         <stem>down</stem>
         <notations>
           <articulations>
             <strong-accent type="up" color="#C3D610"/>
+            <breath-mark color="#00FFFF">comma</breath-mark>
             </articulations>
           <glissando line-type="wavy" number="1" type="stop"/>
           </notations>
@@ -117,10 +123,10 @@
           <step>G</step>
           <octave>4</octave>
           </pitch>
-        <duration>1</duration>
+        <duration>4</duration>
         <voice>1</voice>
         <type>quarter</type>
-        <stem>down</stem>
+        <stem color="#2468AC">down</stem>
         <notations>
           <slur type="start" color="#EFCDAB" number="1"/>
           </notations>
@@ -130,7 +136,7 @@
           <step>A</step>
           <octave>4</octave>
           </pitch>
-        <duration>1</duration>
+        <duration>4</duration>
         <voice>1</voice>
         <type>quarter</type>
         <stem>down</stem>
@@ -140,7 +146,7 @@
           <step>B</step>
           <octave>4</octave>
           </pitch>
-        <duration>1</duration>
+        <duration>4</duration>
         <voice>1</voice>
         <type>quarter</type>
         <accidental color="#0F12A7">natural</accidental>
@@ -157,7 +163,7 @@
           <alter>1</alter>
           <octave>5</octave>
           </pitch>
-        <duration>1</duration>
+        <duration>4</duration>
         <voice>1</voice>
         <type>quarter</type>
         <accidental color="#A632F0">sharp</accidental>
@@ -175,12 +181,64 @@
           <step>D</step>
           <octave>5</octave>
           </pitch>
-        <duration>4</duration>
+        <duration>16</duration>
         <voice>1</voice>
         <type>whole</type>
         <notehead color="#9437FF">normal</notehead>
         <notations>
           <slur type="stop" number="1"/>
+          </notations>
+        </note>
+      </measure>
+    <measure number="4">
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>5</octave>
+          </pitch>
+        <duration>2</duration>
+        <voice>1</voice>
+        <type>eighth</type>
+        <stem>down</stem>
+        <notehead color="#9437FF">normal</notehead>
+        <beam number="1" color="#FF0000">begin</beam>
+        <notations>
+          <arpeggiate number="1" color="#FF0000"/>
+          </notations>
+        </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>5</octave>
+          </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>16th</type>
+        <stem>down</stem>
+        <notehead color="#9437FF">normal</notehead>
+        <beam number="1">continue</beam>
+        <beam number="2" color="#FF0000">begin</beam>
+        </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>5</octave>
+          </pitch>
+        <duration>1</duration>
+        <voice>1</voice>
+        <type>16th</type>
+        <stem>down</stem>
+        <notehead color="#9437FF">normal</notehead>
+        <beam number="1">end</beam>
+        <beam number="2">end</beam>
+        </note>
+      <note color="#F0A007">
+        <rest/>
+        <duration>4</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+        <notations>
+          <fermata type="upright" color="#039E0F"/>
           </notations>
         </note>
       </measure>

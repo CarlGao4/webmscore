@@ -20,87 +20,108 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_UI_UIENGINE_H
-#define MU_UI_UIENGINE_H
+#ifndef MUSE_UI_UIENGINE_H
+#define MUSE_UI_UIENGINE_H
 
 #include <QObject>
 #include <memory>
 
 #include "../iuiengine.h"
-#include "../view/uitheme.h"
+#include "../api/themeapi.h"
 #include "../view/qmltooltip.h"
 #include "../view/qmltranslation.h"
 #include "../view/interactiveprovider.h"
 #include "../view/qmlapi.h"
+#include "../view/qmldataformatter.h"
 
+#include "global/modularity/ioc.h"
 #include "languages/ilanguagesservice.h"
+#include "../iuiconfiguration.h"
 
-class QQmlEngine;
-
-namespace mu::ui {
-class UiEngine : public QObject, public IUiEngine
+namespace muse::ui {
+class QmlApiEngine;
+class UiEngine : public QObject, public IUiEngine, public Injectable
 {
     Q_OBJECT
 
-    INJECT(languages::ILanguagesService, languagesService)
-
-    Q_PROPERTY(UiTheme * theme READ theme NOTIFY themeChanged)
+    Q_PROPERTY(api::ThemeApi * theme READ theme NOTIFY themeChanged)
     Q_PROPERTY(QmlToolTip * tooltip READ tooltip CONSTANT)
+    Q_PROPERTY(QmlDataFormatter * df READ df CONSTANT)
 
     Q_PROPERTY(QQuickItem * rootItem READ rootItem WRITE setRootItem NOTIFY rootItemChanged)
+
+    Q_PROPERTY(bool isEffectsAllowed READ isEffectsAllowed CONSTANT)
+    Q_PROPERTY(bool isSystemDragSupported READ isSystemDragSupported CONSTANT)
 
     // for internal use
     Q_PROPERTY(InteractiveProvider * _interactiveProvider READ interactiveProvider_property CONSTANT)
 
+    GlobalInject<languages::ILanguagesService> languagesService;
+    GlobalInject<ui::IUiConfiguration> configuration;
+
 public:
+    UiEngine(const modularity::ContextPtr& iocCtx);
     ~UiEngine() override;
 
-    static UiEngine* instance();
+    void init();
 
     QmlApi* api() const;
-    UiTheme* theme() const;
+    api::ThemeApi* theme() const;
     QmlToolTip* tooltip() const;
+    QmlDataFormatter* df() const;
+
     InteractiveProvider* interactiveProvider_property() const;
     std::shared_ptr<InteractiveProvider> interactiveProvider() const;
 
     Q_INVOKABLE Qt::KeyboardModifiers keyboardModifiers() const;
     Q_INVOKABLE Qt::LayoutDirection currentLanguageLayoutDirection() const;
 
+    Q_INVOKABLE QColor colorWithAlphaF(const QColor& src, float alpha /* 0 - 1 */) const;
+    Q_INVOKABLE QColor blendColors(const QColor& c1, const QColor& c2) const;
+    Q_INVOKABLE QColor blendColors(const QColor& c1, const QColor& c2, float alpha) const;
+
     // IUiEngine
     void updateTheme() override;
+    QQmlApplicationEngine* qmlAppEngine() const override;
     QQmlEngine* qmlEngine() const override;
+    void quit() override;
     void clearComponentCache() override;
+    GraphicsApi graphicsApi() const override;
+    QString graphicsApiName() const override;
     void addSourceImportPath(const QString& path) override;
     // ---
 
-    void moveQQmlEngine(QQmlEngine* e);
-    void quit();
-
     QQuickItem* rootItem() const;
+
+    bool isEffectsAllowed() const;
+    bool isSystemDragSupported() const;
+
+    // dev
+    Q_INVOKABLE void sleep(int msec);
 
 public slots:
     void setRootItem(QQuickItem* rootItem);
 
 signals:
-    void themeChanged(UiTheme* theme);
-
+    void themeChanged(api::ThemeApi* theme);
     void rootItemChanged(QQuickItem* rootItem);
 
 private:
-    UiEngine();
 
-    QQmlEngine* engine();
-    void setup(QQmlEngine* engine);
-
-    QQmlEngine* m_engine = nullptr;
+    QQmlApplicationEngine* m_engine = nullptr;
+    QmlApiEngine* m_apiEngine = nullptr;
     QStringList m_sourceImportPaths;
-    UiTheme* m_theme = nullptr;
+    api::ThemeApi* m_theme = nullptr;
     QmlTranslation* m_translation = nullptr;
+
     std::shared_ptr<InteractiveProvider> m_interactiveProvider = nullptr;
+
     QmlApi* m_api = nullptr;
     QmlToolTip* m_tooltip = nullptr;
+    QmlDataFormatter* m_dataFormatter = nullptr;
     QQuickItem* m_rootItem = nullptr;
+    mutable int m_isEffectsAllowed = -1;
 };
 }
 
-#endif // MU_UI_UIENGINE_H
+#endif // MUSE_UI_UIENGINE_H

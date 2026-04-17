@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2023 MuseScore BVBA and others
+ * Copyright (C) 2023 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -30,7 +30,7 @@ RestBeamSettingsModel::RestBeamSettingsModel(QObject* parent, IElementRepository
     : AbstractInspectorModel(parent, repository)
 {
     setModelType(InspectorModelType::TYPE_BEAM);
-    setTitle(qtrc("inspector", "Beam"));
+    setTitle(muse::qtrc("inspector", "Beam"));
 
     m_beamModesModel = new BeamModesModel(this, repository);
     m_beamModesModel->init();
@@ -50,7 +50,5 @@ void RestBeamSettingsModel::requestElements()
 
 void RestBeamSettingsModel::onCurrentNotationChanged()
 {
-    AbstractInspectorModel::onCurrentNotationChanged();
-
     m_beamModesModel->onCurrentNotationChanged();
 }

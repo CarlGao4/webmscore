@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -21,8 +21,8 @@
  */
 import QtQuick 2.15
 
-import MuseScore.Ui 1.0
-import MuseScore.UiComponents 1.0
+import Muse.Ui 1.0
+import Muse.UiComponents 1.0
 import MuseScore.Preferences 1.0
 
 Item {
@@ -68,7 +68,7 @@ Item {
         ComboBoxWithTitle {
             id: bufferSize
 
-            title: qsTrc("appshell", "Buffer size:")
+            title: qsTrc("appshell/preferences", "Buffer size:")
             columnWidth: root.columnWidth
 
             currentIndex: indexOfValue(apiModel.bufferSize)
@@ -81,6 +81,26 @@ Item {
             onValueEdited: function(newIndex, newValue) {
                 apiModel.bufferSizeSelected(newValue)
             }
+        }
+
+        ComboBoxWithTitle {
+            id: sampleRate
+
+            title: qsTrc("appshell/preferences", "Sample rate:")
+            columnWidth: root.columnWidth
+
+            currentIndex: indexOfValue(apiModel.sampleRate)
+            model: apiModel.sampleRateList
+
+            navigation.name: "SampleRateBox"
+            navigation.panel: root.navigation
+            navigation.row: root.navigationOrderStart + 2
+
+            onValueEdited: function(newIndex, newValue) {
+                apiModel.sampleRateSelected(newValue)
+            }
+
+            visible: Qt.platform.os === "linux"
         }
     }
 }

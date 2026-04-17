@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -182,7 +182,7 @@ bool StaffTypeChange::setProperty(Pid propertyId, const PropertyValue& v)
         m_staffType->setInvisible(v.toBool());
         break;
     case Pid::STAFF_COLOR:
-        m_staffType->setColor(v.value<mu::draw::Color>());
+        m_staffType->setColor(v.value<Color>());
         break;
     case Pid::STAFF_YOFFSET:
         m_staffType->setYoffset(v.value<Spatium>());
@@ -233,7 +233,7 @@ PropertyValue StaffTypeChange::propertyDefault(Pid id) const
     case Pid::STAFF_INVISIBLE:
         return false;
     case Pid::STAFF_COLOR:
-        return PropertyValue::fromValue(engravingConfiguration()->defaultColor());
+        return PropertyValue::fromValue(configuration()->defaultColor());
     case Pid::STAFF_YOFFSET:
         return Spatium(0.0);
     default:

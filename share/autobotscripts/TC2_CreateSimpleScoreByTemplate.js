@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,6 +22,7 @@
 
 var NewScore = require("steps/NewScore.js")
 var NoteInput = require("steps/NoteInput.js")
+var Home = require("steps/Home.js")
 
 var testCase = {
     name: "TC2: Create Score by Template",
@@ -29,7 +30,7 @@ var testCase = {
     steps: [
         {name: "Close score (if opened) and go to home to start", func: function() {
             api.dispatcher.dispatch("file-close")
-            api.navigation.triggerControl("TopTool", "MainToolBar", "Home")
+            Home.goToHome()
         }},
         {name: "Open New Score Dialog", func: function() {
             NewScore.openNewScoreDialog()
@@ -69,12 +70,10 @@ var testCase = {
             api.dispatcher.dispatch("file-close")
         }},
         {name: "Home", func: function() {
-            api.navigation.triggerControl("TopTool", "MainToolBar", "Home")
+            Home.goToHome()
         }},
         {name: "Open last", func: function() {
-            api.navigation.goToControl("RecentScores", "RecentScores", "New score")
-            api.navigation.right()
-            api.navigation.trigger()
+            Home.openLastProject()
         }}
     ]
 };

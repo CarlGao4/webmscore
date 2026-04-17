@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -30,21 +30,22 @@
 namespace mu::engraving {
 class LocalFileInfoProvider : public IFileInfoProvider
 {
-    INJECT(io::IFileSystem, fileSystem)
+    muse::GlobalInject<muse::io::IFileSystem> fileSystem;
+
 public:
-    explicit LocalFileInfoProvider(const io::path_t& filePath);
+    explicit LocalFileInfoProvider(const muse::io::path_t& filePath);
 
-    io::path_t path() const override;
-    io::path_t fileName(bool includingExtension = true) const override;
-    io::path_t absoluteDirPath() const override;
+    muse::io::path_t path() const override;
+    muse::io::path_t fileName(bool includingExtension = true) const override;
+    muse::io::path_t absoluteDirPath() const override;
 
-    String displayName() const override;
+    muse::String displayName() const override;
 
-    DateTime birthTime() const override;
-    DateTime lastModified() const override;
+    muse::DateTime birthTime() const override;
+    muse::DateTime lastModified() const override;
 
 private:
-    io::path_t m_path;
+    muse::io::path_t m_path;
 };
 }
 

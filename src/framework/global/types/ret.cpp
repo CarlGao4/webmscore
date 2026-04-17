@@ -20,9 +20,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "types/ret.h"
+#include "ret.h"
 
-using namespace mu;
+using namespace muse;
 
 Ret::Ret(bool arg)
     : m_code(arg ? int(Code::Ok) : int(Code::UnknownError))
@@ -74,15 +74,6 @@ const std::string& Ret::text() const
 void Ret::setData(const std::string& key, const std::any& val)
 {
     m_data[key] = val;
-}
-
-std::any Ret::data(const std::string& key) const
-{
-    auto it = m_data.find(key);
-    if (it != m_data.end()) {
-        return it->second;
-    }
-    return std::any();
 }
 
 std::string Ret::toString() const

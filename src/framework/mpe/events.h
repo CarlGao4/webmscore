@@ -20,33 +20,22 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_MPE_EVENTS_H
-#define MU_MPE_EVENTS_H
+#ifndef MUSE_MPE_EVENTS_H
+#define MUSE_MPE_EVENTS_H
 
 #include <variant>
 #include <vector>
 
 #include "async/channel.h"
 #include "realfn.h"
-#include "types/val.h"
+#include "global/types/number.h"
+#include "types/flags.h"
+#include "types/number.h"
 
 #include "mpetypes.h"
 #include "playbacksetupdata.h"
 
-namespace mu::mpe {
-struct NoteEvent;
-struct RestEvent;
-using PlaybackEvent = std::variant<NoteEvent, RestEvent>;
-using PlaybackEventList = std::vector<PlaybackEvent>;
-using PlaybackEventsMap = std::map<timestamp_t, PlaybackEventList>;
-
-struct PlaybackParam;
-using PlaybackParamList = std::vector<PlaybackParam>;
-using PlaybackParamMap = std::map<timestamp_t, PlaybackParamList>;
-
-using MainStreamChanges = async::Channel<PlaybackEventsMap, DynamicLevelMap, PlaybackParamMap>;
-using OffStreamChanges = async::Channel<PlaybackEventsMap, PlaybackParamMap>;
-
+namespace muse::mpe {
 struct ArrangementContext
 {
     timestamp_t nominalTimestamp = 0;
@@ -57,6 +46,16 @@ struct ArrangementContext
     staff_layer_idx_t staffLayerIndex = 0;
     double bps = 0.0;
 
+    bool hasStart() const
+    {
+        return actualDuration > 0;
+    }
+
+    bool hasEnd() const
+    {
+        return actualDuration != mpe::INFINITE_DURATION;
+    }
+
     bool operator==(const ArrangementContext& other) const
     {
         return nominalTimestamp == other.nominalTimestamp
@@ -65,7 +64,7 @@ struct ArrangementContext
                && actualDuration == other.actualDuration
                && voiceLayerIndex == other.voiceLayerIndex
                && staffLayerIndex == other.staffLayerIndex
-               && bps == other.bps;
+               && muse::is_equal(bps, other.bps);
     }
 };
 
@@ -86,17 +85,21 @@ struct ExpressionContext
     ArticulationMap articulations;
     dynamic_level_t nominalDynamicLevel = MIN_DYNAMIC_LEVEL;
     ExpressionCurve expressionCurve;
+    std::optional<float> velocityOverride;
 
     bool operator==(const ExpressionContext& other) const
     {
         return articulations == other.articulations
                && nominalDynamicLevel == other.nominalDynamicLevel
-               && expressionCurve == other.expressionCurve;
+               && expressionCurve == other.expressionCurve
+               && velocityOverride == velocityOverride;
     }
 };
 
 struct NoteEvent
 {
+    NoteEvent() = default;
+
     explicit NoteEvent(ArrangementContext&& arrangementCtx,
                        PitchContext&& pitchCtx,
                        ExpressionContext&& expressionCtx)
@@ -193,7 +196,7 @@ private:
     {
         m_arrangementCtx.actualDuration = m_arrangementCtx.nominalDuration;
 
-        if (articulationsApplied.empty()) {
+        if (articulationsApplied.empty() || m_arrangementCtx.nominalDuration == INFINITE_DURATION) {
             return;
         }
 
@@ -220,12 +223,14 @@ private:
 
     void calculateExpressionCurve(const ArticulationMap& articulationsApplied, const float requiredVelocityFraction)
     {
-        const ExpressionPattern::DynamicOffsetMap& appliedOffsetMap = articulationsApplied.averageDynamicOffsetMap();
+        m_expressionCtx.expressionCurve = articulationsApplied.averageDynamicOffsetMap();
+
+        if (!RealIsNull(requiredVelocityFraction)) {
+            m_expressionCtx.velocityOverride = requiredVelocityFraction;
+        }
 
         dynamic_level_t articulationDynamicLevel = articulationsApplied.averageMaxAmplitudeLevel();
         dynamic_level_t nominalDynamicLevel = m_expressionCtx.nominalDynamicLevel;
-
-        m_expressionCtx.expressionCurve = appliedOffsetMap;
 
         constexpr dynamic_level_t naturalDynamicLevel = dynamicLevelFromType(DynamicType::Natural);
 
@@ -245,10 +250,6 @@ private:
         for (auto& pair : m_expressionCtx.expressionCurve) {
             pair.second = static_cast<dynamic_level_t>(RealRound(pair.second * ratio, 0));
         }
-
-        if (!RealIsNull(requiredVelocityFraction)) {
-            m_expressionCtx.expressionCurve.amplifyVelocity(requiredVelocityFraction);
-        }
     }
 
     ArrangementContext m_arrangementCtx;
@@ -258,6 +259,8 @@ private:
 
 struct RestEvent
 {
+    RestEvent() = default;
+
     explicit RestEvent(ArrangementContext&& arrangement)
         : m_arrangementCtx(arrangement) {}
 
@@ -286,28 +289,97 @@ private:
     ArrangementContext m_arrangementCtx;
 };
 
-struct PlaybackParam {
-    String code;
-    Val val;
+struct ControllerChangeEvent {
+    enum Type : signed char {
+        Undefined = -1,
+        Modulation,
+        SustainPedalOnOff,
+        PitchBend,
+    };
 
-    staff_layer_idx_t staffLayerIndex = 0;
+    using Value = muse::number_t<float>;
 
-    bool operator==(const PlaybackParam& other) const
+    Type type = Undefined;
+    Value val; // [0;1]
+    layer_idx_t layerIdx = 0;
+
+    bool operator==(const ControllerChangeEvent& e) const
     {
-        return code == other.code && val == other.val;
+        return type == e.type && val == e.val && layerIdx == e.layerIdx;
     }
 };
 
-static const String SOUND_PRESET_PARAM_CODE(u"sound_preset");
-static const String PLAY_TECHNIQUE_PARAM_CODE(u"playing_technique");
+using ControllerChangeEventList = std::vector<ControllerChangeEvent>;
 
-static const std::string ORDINARY_PLAYING_TECHNIQUE_CODE("ordinary_technique");
+struct TextArticulationEvent {
+    enum FlagType : unsigned char {
+        NoFlags = 0,
+        StartsAtPlaybackPosition,
+    };
+
+    String text;
+    layer_idx_t layerIdx = 0;
+    Flags<FlagType> flags;
+
+    bool operator==(const TextArticulationEvent& e) const
+    {
+        return text == e.text && layerIdx == e.layerIdx && flags == e.flags;
+    }
+};
+
+using TextArticulationEventList = std::vector<TextArticulationEvent>;
+
+struct SoundPresetChangeEvent {
+    String code;
+    layer_idx_t layerIdx = 0;
+
+    bool operator==(const SoundPresetChangeEvent& e) const
+    {
+        return code == e.code && layerIdx == e.layerIdx;
+    }
+};
+
+using SoundPresetChangeEventList = std::vector<SoundPresetChangeEvent>;
+
+struct SyllableEvent {
+    enum FlagType : unsigned char {
+        NoFlags = 0,
+        StartsAtPlaybackPosition,
+        HyphenedToNext,
+    };
+
+    String text;
+    layer_idx_t layerIdx = 0;
+    Flags<FlagType> flags;
+
+    bool operator==(const SyllableEvent& e) const
+    {
+        return text == e.text && layerIdx == e.layerIdx && flags == e.flags;
+    }
+};
+
+using SyllableEventList = std::vector<SyllableEvent>;
+
+using PlaybackEvent = std::variant<std::monostate, NoteEvent,
+                                   RestEvent,
+                                   TextArticulationEvent,
+                                   SoundPresetChangeEvent,
+                                   SyllableEvent,
+                                   ControllerChangeEvent>;
+
+using PlaybackEventList = std::vector<PlaybackEvent>;
+using PlaybackEventsMap = std::map<timestamp_t, PlaybackEventList>;
+
+using DynamicLevelMap = std::map<timestamp_t, dynamic_level_t>;
+using DynamicLevelLayers = std::map<layer_idx_t, DynamicLevelMap>;
+
+using MainStreamChanges = async::Channel<PlaybackEventsMap, DynamicLevelLayers>;
+using OffStreamChanges = async::Channel<PlaybackEventsMap, DynamicLevelLayers, bool /*flushOffstream*/>;
 
 struct PlaybackData {
     PlaybackEventsMap originEvents;
     PlaybackSetupData setupData;
-    DynamicLevelMap dynamicLevelMap;
-    PlaybackParamMap paramMap;
+    DynamicLevelLayers dynamics;
 
     MainStreamChanges mainStream;
     OffStreamChanges offStream;
@@ -316,8 +388,7 @@ struct PlaybackData {
     {
         return originEvents == other.originEvents
                && setupData == other.setupData
-               && dynamicLevelMap == other.dynamicLevelMap
-               && paramMap == other.paramMap;
+               && dynamics == other.dynamics;
     }
 
     bool isValid() const
@@ -327,4 +398,4 @@ struct PlaybackData {
 };
 }
 
-#endif // MU_MPE_EVENTS_H
+#endif // MUSE_MPE_EVENTS_H

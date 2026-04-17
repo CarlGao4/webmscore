@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -38,22 +38,23 @@ public:
     PropertyValue defaultStyleValue(const StyleId& styleId) const override;
     void setStyleValue(const StyleId& styleId, const PropertyValue& newValue) override;
     void resetStyleValue(const StyleId& styleId) override;
+    void resetStyleValues(const std::vector<StyleId>& styleIds) override;
 
     bool canApplyToAllParts() const override;
     void applyToAllParts() override;
 
     void resetAllStyleValues(const StyleIdSet& exceptTheseOnes = {}) override;
 
-    async::Notification styleChanged() const override;
+    muse::async::Notification styleChanged() const override;
 
-    bool loadStyle(const mu::io::path_t&, bool allowAnyVersion) override;
-    bool saveStyle(const mu::io::path_t&) override;
+    bool loadStyle(const muse::io::path_t&, bool allowAnyVersion) override;
+    bool saveStyle(const muse::io::path_t&) override;
 
 private:
     mu::engraving::Score* score() const;
 
     IGetScore* m_getScore = nullptr;
-    async::Notification m_styleChanged;
+    muse::async::Notification m_styleChanged;
     INotationUndoStackPtr m_undoStack;
 };
 }

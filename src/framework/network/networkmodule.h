@@ -19,18 +19,25 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_NETWORK_NETWORKMODULE_H
-#define MU_NETWORK_NETWORKMODULE_H
+#ifndef MUSE_NETWORK_NETWORKMODULE_H
+#define MUSE_NETWORK_NETWORKMODULE_H
 
 #include "modularity/imodulesetup.h"
 
-namespace mu::network {
+namespace muse::network {
+class NetworkConfiguration;
 class NetworkModule : public modularity::IModuleSetup
 {
 public:
     std::string moduleName() const override;
+
     void registerExports() override;
+    void registerApi() override;
+    void onInit(const IApplication::RunMode& mode) override;
+
+private:
+    std::shared_ptr<NetworkConfiguration> m_configuration;
 };
 }
 
-#endif // MU_NETWORK_NETWORKMODULE_H
+#endif // MUSE_NETWORK_NETWORKMODULE_H

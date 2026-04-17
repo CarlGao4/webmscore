@@ -19,8 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_GLOBAL_CONTAINERS_H
-#define MU_GLOBAL_CONTAINERS_H
+#pragma once
 
 #include <algorithm>
 #include <vector>
@@ -32,7 +31,7 @@
 
 //! NOTE useful functions for containers
 
-namespace mu {
+namespace muse {
 static constexpr size_t nidx = static_cast<size_t>(-1);
 
 // vector
@@ -73,6 +72,12 @@ inline bool remove_if(std::vector<T>& vec, Predicate p)
 }
 
 template<typename T>
+inline void removeFirst(std::vector<T>& vec)
+{
+    vec.erase(vec.begin());
+}
+
+template<typename T>
 inline T takeAt(std::vector<T>& vec, size_t idx)
 {
     T v = value(vec, idx);
@@ -103,7 +108,7 @@ inline void swapItemsAt(std::vector<T>& vec, size_t idx1, size_t idx2)
 template<typename T>
 inline bool moveItem(std::vector<T>& vec, size_t oldIdx, size_t newIdx)
 {
-    if (oldIdx == mu::nidx || oldIdx == newIdx) {
+    if (oldIdx == muse::nidx || oldIdx == newIdx) {
         return false;
     }
 
@@ -205,7 +210,9 @@ inline std::pair<bool, T> take(std::list<T>& l, const T& v)
     return ret;
 }
 
-// set
+// ===========================
+// Set
+// ===========================
 template<typename T>
 inline bool contains(const std::set<T>& s, const T& v)
 {
@@ -218,6 +225,19 @@ inline bool contains(const std::unordered_set<T>& s, const T& v)
     return s.find(v) != s.cend();
 }
 
+// ===========================
+// Array
+// ===========================
+template<typename T, size_t size>
+inline bool contains(const std::array<T, size>& s, const T& v)
+{
+    return std::find(s.begin(), s.end(), v) != s.cend();
+}
+
+// ===========================
+// General
+// ===========================
+
 template<typename Container, typename T>
 inline size_t indexOf(const Container& c, const T& v)
 {
@@ -225,7 +245,7 @@ inline size_t indexOf(const Container& c, const T& v)
     if (it != c.cend()) {
         return std::distance(c.cbegin(), it);
     }
-    return mu::nidx;
+    return muse::nidx;
 }
 
 template<typename K, typename V>
@@ -311,14 +331,28 @@ inline auto value(const Map& m, const typename Map::key_type& k, const typename 
 }
 
 template<typename Map, typename T>
-inline bool remove(Map& c, const T& v)
+inline bool remove(Map& c, const T& k)
 {
-    auto it = c.find(v);
+    auto it = c.find(k);
     if (it != c.end()) {
         c.erase(it);
         return true;
     }
     return false;
+}
+
+template<typename Map, typename Predicate>
+inline size_t remove_if(Map& c, Predicate pred)
+{
+    auto old_size = c.size();
+    for (auto first = c.begin(), last = c.end(); first != last;) {
+        if (pred(*first)) {
+            first = c.erase(first);
+        } else {
+            ++first;
+        }
+    }
+    return old_size - c.size();
 }
 
 template<typename Map, typename K>
@@ -431,4 +465,9 @@ inline void DeleteAll(const Container& c)
 }
 }
 
-#endif // MU_GLOBAL_CONTAINERS_H
+template<typename T>
+inline std::set<T>& operator<<(std::set<T>& s, const T& v)
+{
+    s.insert(v);
+    return s;
+}

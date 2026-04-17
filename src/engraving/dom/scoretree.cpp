@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -32,6 +32,7 @@
 #include "chord.h"
 #include "durationelement.h"
 #include "fret.h"
+#include "harmony.h"
 #include "hook.h"
 #include "instrumentname.h"
 #include "ledgerline.h"
@@ -42,6 +43,7 @@
 #include "note.h"
 #include "notedot.h"
 #include "page.h"
+#include "playcounttext.h"
 #include "rest.h"
 #include "score.h"
 #include "segment.h"
@@ -54,8 +56,9 @@
 #include "system.h"
 #include "systemdivider.h"
 #include "text.h"
-#include "tie.h"
-#include "tremolo.h"
+
+#include "tremolosinglechord.h"
+#include "tremolotwochord.h"
 #include "trill.h"
 #include "tuplet.h"
 
@@ -121,11 +124,11 @@ EngravingObjectList System::scanChildren() const
         children.push_back(bracket);
     }
 
-    if (auto dividerLeft = systemDividerLeft()) {
+    if (SystemDivider* dividerLeft = systemDividerLeft()) {
         children.push_back(dividerLeft);
     }
 
-    if (auto dividerRight = systemDividerRight()) {
+    if (SystemDivider* dividerRight = systemDividerRight()) {
         children.push_back(dividerRight);
     }
 
@@ -206,23 +209,23 @@ EngravingObjectList Measure::scanChildren() const
 
     size_t nstaves = score()->nstaves();
     for (staff_idx_t staffIdx = 0; staffIdx < nstaves; ++staffIdx) {
-        if (auto _staffLines = m_mstaves[staffIdx]->lines()) {
+        if (StaffLines* _staffLines = m_mstaves[staffIdx]->lines()) {
             children.push_back(_staffLines);
         }
 
-        if (auto _vspacerUp = vspacerUp(staffIdx)) {
+        if (Spacer* _vspacerUp = vspacerUp(staffIdx)) {
             children.push_back(_vspacerUp);
         }
 
-        if (auto _vspacerDown = vspacerDown(staffIdx)) {
+        if (Spacer* _vspacerDown = vspacerDown(staffIdx)) {
             children.push_back(_vspacerDown);
         }
 
-        if (auto _noText = noText(staffIdx)) {
+        if (MeasureNumber* _noText = measureNumber(staffIdx)) {
             children.push_back(_noText);
         }
 
-        if (auto _mmRangeText = mmRangeText(staffIdx)) {
+        if (MMRestRange* _mmRangeText = mmRangeText(staffIdx)) {
             children.push_back(_mmRangeText);
         }
     }
@@ -373,8 +376,12 @@ EngravingObjectList Chord::scanChildren() const
         children.push_back(m_arpeggio);
     }
 
-    if (m_tremolo && m_tremolo->chord1() == this) {
-        children.push_back(m_tremolo);
+    if (m_tremoloSingleChord && m_tremoloSingleChord->chord() == this) {
+        children.push_back(m_tremoloSingleChord);
+    }
+
+    if (m_tremoloTwoChord && m_tremoloTwoChord->chord1() == this) {
+        children.push_back(m_tremoloTwoChord);
     }
 
     for (Chord* chord : graceNotes()) {
@@ -397,10 +404,8 @@ EngravingObjectList Chord::scanChildren() const
         children.push_back(m_stemSlash);
     }
 
-    LedgerLine* ledgerLines = m_ledgerLines;
-    while (ledgerLines) {
-        children.push_back(ledgerLines);
-        ledgerLines = ledgerLines->next();
+    for (LedgerLine* ledg : m_ledgerLines) {
+        children.push_back(ledg);
     }
 
     for (EngravingObject* child : ChordRest::scanChildren()) {
@@ -453,10 +458,6 @@ EngravingObjectList Note::scanChildren() const
 
     for (NoteDot* noteDot : m_dots) {
         children.push_back(noteDot);
-    }
-
-    if (m_tieFor) {
-        children.push_back(m_tieFor);
     }
 
     for (EngravingItem* element : el()) {

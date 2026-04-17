@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -20,8 +20,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_ENGRAVING_COMPAT_ENGRAVINGCOMPAT_H
-#define MU_ENGRAVING_COMPAT_ENGRAVINGCOMPAT_H
+#pragma once
 
 namespace mu::engraving {
 class MasterScore;
@@ -35,10 +34,14 @@ public:
     static void doPostLayoutCompatIfNeeded(MasterScore* score);
 
 private:
+    static void correctPedalEndPoints(MasterScore* score);
     static void undoStaffTextExcludeFromPart(MasterScore* masterScore);
+    static void migrateDynamicPosOnVocalStaves(MasterScore* masterScore);
+    static void resetMarkerLeftFontSize(MasterScore* masterScore);
+    static void resetRestVerticalOffsets(MasterScore* masterScore);
+    static void adjustVBoxDistances(MasterScore* masterScore);
 
     static bool relayoutUserModifiedCrossStaffBeams(MasterScore* score);
+    static bool resetHookHeightSign(MasterScore* masterScore);
 };
 } // namespace mu::engraving::compat
-
-#endif // MU_ENGRAVING_COMPAT_ENGRAVINGCOMPAT_H

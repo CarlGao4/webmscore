@@ -17,7 +17,7 @@ if(NOT DEFINED CMAKE_SCRIPT_MODE_FILE)
     )
 endif()
 
-cmake_minimum_required(VERSION 3.16) # should match version in CMakeLists.txt
+cmake_minimum_required(VERSION 3.22) # should match version in CMakeLists.txt
 
 # CMake arguments up to '-P' (ignore these)
 set(i "1")
@@ -38,7 +38,7 @@ while(i LESS "${CMAKE_ARGC}")
 endwhile()
 
 # load custom CMake functions and macros
-include("${CMAKE_CURRENT_LIST_DIR}/build/cmake/GetUtilsFunctions.cmake") # "fn__" namespace
+include("${CMAKE_CURRENT_LIST_DIR}/buildscripts/cmake/GetUtilsFunctions.cmake") # "fn__" namespace
 
 # Set the name of the build folder (just the folder name, not the full path)
 function(build_folder
@@ -95,7 +95,7 @@ if(DEFINED ENV{QTDIR})
     endif()
 endif()
 
-fn__require_program(QMAKE Qt --version "https://musescore.org/en/handbook/developers-handbook/compilation" qmake)
+fn__require_program(QMAKE Qt --version "https://musescore.org/en/handbook/developers-handbook/compilation" qmake6 qmake)
 fn__set_qt_variables("${QMAKE}")
 message(STATUS "QT_LOCATION: ${QT_LOCATION}")
 message(STATUS "QT_VERSION: ${QT_VERSION}")
@@ -186,9 +186,9 @@ list(APPEND CONFIGURE_ARGS "-DCMAKE_INSTALL_PREFIX=${INSTALL_PATH}")
 list(APPEND CONFIGURE_ARGS "-DCMAKE_BUILD_TYPE=${BUILD_TYPE}")
 
 if(QT_COMPILER MATCHES "_64$" OR QT_COMPILER MATCHES "mingw64")
-    list(APPEND CONFIGURE_ARGS "-DMUE_COMPILE_BUILD_64=ON")
+    list(APPEND CONFIGURE_ARGS "-DMUSE_COMPILE_BUILD_64=ON")
 else()
-    list(APPEND CONFIGURE_ARGS "-DMUE_COMPILE_BUILD_64=OFF")
+    list(APPEND CONFIGURE_ARGS "-DMUSE_COMPILE_BUILD_64=OFF")
 endif()
 
 #### ACTUAL BUILD STEPS START HERE ####
@@ -215,7 +215,7 @@ if(ARG_CONFIGURE AND NOT EXISTS "${BUILD_PATH}/CMakeCache.txt")
     message("\n~~~~ Actualizing Configure step ~~~~\n")
     file(MAKE_DIRECTORY "${BUILD_PATH}")
     if(QT_COMPILER MATCHES "msvc")
-        set(CMAKE_WRAPPER "${SOURCE_PATH}/build/cmake_wrapper.bat")
+        set(CMAKE_WRAPPER "${SOURCE_PATH}/buildscripts/tools/cmake_wrapper.bat")
     else()
         set(CMAKE_WRAPPER "cmake")
     endif()

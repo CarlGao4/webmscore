@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,9 +22,12 @@
 #include "projectuiactions.h"
 
 #include "types/translatablestring.h"
+#include "context/shortcutcontext.h"
 
 using namespace mu::project;
-using namespace mu::ui;
+using namespace muse;
+using namespace muse::ui;
+using namespace muse::actions;
 
 const UiActionList ProjectUiActions::m_actions = {
     UiAction("file-open",
@@ -63,13 +66,13 @@ const UiActionList ProjectUiActions::m_actions = {
     UiAction("file-save-a-copy",
              mu::context::UiCtxAny,
              mu::context::CTX_ANY,
-             TranslatableString("action", "Save a cop&y…"),
+             TranslatableString("action", "Save a &copy…"),
              TranslatableString("action", "Save a copy…")
              ),
     UiAction("file-save-selection",
              mu::context::UiCtxAny,
              mu::context::CTX_ANY,
-             TranslatableString("action", "Save se&lection…"),
+             TranslatableString("action", "Save &selection…"),
              TranslatableString("action", "Save selection…")
              ),
     UiAction("file-save-to-cloud",
@@ -82,14 +85,14 @@ const UiActionList ProjectUiActions::m_actions = {
     UiAction("file-publish",
              mu::context::UiCtxAny,
              mu::context::CTX_ANY,
-             TranslatableString("action", "Pu&blish to MuseScore.com…"),
+             TranslatableString("action", "Publish to &MuseScore.com…"),
              TranslatableString("action", "Publish to MuseScore.com…"),
              IconCode::Code::CLOUD_FILE
              ),
     UiAction("file-share-audio",
              mu::context::UiCtxAny,
              mu::context::CTX_ANY,
-             TranslatableString("action", "Share on Audio.com…"),
+             TranslatableString("action", "Share on &Audio.com…"),
              TranslatableString("action", "Share on Audio.com…"),
              IconCode::Code::SHARE_AUDIO
              ),
@@ -97,7 +100,6 @@ const UiActionList ProjectUiActions::m_actions = {
              mu::context::UiCtxAny,
              mu::context::CTX_ANY,
              TranslatableString("action", "&Export…"),
-             TranslatableString("action", "Export…"),
              IconCode::Code::SHARE_FILE
              ),
     UiAction("file-import-pdf",
@@ -117,14 +119,13 @@ const UiActionList ProjectUiActions::m_actions = {
              mu::context::UiCtxAny,
              mu::context::CTX_ANY,
              TranslatableString("action", "&Print…"),
-             TranslatableString("action", "Print…"),
              IconCode::Code::PRINT
              ),
     UiAction("clear-recent",
              mu::context::UiCtxAny,
              mu::context::CTX_ANY,
-             TranslatableString("action", "&Clear recent files"),
-             TranslatableString("action", "Clear recent files")
+             TranslatableString("action", "&Clear list of recent files"),
+             TranslatableString("action", "Clear list of recent files")
              )
 };
 
@@ -152,12 +153,12 @@ bool ProjectUiActions::actionChecked(const UiAction&) const
     return false;
 }
 
-mu::async::Channel<mu::actions::ActionCodeList> ProjectUiActions::actionEnabledChanged() const
+muse::async::Channel<ActionCodeList> ProjectUiActions::actionEnabledChanged() const
 {
     return m_actionEnabledChanged;
 }
 
-mu::async::Channel<mu::actions::ActionCodeList> ProjectUiActions::actionCheckedChanged() const
+muse::async::Channel<ActionCodeList> ProjectUiActions::actionCheckedChanged() const
 {
     return m_actionCheckedChanged;
 }

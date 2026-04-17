@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -37,7 +37,7 @@
 #include "log.h"
 
 using namespace mu::palette;
-using namespace mu::ui;
+using namespace muse::ui;
 using namespace mu::engraving;
 
 void MasterPalette::setSelectedPaletteName(const QString& name)
@@ -72,7 +72,7 @@ void MasterPalette::addPalette(PalettePtr palette)
     psa->setRestrictHeight(false);
     QTreeWidgetItem* item = new QTreeWidgetItem(QStringList(widget->name()));
     item->setData(0, Qt::UserRole, stack->count());
-    item->setText(0, mu::qtrc("palette", widget->name().toUtf8().data()).replace("&&", "&"));
+    item->setText(0, muse::qtrc("palette", widget->name().toUtf8().data()).replace("&&", "&"));
     stack->addWidget(psa);
     treeWidget->addTopLevelItem(item);
 }
@@ -135,19 +135,20 @@ MasterPalette::MasterPalette(QWidget* parent)
     stack->addWidget(new SymbolDialog(Smufl::SMUFL_ALL_SYMBOLS));
 
     // Add "All symbols" entry to be first in the list of categories
-    QTreeWidgetItem* child = new QTreeWidgetItem(QStringList(Smufl::SMUFL_ALL_SYMBOLS));
+    QTreeWidgetItem* child = new QTreeWidgetItem({ Smufl::SMUFL_ALL_SYMBOLS });
     child->setData(0, Qt::UserRole, m_idxAllSymbols);
     m_symbolItem->addChild(child);
 
-    std::vector<String> symbols = mu::keys(Smufl::smuflRanges());
-    for (size_t i = 0; i < symbols.size(); i++) {
-        QString symbol = symbols[i].toQString();
-        if (symbol == Smufl::SMUFL_ALL_SYMBOLS) {
+    int idx = 0;
+    for (const auto& [rangeName, _] : Smufl::smuflRanges()) {
+        ++idx;
+
+        if (rangeName == Smufl::SMUFL_ALL_SYMBOLS) {
             continue;
         }
 
-        QTreeWidgetItem* chld = new QTreeWidgetItem(QStringList(symbol));
-        chld->setData(0, Qt::UserRole, m_idxAllSymbols + static_cast<int>(i) + 1);
+        QTreeWidgetItem* chld = new QTreeWidgetItem({ rangeName });
+        chld->setData(0, Qt::UserRole, m_idxAllSymbols + idx);
 
         m_symbolItem->addChild(chld);
     }
@@ -155,13 +156,6 @@ MasterPalette::MasterPalette(QWidget* parent)
     connect(treeWidget, &QTreeWidget::currentItemChanged, this, &MasterPalette::currentChanged);
     connect(treeWidget, &QTreeWidget::itemClicked, this, &MasterPalette::clicked);
     retranslate(true);
-
-    WidgetStateStore::restoreGeometry(this);
-}
-
-int MasterPalette::static_metaTypeId()
-{
-    return qRegisterMetaType<MasterPalette>("MasterPalette");
 }
 
 //---------------------------------------------------------
@@ -170,9 +164,9 @@ int MasterPalette::static_metaTypeId()
 
 void MasterPalette::retranslate(bool firstTime)
 {
-    m_keyItem->setText(0, mu::qtrc("palette", "Key signatures"));
-    m_timeItem->setText(0, mu::qtrc("palette", "Time signatures"));
-    m_symbolItem->setText(0, mu::qtrc("palette", "Symbols"));
+    m_keyItem->setText(0, muse::qtrc("palette", "Key signatures"));
+    m_timeItem->setText(0, muse::qtrc("palette", "Time signatures"));
+    m_symbolItem->setText(0, muse::qtrc("palette", "Symbols"));
     if (!firstTime) {
         retranslateUi(this);
     }
@@ -188,8 +182,8 @@ void MasterPalette::currentChanged(QTreeWidgetItem* item, QTreeWidgetItem*)
 
     if (idx > m_idxAllSymbols) {
         if (!m_symbolWidgets.contains(idx)) {
-            std::vector<String> symbols = mu::keys(Smufl::smuflRanges());
-            SymbolDialog* dialog = new SymbolDialog(symbols[idx - m_idxAllSymbols - 1].toQString());
+            String rangeName = std::next(Smufl::smuflRanges().cbegin(), idx - m_idxAllSymbols - 1)->first;
+            SymbolDialog* dialog = new SymbolDialog(rangeName.toQString());
             m_symbolWidgets[idx] = dialog;
             stack->addWidget(dialog);
         }
@@ -221,6 +215,12 @@ void MasterPalette::clicked(QTreeWidgetItem* item, int)
 //---------------------------------------------------------
 //   closeEvent
 //---------------------------------------------------------
+
+void MasterPalette::showEvent(QShowEvent* event)
+{
+    WidgetStateStore::restoreGeometry(this);
+    TopLevelDialog::showEvent(event);
+}
 
 void MasterPalette::closeEvent(QCloseEvent* event)
 {

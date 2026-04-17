@@ -19,22 +19,21 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_ACCESSIBILITY_IACCESSIBLE_H
-#define MU_ACCESSIBILITY_IACCESSIBLE_H
-
-#include <utility>
+#ifndef MUSE_ACCESSIBILITY_IACCESSIBLE_H
+#define MUSE_ACCESSIBILITY_IACCESSIBLE_H
 
 #include <QString>
 #include <QRect>
 #include <QVariant>
 #include <QMap>
 
-#include "async/channel.h"
-#include "types/val.h"
+#include "modularity/ioc.h"
+#include "global/async/channel.h"
+#include "global/types/val.h"
 
 class QWindow;
 
-namespace mu::accessibility {
+namespace muse::accessibility {
 class IAccessible
 {
 public:
@@ -49,6 +48,7 @@ public:
         Panel,
         StaticText,
         EditableText,
+        SilentRole, // avoids reading "button", "text", etc. after item name
         Button,
         CheckBox,
         RadioButton,
@@ -56,6 +56,7 @@ public:
         List,
         ListItem,
         MenuItem,
+        SpinBox,
         Range,
         Group,
 
@@ -121,8 +122,9 @@ public:
 
     virtual const IAccessible* accessibleParent() const = 0;
     virtual size_t accessibleChildCount() const = 0;
-    virtual const IAccessible* accessibleChild(size_t i) const = 0;
+    virtual IAccessible* accessibleChild(size_t i) const = 0;
     virtual QWindow* accessibleWindow() const = 0;
+    virtual muse::modularity::ContextPtr iocContext() const = 0;
 
     virtual IAccessible::Role accessibleRole() const = 0;
     virtual QString accessibleName() const = 0;
@@ -159,4 +161,4 @@ public:
 };
 }
 
-#endif // MU_ACCESSIBILITY_IACCESSIBLE_H
+#endif // MUSE_ACCESSIBILITY_IACCESSIBLE_H

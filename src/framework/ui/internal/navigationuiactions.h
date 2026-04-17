@@ -19,12 +19,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_UI_NAVIGATIONUIACTIONS_H
-#define MU_UI_NAVIGATIONUIACTIONS_H
+#ifndef MUSE_UI_NAVIGATIONUIACTIONS_H
+#define MUSE_UI_NAVIGATIONUIACTIONS_H
 
 #include "../iuiactionsmodule.h"
 
-namespace mu::ui {
+namespace muse::ui {
 class NavigationUiActions : public IUiActionsModule
 {
 public:
@@ -42,4 +42,4 @@ private:
 };
 }
 
-#endif // MU_UI_NAVIGATIONUIACTIONS_H
+#endif // MUSE_UI_NAVIGATIONUIACTIONS_H

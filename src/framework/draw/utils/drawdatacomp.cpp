@@ -28,10 +28,9 @@
 
 #include "log.h"
 
-using namespace mu;
-using namespace mu::draw;
+using namespace muse::draw;
 
-namespace mu::draw::comp {
+namespace muse::draw::comp {
 static const int DEFAULT_PREC(3);
 
 struct Polygon;
@@ -592,22 +591,22 @@ static void fillDrawData(DrawDataPtr& dd, const comp::Data& cd)
     // collect objects (save order)
     std::vector<const DrawData::Item*> objs;
     for (const comp::Path& p : cd.paths) {
-        if (!mu::contains(objs, p.obj)) {
+        if (!muse::contains(objs, p.obj)) {
             objs.push_back(p.obj);
         }
     }
     for (const comp::Polygon& p : cd.polygons) {
-        if (!mu::contains(objs, p.obj)) {
+        if (!muse::contains(objs, p.obj)) {
             objs.push_back(p.obj);
         }
     }
     for (const comp::Text& p : cd.texts) {
-        if (!mu::contains(objs, p.obj)) {
+        if (!muse::contains(objs, p.obj)) {
             objs.push_back(p.obj);
         }
     }
     for (const comp::Pixmap& p : cd.pixmaps) {
-        if (!mu::contains(objs, p.obj)) {
+        if (!muse::contains(objs, p.obj)) {
             objs.push_back(p.obj);
         }
     }
@@ -660,7 +659,7 @@ static void fillDrawData(DrawDataPtr& dd, const comp::Data& cd)
         dd->item.chilren.push_back(dobj);
     }
 }
-} // mu::draw::comp
+} // muse::draw::comp
 
 Diff DrawDataComp::compare(const DrawDataPtr& data, const DrawDataPtr& origin, Tolerance tolerance)
 {

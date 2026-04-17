@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -28,31 +28,123 @@
 #include <QJsonDocument>
 
 #include "engraving/dom/tempotext.h"
-#include "engraving/dom/text.h"
+
+#include "project/inotationproject.h"
+
+#include "audio/common/audioutils.h"
+#include "audio/common/audiotypes.h"
 #include "engraving/dom/masterscore.h"
 #include "engraving/dom/excerpt.h"
 
 #include "log.h"
 
+using namespace muse;
 using namespace mu::converter;
 using namespace mu::engraving;
+using namespace mu::project;
 
 static QString boolToString(bool b)
 {
     return b ? "true" : "false";
 }
 
-mu::RetVal<std::string> NotationMeta::metaJson(notation::INotationPtr notation)
+static bool shouldTryRecognizeText(const Text* text)
 {
-    IF_ASSERT_FAILED(notation) {
+    const TextStyleType type = text->textStyleType();
+    if (type == TextStyleType::DEFAULT || type == TextStyleType::FRAME) {
+        return true;
+    }
+
+    return (int)(type) >= (int)TextStyleType::USER1 && (int)(type) <= (int)TextStyleType::USER12;
+}
+
+static QString recognizeTitle(const mu::engraving::Score* score)
+{
+    const MeasureBase* mb = score->first();
+    if (!mb || !mb->isVBox()) {
+        return QString();
+    }
+
+    const Text* titleText = nullptr;
+    double maxFontSize = DBL_MIN;
+    double minY = DBL_MAX;
+
+    for (const EngravingItem* item : mb->el()) {
+        if (!item || !item->isText()) {
+            continue;
+        }
+
+        const Text* text = toText(item);
+        if (!shouldTryRecognizeText(text)) {
+            continue;
+        }
+
+        if (text->size() < maxFontSize) {
+            continue;
+        }
+
+        if (RealIsEqual(text->size(), maxFontSize) && text->y() > minY) {
+            continue;
+        }
+
+        titleText = text;
+        maxFontSize = text->size();
+        minY = text->y();
+    }
+
+    return titleText ? titleText->plainText().toQString() : QString();
+}
+
+static QString recognizeComposer(const mu::engraving::Score* score)
+{
+    const MeasureBase* mb = score->first();
+    if (!mb || !mb->isVBox()) {
+        return QString();
+    }
+
+    const Text* rightmostText = nullptr;
+    double rightmostTextX = mb->ldata()->bbox().center().x();
+
+    for (const EngravingItem* item : mb->el()) {
+        if (!item || !item->isText()) {
+            continue;
+        }
+
+        const Text* text = toText(item);
+        if (!shouldTryRecognizeText(text)) {
+            continue;
+        }
+
+        if (text->x() > rightmostTextX) {
+            rightmostText = text;
+            rightmostTextX = text->x();
+        }
+    }
+
+    return rightmostText ? rightmostText->plainText().toQString() : QString();
+}
+
+RetVal<std::string> NotationMeta::metaJson(INotationProjectPtr project)
+{
+    IF_ASSERT_FAILED(project) {
         return make_ret(Ret::Code::UnknownError);
     }
 
-    mu::engraving::Score* score = notation->elements()->msScore();
-    return metaJson(score);
+    mu::engraving::Score* score = project->masterNotation()->notation()->elements()->msScore();
+    RetVal<std::string> result = metaJson(score);
+    if (!result.ret) {
+        return result;
+    }
+
+    QJsonDocument doc = QJsonDocument::fromJson(QByteArray::fromStdString(result.val));
+    QJsonObject json = doc.object();
+    json["tracks"] = tracksJsonArray(project);
+    result.val = QJsonDocument(json).toJson().toStdString();
+
+    return result;
 }
 
-mu::RetVal<std::string> NotationMeta::metaJson(mu::engraving::Score* score)
+RetVal<std::string> NotationMeta::metaJson(mu::engraving::Score* score)
 {
     IF_ASSERT_FAILED(score) {
         return make_ret(Ret::Code::UnknownError);
@@ -83,6 +175,7 @@ mu::RetVal<std::string> NotationMeta::metaJson(mu::engraving::Score* score)
     json["parts"] =  partsJsonArray(score);
     json["pageFormat"] = pageFormatJson(score->style());
     json["textFramesData"] =  typeDataJson(score);
+    json["tracks"] = QJsonArray(); // loaded in metaJson(project)
     json["excerpts"] = excerptsJsonArray(score);
 
     RetVal<std::string> result;
@@ -102,6 +195,10 @@ QString NotationMeta::title(const mu::engraving::Score* score)
 
     if (title.isEmpty()) {
         title = score->metaTag(u"workTitle");
+    }
+
+    if (title.isEmpty()) {
+        title = recognizeTitle(score);
     }
 
     if (title.isEmpty()) {
@@ -132,6 +229,10 @@ QString NotationMeta::composer(const mu::engraving::Score* score)
 
     if (composer.isEmpty()) {
         composer = score->metaTag(u"composer");
+    }
+
+    if (composer.isEmpty()) {
+        composer = recognizeComposer(score);
     }
 
     return composer;
@@ -202,6 +303,7 @@ QJsonArray NotationMeta::partsJsonArray(const mu::engraving::Score* score)
     QJsonArray jsonPartsArray;
     for (const mu::engraving::Part* part : score->parts()) {
         QJsonObject jsonPart;
+        jsonPart.insert("id", part->id().toQString());
         jsonPart.insert("name", part->longName().replace(u"\n", u"").toQString());
         int midiProgram = part->midiProgram();
         jsonPart.insert("program", midiProgram);
@@ -247,14 +349,14 @@ static void findTextByType(void* data, mu::engraving::EngravingItem* element)
 QJsonObject NotationMeta::typeDataJson(mu::engraving::Score* score)
 {
     QJsonObject typesData;
-    static std::vector<std::pair<QString, TextStyleType> > namesTypesList {
+    static const std::vector<std::pair<QString, TextStyleType> > namesTypesList {
         { "titles", TextStyleType::TITLE },
         { "subtitles", TextStyleType::SUBTITLE },
         { "composers", TextStyleType::COMPOSER },
         { "poets", TextStyleType::LYRICIST }
     };
 
-    for (auto nameType : namesTypesList) {
+    for (const auto& nameType : namesTypesList) {
         QJsonArray typeData;
         QStringList typeTextStrings;
         std::pair<TextStyleType, QStringList*> extendedTitleData = std::make_pair(nameType.second, &typeTextStrings);
@@ -266,6 +368,65 @@ QJsonObject NotationMeta::typeDataJson(mu::engraving::Score* score)
     }
 
     return typesData;
+}
+
+QJsonArray NotationMeta::tracksJsonArray(INotationProjectPtr project)
+{
+    QJsonArray jsonTracksArray;
+
+    if (!project) {
+        return jsonTracksArray;
+    }
+
+    IProjectAudioSettingsPtr audioSettings = project->audioSettings();
+    if (!audioSettings) {
+        return jsonTracksArray;
+    }
+
+    const TrackInputParamsMap& allTrackInputParams = audioSettings->allTrackInputParams();
+    std::map<InstrumentTrackId, QJsonObject> sortedJsonTracks;
+
+    for (const auto& [trackId, inputParams] : allTrackInputParams) {
+        if (inputParams.resourceMeta.id.empty()) {
+            continue;
+        }
+
+        QJsonObject jsonTrack;
+        jsonTrack.insert("instrumentId", trackId.instrumentId.toQString());
+        jsonTrack.insert("partId", trackId.partId.toQString());
+        jsonTrack.insert("type", audioResourceTypeToString(inputParams.resourceMeta.type).toQString());
+
+        audio::AudioSourceType sourceType = sourceTypeFromResourceType(inputParams.resourceMeta.type);
+        if (sourceType != audio::AudioSourceType::Fluid) {
+            if (sourceType == audio::AudioSourceType::MuseSampler) {
+                jsonTrack.insert("vendor", QString::fromStdString(inputParams.resourceMeta.attributeVal(
+                                                                      u"museVendorName").toStdString()));
+            } else {
+                jsonTrack.insert("vendor", QString::fromStdString(inputParams.resourceMeta.vendor));
+            }
+        }
+
+        String name = audioSourceName(inputParams);
+        jsonTrack.insert("name", name.toQString());
+
+        QString soundIdStr = QString::fromStdString(inputParams.resourceMeta.id);
+        if (soundIdStr != name) {
+            jsonTrack.insert("soundId", soundIdStr);
+        }
+
+        String category = audioSourceCategoryName(inputParams);
+        if (category != name) {
+            jsonTrack.insert("category", category.toQString());
+        }
+
+        sortedJsonTracks.insert({ trackId, jsonTrack });
+    }
+
+    for (const auto& pair : sortedJsonTracks) {
+        jsonTracksArray.append(pair.second);
+    }
+
+    return jsonTracksArray;
 }
 
 QJsonArray NotationMeta::excerptsJsonArray(const Score* score) {

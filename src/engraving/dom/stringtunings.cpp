@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2022 MuseScore BVBA and others
+ * Copyright (C) 2022 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -169,7 +169,7 @@ String StringTunings::accessibleInfo() const
     int numOfStrings = static_cast<int>(stringList.size());
     for (int i = 0; i < numOfStrings; ++i) {
         string_idx_t index = numOfStrings - i - 1;
-        if (mu::contains(m_visibleStrings, index)) {
+        if (muse::contains(m_visibleStrings, index)) {
             const instrString str = stringList[index];
             String pitchStr = pitch2string(str.pitch, str.useFlat);
             if (pitchStr.empty()) {
@@ -177,8 +177,8 @@ String StringTunings::accessibleInfo() const
                 continue;
             }
 
-            info += mtrc("engraving", "String %1").arg(String::number(i + 1)) + u", "
-                    + mtrc("engraving", "Value %1").arg(pitchStr) + u"; ";
+            info += muse::mtrc("engraving", "String %1").arg(String::number(i + 1)) + u", "
+                    + muse::mtrc("engraving", "Value %1").arg(pitchStr) + u"; ";
         }
     }
 
@@ -244,6 +244,24 @@ bool StringTunings::noStringVisible() const
     return m_noStringVisible;
 }
 
+void StringTunings::triggerLayout() const
+{
+    if (!part()) {
+        return StaffTextBase::triggerLayout();
+    }
+
+    Fraction startTick = tick();
+
+    const std::map<int, StringTunings*>& allStringTuningsOnThisPart = part()->stringTunings();
+    auto iterOfNextStringTuningOnThisPart = allStringTuningsOnThisPart.upper_bound(startTick.ticks());
+    StringTunings* nextStringTuning = iterOfNextStringTuningOnThisPart != allStringTuningsOnThisPart.end()
+                                      ? iterOfNextStringTuningOnThisPart->second : nullptr;
+
+    Fraction endTick = nextStringTuning ? nextStringTuning->tick() : score()->endTick();
+
+    score()->setLayout(startTick, endTick, staffIdx(), staffIdx(), this);
+}
+
 String StringTunings::generateText() const
 {
     const StringData* stringData = this->stringData();
@@ -258,7 +276,7 @@ String StringTunings::generateText() const
     int numOfStrings = static_cast<int>(stringList.size());
     for (int i = 0; i < numOfStrings; ++i) {
         string_idx_t index = numOfStrings - i - 1;
-        if (mu::contains(m_visibleStrings, index)) {
+        if (muse::contains(m_visibleStrings, index)) {
             const instrString str = stringList[index];
             String pitchStr = pitch2string(str.pitch, str.useFlat);
             if (pitchStr.empty()) {

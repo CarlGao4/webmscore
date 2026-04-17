@@ -20,12 +20,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_MUSESAMPLER_MUSESAMPLERWRAPPER_H
-#define MU_MUSESAMPLER_MUSESAMPLERWRAPPER_H
+#ifndef MUSE_MUSESAMPLER_MUSESAMPLERWRAPPER_H
+#define MUSE_MUSESAMPLER_MUSESAMPLERWRAPPER_H
 
 #include <memory>
 
-#include "audio/internal/abstractsynthesizer.h"
+#include "audio/worker/internal/synthesizers/abstractsynthesizer.h"
 #include "async/channel.h"
 
 #include "libhandler.h"
@@ -33,46 +33,75 @@
 
 #include "imusesamplertracks.h"
 
-namespace mu::musesampler {
-class MuseSamplerWrapper : public audio::synth::AbstractSynthesizer, public IMuseSamplerTracks,
-    public std::enable_shared_from_this<MuseSamplerWrapper>
+#include "timer.h"
+
+namespace muse::musesampler {
+class MuseSamplerWrapper : public audio::synth::AbstractSynthesizer, public IMuseSamplerTracks
 {
 public:
-    MuseSamplerWrapper(MuseSamplerLibHandlerPtr samplerLib, const InstrumentInfo& instrument, const audio::AudioSourceParams& params);
+    MuseSamplerWrapper(MuseSamplerLibHandlerPtr samplerLib, const InstrumentInfo& instrument, const muse::audio::AudioSourceParams& params,
+                       const modularity::ContextPtr& iocCtx);
     ~MuseSamplerWrapper() override;
 
     void setSampleRate(unsigned int sampleRate) override;
     unsigned int audioChannelsCount() const override;
     async::Channel<unsigned int> audioChannelsCountChanged() const override;
-    audio::samples_t process(float* buffer, audio::samples_t samplesPerChannel) override;
+    muse::audio::samples_t process(float* buffer, muse::audio::samples_t samplesPerChannel) override;
 
     std::string name() const override;
-    audio::AudioSourceType type() const override;
+    muse::audio::AudioSourceType type() const override;
     void flushSound() override;
     bool isValid() const override;
 
-    void revokePlayingNotes() override;
+    void prepareToPlay() override;
+    bool readyToPlay() const override;
+
+    void processInput() override;
+    void clearCache() override;
 
 private:
     void setupSound(const mpe::PlaybackSetupData& setupData) override;
     void setupEvents(const mpe::PlaybackData& playbackData) override;
-    void updateRenderingMode(const audio::RenderMode mode) override;
+    const mpe::PlaybackData& playbackData() const override;
+
+    void updateRenderingMode(const muse::audio::RenderMode mode) override;
 
     // IMuseSamplerTracks
     const TrackList& allTracks() const override;
     ms_Track addTrack() override;
 
-    audio::msecs_t playbackPosition() const override;
-    void setPlaybackPosition(const audio::msecs_t newPosition) override;
+    muse::audio::msecs_t playbackPosition() const override;
+    void setPlaybackPosition(const muse::audio::msecs_t newPosition) override;
     bool isActive() const override;
-    void setIsActive(bool arg) override;
+    void setIsActive(bool active) override;
+
+    bool initSampler(const muse::audio::sample_rate_t sampleRate, const muse::audio::samples_t blockSize);
+
+    void setupOnlineSound();
+    void updateRenderingProgress(ms_RenderingRangeList list, int size);
 
     InstrumentInfo resolveInstrument(const mpe::PlaybackSetupData& setupData) const;
     std::string resolveDefaultPresetCode(const InstrumentInfo& instrument) const;
 
+    void prepareOutputBuffer(const muse::audio::samples_t samples);
     void handleAuditionEvents(const MuseSamplerSequencer::EventType& event);
-    void setCurrentPosition(const audio::samples_t samples);
-    void extractOutputSamples(audio::samples_t samples, float* output);
+    void setCurrentPosition(const muse::audio::samples_t samples);
+    void doCurrentSetPosition();
+    void extractOutputSamples(muse::audio::samples_t samples, float* output);
+
+    struct RenderingInfo {
+        long long maxChunksDurationUs = 0;
+        int errorCode = 0;
+        std::string errorText;
+        std::string errorData;
+        int64_t percentage = 0;
+        audio::InputProcessingProgress::ChunkInfoList lastReceivedChunks;
+
+        void clear()
+        {
+            *this = RenderingInfo();
+        }
+    };
 
     async::Channel<unsigned int> m_audioChannelsCountChanged;
 
@@ -82,7 +111,13 @@ private:
     TrackList m_tracks;
     ms_OutputBuffer m_bus;
 
-    audio::samples_t m_currentPosition = 0;
+    RenderingInfo m_renderingInfo;
+
+    using RenderingStateChangedChannel = async::Channel<ms_RenderingRangeList, int>;
+    RenderingStateChangedChannel m_renderingStateChanged;
+
+    muse::audio::samples_t m_currentPosition = 0;
+    muse::audio::sample_rate_t m_samplerSampleRate = 0;
 
     std::vector<float> m_leftChannel;
     std::vector<float> m_rightChannel;
@@ -90,11 +125,15 @@ private:
     std::array<float*, 2> m_internalBuffer;
 
     bool m_offlineModeStarted = false;
+    bool m_allNotesOffRequested = false;
+    bool m_pendingSetPosition = false;
 
     MuseSamplerSequencer m_sequencer;
+
+    std::unique_ptr<Timer> m_checkReadyToPlayTimer;
 };
 
 using MuseSamplerWrapperPtr = std::shared_ptr<MuseSamplerWrapper>;
 }
 
-#endif // MU_MUSESAMPLER_MUSESAMPLERWRAPPER_H
+#endif // MUSE_MUSESAMPLER_MUSESAMPLERWRAPPER_H

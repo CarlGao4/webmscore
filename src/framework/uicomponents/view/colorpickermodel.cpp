@@ -22,14 +22,23 @@
 
 #include "colorpickermodel.h"
 
-using namespace mu::uicomponents;
+#include "log.h"
+
+using namespace muse::uicomponents;
 
 ColorPickerModel::ColorPickerModel(QObject* parent)
-    : QObject(parent)
+    : QObject(parent), muse::Injectable(muse::iocCtxForQmlObject(this))
 {
 }
 
-QColor ColorPickerModel::selectColor(const QColor& currentColor)
+void ColorPickerModel::selectColor(const QColor& currentColor, bool allowAlpha)
 {
-    return interactive()->selectColor(currentColor);
+    interactive()->selectColor(Color::fromQColor(currentColor), {}, allowAlpha)
+    .onResolve(this, [this](const Color& c) {
+        emit colorSelected(c.toQColor());
+    })
+    .onReject(this, [this](int code, const std::string& msg) {
+        LOGD() << "select color rejected, err code: " << code << ", msg: " << msg;
+        emit selectRejected();
+    });
 }

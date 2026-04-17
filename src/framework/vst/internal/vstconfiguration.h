@@ -19,13 +19,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
-#ifndef MU_VST_VSTCONFIGURATION_H
-#define MU_VST_VSTCONFIGURATION_H
+#pragma once
 
 #include "ivstconfiguration.h"
 
-namespace mu::vst {
+namespace muse::vst {
 class VstConfiguration : public IVstConfiguration
 {
 public:
@@ -35,9 +33,11 @@ public:
     void setUserVstDirectories(const io::paths_t& paths) override;
     async::Channel<io::paths_t> userVstDirectoriesChanged() const override;
 
+    // dev
+    std::string usedVstView() const override;
+    void setUsedVstView(const std::string& code) override;
+
 private:
     async::Channel<io::paths_t> m_userVstDirsChanged;
 };
 }
-
-#endif // MU_VST_VSTCONFIGURATION_H

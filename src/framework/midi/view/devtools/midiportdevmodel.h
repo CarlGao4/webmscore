@@ -19,8 +19,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_MIDI_MIDIPORTDEVMODEL_H
-#define MU_MIDI_MIDIPORTDEVMODEL_H
+#ifndef MUSE_MIDI_MIDIPORTDEVMODEL_H
+#define MUSE_MIDI_MIDIPORTDEVMODEL_H
 
 #include <QObject>
 #include <QVariantList>
@@ -30,20 +30,22 @@
 #include "midi/imidiinport.h"
 #include "async/asyncable.h"
 
-namespace mu::midi {
-class MidiPortDevModel : public QObject, public async::Asyncable
+namespace muse::midi {
+class MidiPortDevModel : public QObject, public Injectable, public async::Asyncable
 {
     Q_OBJECT
-
-    INJECT(IMidiOutPort, midiOutPort)
-    INJECT(IMidiInPort, midiInPort)
 
     Q_PROPERTY(QVariantList outputDevices READ outputDevices NOTIFY outputDevicesChanged)
     Q_PROPERTY(QVariantList inputDevices READ inputDevices NOTIFY inputDevicesChanged)
     Q_PROPERTY(QVariantList inputEvents READ inputEvents NOTIFY inputEventsChanged)
 
+    Inject<IMidiOutPort> midiOutPort = { this };
+    Inject<IMidiInPort> midiInPort = { this };
+
 public:
     explicit MidiPortDevModel(QObject* parent = nullptr);
+
+    Q_INVOKABLE void init();
 
     QVariantList outputDevices() const;
     Q_INVOKABLE void outputDeviceAction(const QString& deviceID, const QString& action);
@@ -65,4 +67,4 @@ private:
 };
 }
 
-#endif // MU_MIDI_MIDIPORTDEVMODEL_H
+#endif // MUSE_MIDI_MIDIPORTDEVMODEL_H

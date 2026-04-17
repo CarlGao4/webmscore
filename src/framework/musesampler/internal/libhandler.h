@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2022 MuseScore BVBA and others
+ * Copyright (C) 2025 MuseScore BVBA and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -20,8 +20,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_MUSESAMPLER_LIBHANDLER_H
-#define MU_MUSESAMPLER_LIBHANDLER_H
+#pragma once
 
 #include <memory>
 #include <cstring>
@@ -31,364 +30,236 @@
 
 #include "types/version.h"
 
-namespace mu::musesampler {
+namespace muse::musesampler {
 struct MuseSamplerLibHandler
 {
-    ms_get_version_major getVersionMajor = nullptr;
-    ms_get_version_minor getVersionMinor = nullptr;
-    ms_get_version_revision getVersionRevision = nullptr;
-    ms_get_version_string getVersionString = nullptr;
-
-    ms_contains_instrument containsInstrument = nullptr;
-
-    ms_get_matching_instrument_id getMatchingInstrumentId = nullptr;
-    ms_get_instrument_list getInstrumentList = nullptr;
-    ms_get_matching_instrument_list getMatchingInstrumentList = nullptr;
-    ms_InstrumentList_get_next getNextInstrument = nullptr;
-    ms_Instrument_get_id getInstrumentId = nullptr;
-    ms_Instrument_get_name getInstrumentName = nullptr;
-    ms_Instrument_get_category getInstrumentCategory = nullptr;
-    ms_Instrument_get_package getInstrumentPackage = nullptr;
-    ms_Instrument_get_pack_name getInstrumentPackName = nullptr;
-    ms_Instrument_get_info_json getInstrumentInfoJson = nullptr;
-    ms_Instrument_get_vendor_name getInstrumentVendorName = nullptr;
-    ms_Instrument_get_musicxml_sound getMusicXmlSoundId = nullptr;
-    ms_Instrument_get_mpe_sound getMpeSoundId = nullptr;
-    ms_Instrument_get_reverb_level getReverbLevel = nullptr;
-
-    ms_Instrument_get_preset_list getPresetList = nullptr;
-    ms_PresetList_get_next getNextPreset = nullptr;
-    ms_MuseSampler_create_preset_change createPresetChange = nullptr;
-    ms_MuseSampler_add_preset addPreset = nullptr;
-    ms_get_text_articulations getTextArticulations = nullptr;
-    ms_MuseSampler_add_track_text_articulation_event addTextArticulationEvent = nullptr;
-    ms_get_drum_mapping getDrumMapping = nullptr;
-
-    ms_MuseSampler_create create = nullptr;
-    ms_MuseSampler_destroy destroy = nullptr;
-    ms_MuseSampler_init initSampler = nullptr;
-
-    ms_MuseSampler_clear_score clearScore = nullptr;
-    ms_MuseSampler_add_track addTrack = nullptr;
-    ms_MuseSampler_finalize_track finalizeTrack = nullptr;
-    ms_MuseSampler_clear_track clearTrack = nullptr;
-
-    std::function<bool(ms_MuseSampler ms, ms_Track track, long long timestamp, float value)> addDynamicsEvent = nullptr;
-    std::function<bool(ms_MuseSampler ms, ms_Track track, long long timestamp, float value)> addPedalEvent = nullptr;
-    std::function<bool(ms_MuseSampler ms, ms_Track track, NoteEvent ev, long long& event_id)> addNoteEvent = nullptr;
-    ms_MuseSampler_is_ranged_articulation isRangedArticulation = nullptr;
-    ms_MuseSampler_add_track_event_range_start addTrackEventRangeStart = nullptr;
-    ms_MuseSampler_add_track_event_range_end addTrackEventRangeEnd = nullptr;
-
-    ms_MuseSampler_add_pitch_bend addPitchBend = nullptr;
-    ms_MuseSampler_add_vibrato addVibrato = nullptr;
-
-    std::function<bool(ms_MuseSampler ms, ms_Track track, ms_AuditionStartNoteEvent_3)> startAuditionNote = nullptr;
-    ms_MuseSampler_stop_audition_note stopAuditionNote = nullptr;
-
-    ms_MuseSampler_start_liveplay_mode startLivePlayMode = nullptr;
-    ms_MuseSampler_stop_liveplay_mode stopLivePlayMode = nullptr;
-    std::function<bool(ms_MuseSampler ms, ms_Track track, ms_LivePlayStartNoteEvent_2)> startLivePlayNote = nullptr;
-    ms_MuseSampler_stop_liveplay_note stopLivePlayNote = nullptr;
-
-    ms_MuseSampler_start_offline_mode startOfflineMode = nullptr;
-    ms_MuseSampler_stop_offline_mode stopOfflineMode = nullptr;
-    ms_MuseSampler_process_offline processOffline = nullptr;
-
-    ms_MuseSampler_set_position setPosition = nullptr;
-    ms_MuseSampler_set_playing setPlaying = nullptr;
-    ms_MuseSampler_process process = nullptr;
-    ms_MuseSampler_all_notes_off allNotesOff = nullptr;
-
-private:
-    ms_init initLib = nullptr;
-    ms_disable_reverb disableReverb = nullptr;
-    ms_MuseSampler_add_track_dynamics_event addDynamicsEventInternal = nullptr;
-    ms_MuseSampler_add_track_dynamics_event_2 addDynamicsEventInternal2 = nullptr;
-    ms_MuseSampler_add_track_pedal_event addPedalEventInternal = nullptr;
-    ms_MuseSampler_add_track_pedal_event_2 addPedalEventInternal2 = nullptr;
-    ms_MuseSampler_add_track_note_event addNoteEventInternal = nullptr;
-    ms_MuseSampler_add_track_note_event_2 addNoteEventInternal2 = nullptr;
-    ms_MuseSampler_add_track_note_event_3 addNoteEventInternal3 = nullptr;
-    ms_MuseSampler_add_track_note_event_4 addNoteEventInternal4 = nullptr;
-    ms_MuseSampler_add_track_note_event_5 addNoteEventInternal5 = nullptr;
-    ms_MuseSampler_start_audition_note startAuditionNoteInternal = nullptr;
-    ms_MuseSampler_start_audition_note_2 startAuditionNoteInternal2 = nullptr;
-    ms_MuseSampler_start_audition_note_3 startAuditionNoteInternal3 = nullptr;
-    ms_MuseSampler_start_liveplay_note startLivePlayNoteInternal = nullptr;
-    ms_MuseSampler_start_liveplay_note_2 startLivePlayNoteInternal2 = nullptr;
 public:
-
-    MuseSamplerLibHandler(const io::path_t& path)
-    {
-        // The specific versions supported, based on known functions/etc:
-        const framework::Version minimumSupported{ 0, 2, 2 };
-        constexpr int maximumMajorVersion = 0;
-
-        m_lib = loadLib(path);
-
-        if (!m_lib) {
-            LOGE() << "Unable to open MuseSampler library, path: " << path;
-            return;
-        }
-
-        initLib = (ms_init)getLibFunc(m_lib, "ms_init");
-
-        getVersionMajor = (ms_get_version_major)getLibFunc(m_lib, "ms_get_version_major");
-        getVersionMinor = (ms_get_version_minor)getLibFunc(m_lib, "ms_get_version_minor");
-        getVersionRevision = (ms_get_version_revision)getLibFunc(m_lib, "ms_get_version_revision");
-        getVersionString = (ms_get_version_string)getLibFunc(m_lib, "ms_get_version_string");
-
-        // Invalid...
-        if (!getVersionMajor || !getVersionMinor || !getVersionRevision) {
-            return;
-        }
-
-        framework::Version current(getVersionMajor(),
-                                   getVersionMinor(),
-                                   getVersionRevision());
-        if (current < minimumSupported) {
-            LOGE() << "MuseSampler " << current.toString() << " is not supported (too old -- update MuseSampler); ignoring";
-            return;
-        }
-        // Major versions have incompatible changes; we can only support
-        // interfaces we know about.
-        // TODO: check when we fixed the issue with version numbers not reporting?  Was this ever an issue?
-        if (current.majorVersion() > maximumMajorVersion) {
-            LOGE() << "MuseSampler " << current.toString() << " is not supported (too new -- update MuseScore Studio); ignoring";
-            return;
-        }
-
-        // Check versions here; define optional functions below
-        int versionMajor = getVersionMajor();
-        int versionMinor = getVersionMinor();
-
-        bool at_least_v_0_3 = (versionMajor == 0 && versionMinor >= 3) || versionMajor > 0;
-        bool at_least_v_0_4 = (versionMajor == 0 && versionMinor >= 4) || versionMajor > 0;
-        bool at_least_v_0_5 = (versionMajor == 0 && versionMinor >= 5) || versionMajor > 0;
-        bool at_least_v_0_6 = (versionMajor == 0 && versionMinor >= 6) || versionMajor > 0;
-
-        m_supportsMultipleTracks = at_least_v_0_6;
-
-        containsInstrument = (ms_contains_instrument)getLibFunc(m_lib, "ms_contains_instrument");
-        getMatchingInstrumentId = (ms_get_matching_instrument_id)getLibFunc(m_lib, "ms_get_matching_instrument_id");
-        getInstrumentList = (ms_get_instrument_list)getLibFunc(m_lib, "ms_get_instrument_list");
-        getMatchingInstrumentList = (ms_get_matching_instrument_list)getLibFunc(m_lib, "ms_get_matching_instrument_list");
-        getNextInstrument = (ms_InstrumentList_get_next)getLibFunc(m_lib, "ms_InstrumentList_get_next");
-        getInstrumentId = (ms_Instrument_get_id)getLibFunc(m_lib, "ms_Instrument_get_id");
-        getInstrumentName = (ms_Instrument_get_name)getLibFunc(m_lib, "ms_Instrument_get_name");
-        getInstrumentCategory = (ms_Instrument_get_category)getLibFunc(m_lib, "ms_Instrument_get_category");
-        getInstrumentPackage = (ms_Instrument_get_package)getLibFunc(m_lib, "ms_Instrument_get_package");
-
-        getMusicXmlSoundId = (ms_Instrument_get_musicxml_sound)getLibFunc(m_lib, "ms_Instrument_get_musicxml_sound");
-        getMpeSoundId = (ms_Instrument_get_mpe_sound)getLibFunc(m_lib, "ms_Instrument_get_mpe_sound");
-
-        getPresetList = (ms_Instrument_get_preset_list)getLibFunc(m_lib, "ms_Instrument_get_preset_list");
-        getNextPreset = (ms_PresetList_get_next)getLibFunc(m_lib, "ms_PresetList_get_next");
-
-        create = (ms_MuseSampler_create)getLibFunc(m_lib, "ms_MuseSampler_create");
-        destroy = (ms_MuseSampler_destroy)getLibFunc(m_lib, "ms_MuseSampler_destroy");
-        initSampler = (ms_MuseSampler_init)getLibFunc(m_lib, "ms_MuseSampler_init");
-
-        clearScore = (ms_MuseSampler_clear_score)getLibFunc(m_lib, "ms_MuseSampler_clear_score");
-        addTrack = (ms_MuseSampler_add_track)getLibFunc(m_lib, "ms_MuseSampler_add_track");
-        finalizeTrack = (ms_MuseSampler_finalize_track)getLibFunc(m_lib, "ms_MuseSampler_finalize_track");
-        clearTrack = (ms_MuseSampler_clear_track)getLibFunc(m_lib, "ms_MuseSampler_clear_track");
-
-        if (at_least_v_0_4) {
-            if (addDynamicsEventInternal2
-                    = (ms_MuseSampler_add_track_dynamics_event_2)getLibFunc(m_lib, "ms_MuseSampler_add_track_dynamics_event_2");
-                addDynamicsEventInternal2 != nullptr) {
-                addDynamicsEvent = [this](ms_MuseSampler ms, ms_Track track, long long timestamp, float value) {
-                    ms_DynamicsEvent_2 evt{ timestamp, value };
-                    return addDynamicsEventInternal2(ms, track, evt) == ms_Result_OK;
-                };
-            }
-            disableReverb = (ms_disable_reverb)getLibFunc(m_lib, "ms_disable_reverb");
-            getReverbLevel = (ms_Instrument_get_reverb_level)getLibFunc(m_lib, "ms_Instrument_get_reverb_level");
-        } else {
-            if (addDynamicsEventInternal
-                    = (ms_MuseSampler_add_track_dynamics_event)getLibFunc(m_lib, "ms_MuseSampler_add_track_dynamics_event");
-                addDynamicsEventInternal != nullptr) {
-                addDynamicsEvent = [this](ms_MuseSampler ms, ms_Track track, long long timestamp, float value) {
-                    ms_DynamicsEvent evt{ static_cast<long>(timestamp), value };
-                    return addDynamicsEventInternal(ms, track, evt) == ms_Result_OK;
-                };
-            }
-        }
-
-        if (at_least_v_0_4) {
-            if (addPedalEventInternal2
-                    = (ms_MuseSampler_add_track_pedal_event_2)getLibFunc(m_lib, "ms_MuseSampler_add_track_pedal_event_2");
-                addPedalEventInternal2 != nullptr) {
-                addPedalEvent = [this](ms_MuseSampler ms, ms_Track track, long long timestamp, float value) {
-                    ms_PedalEvent_2 evt{ timestamp, value };
-                    return addPedalEventInternal2(ms, track, evt) == ms_Result_OK;
-                };
-            }
-        } else {
-            if (addPedalEventInternal = (ms_MuseSampler_add_track_pedal_event)getLibFunc(m_lib, "ms_MuseSampler_add_track_pedal_event");
-                addPedalEventInternal != nullptr) {
-                addPedalEvent = [this](ms_MuseSampler ms, ms_Track track, long long timestamp, float value) {
-                    // TODO: down cast of long long? trim?
-                    ms_PedalEvent evt{ static_cast<long>(timestamp), value };
-                    return addPedalEventInternal(ms, track, evt) == ms_Result_OK;
-                };
-            }
-        }
-
-        if (at_least_v_0_6) {
-            if (addNoteEventInternal5 = (ms_MuseSampler_add_track_note_event_5)getLibFunc(m_lib, "ms_MuseSampler_add_track_note_event_5");
-                addNoteEventInternal5 != nullptr) {
-                addNoteEvent
-                    = [this](ms_MuseSampler ms, ms_Track track, NoteEvent ev, long long& event_id) {
-                    return addNoteEventInternal5(ms, track, ev, event_id) == ms_Result_OK;
-                };
-            }
-        } else if (at_least_v_0_5) {
-            if (addNoteEventInternal4 = (ms_MuseSampler_add_track_note_event_4)getLibFunc(m_lib, "ms_MuseSampler_add_track_note_event_4");
-                addNoteEventInternal4 != nullptr) {
-                addNoteEvent
-                    = [this](ms_MuseSampler ms, ms_Track track, NoteEvent ev, long long& event_id) {
-                    ms_NoteEvent_3 ev3{ ev._voice, ev._location_us, ev._duration_us, ev._pitch, ev._tempo, ev._offset_cents,
-                                        ev._articulation };
-                    return addNoteEventInternal4(ms, track, ev3, event_id) == ms_Result_OK;
-                };
-            }
-        } else if (at_least_v_0_4) {
-            if (addNoteEventInternal3 = (ms_MuseSampler_add_track_note_event_3)getLibFunc(m_lib, "ms_MuseSampler_add_track_note_event_3");
-                addNoteEventInternal3 != nullptr) {
-                addNoteEvent
-                    = [this](ms_MuseSampler ms, ms_Track track, NoteEvent ev, long long& event_id) {
-                    event_id = 0;
-                    ms_NoteEvent_3 ev3{ ev._voice, ev._location_us, ev._duration_us, ev._pitch, ev._tempo, ev._offset_cents,
-                                        ev._articulation };
-                    return addNoteEventInternal3(ms, track, ev3) == ms_Result_OK;
-                };
-            }
-        } else if (at_least_v_0_3) {
-            if (addNoteEventInternal2 = (ms_MuseSampler_add_track_note_event_2)getLibFunc(m_lib, "ms_MuseSampler_add_track_note_event_2");
-                addNoteEventInternal2 != nullptr) {
-                addNoteEvent
-                    = [this](ms_MuseSampler ms, ms_Track track, NoteEvent ev, long long& event_id) {
-                    event_id = 0;
-                    ms_NoteEvent_2 ev2{ ev._voice, static_cast<long>(ev._location_us), static_cast<long>(ev._duration_us), ev._pitch,
-                                        ev._tempo, ev._offset_cents,
-                                        ev._articulation };
-                    return addNoteEventInternal2(ms, track, ev2) == ms_Result_OK;
-                };
-            }
-        } else {
-            if (addNoteEventInternal = (ms_MuseSampler_add_track_note_event)getLibFunc(m_lib, "ms_MuseSampler_add_track_note_event");
-                addNoteEventInternal != nullptr) {
-                addNoteEvent
-                    = [this](ms_MuseSampler ms, ms_Track track, NoteEvent ev, long long& event_id) {
-                    event_id = 0;
-                    ms_NoteEvent ev0{ ev._voice, static_cast<long>(ev._location_us), static_cast<long>(ev._duration_us), ev._pitch,
-                                      ev._tempo, ev._articulation };
-                    return addNoteEventInternal(ms, track, ev0) == ms_Result_OK;
-                };
-            }
-        }
-
-        isRangedArticulation = (ms_MuseSampler_is_ranged_articulation)getLibFunc(m_lib, "ms_MuseSampler_is_ranged_articulation");
-        addTrackEventRangeStart
-            = (ms_MuseSampler_add_track_event_range_start)getLibFunc(m_lib, "ms_MuseSampler_add_track_event_range_start");
-        addTrackEventRangeEnd = (ms_MuseSampler_add_track_event_range_end)getLibFunc(m_lib, "ms_MuseSampler_add_track_event_range_end");
-
-        if (at_least_v_0_6) {
-            if (startAuditionNoteInternal3
-                    = (ms_MuseSampler_start_audition_note_3)getLibFunc(m_lib, "ms_MuseSampler_start_audition_note_3");
-                startAuditionNoteInternal3 != nullptr) {
-                startAuditionNote = [this](ms_MuseSampler ms, ms_Track track, ms_AuditionStartNoteEvent_3 evt) {
-                    return startAuditionNoteInternal3(ms, track, evt) == ms_Result_OK;
-                };
-            }
-        } else if (at_least_v_0_3) {
-            if (startAuditionNoteInternal2
-                    = (ms_MuseSampler_start_audition_note_2)getLibFunc(m_lib, "ms_MuseSampler_start_audition_note_2");
-                startAuditionNoteInternal2 != nullptr) {
-                startAuditionNote = [this](ms_MuseSampler ms, ms_Track track, ms_AuditionStartNoteEvent_3 evt3) {
-                    ms_AuditionStartNoteEvent_2 evt2{ evt3._pitch, evt3._offset_cents, evt3._articulation, evt3._dynamics };
-                    return startAuditionNoteInternal2(ms, track, evt2) == ms_Result_OK;
-                };
-            }
-        } else {
-            if (startAuditionNoteInternal = (ms_MuseSampler_start_audition_note)getLibFunc(m_lib, "ms_MuseSampler_start_audition_note");
-                startAuditionNoteInternal != nullptr) {
-                startAuditionNote = [this](ms_MuseSampler ms, ms_Track track, ms_AuditionStartNoteEvent_3 evt3) {
-                    ms_AuditionStartNoteEvent evt{ evt3._pitch, evt3._articulation, evt3._dynamics };
-                    return startAuditionNoteInternal(ms, track, evt) == ms_Result_OK;
-                };
-            }
-        }
-        stopAuditionNote = (ms_MuseSampler_stop_audition_note)getLibFunc(m_lib, "ms_MuseSampler_stop_audition_note");
-
-        startLivePlayMode = (ms_MuseSampler_start_liveplay_mode)getLibFunc(m_lib, "ms_MuseSampler_start_liveplay_mode");
-        stopLivePlayMode = (ms_MuseSampler_stop_liveplay_mode)getLibFunc(m_lib, "ms_MuseSampler_stop_liveplay_mode");
-        if (at_least_v_0_3) {
-            if (startLivePlayNoteInternal2
-                    = (ms_MuseSampler_start_liveplay_note_2)getLibFunc(m_lib, "ms_MuseSampler_start_liveplay_note_2");
-                startLivePlayNoteInternal2 != nullptr) {
-                startLivePlayNote = [this](ms_MuseSampler ms, ms_Track track, ms_LivePlayStartNoteEvent_2 evt) {
-                    return startLivePlayNoteInternal2(ms, track, evt) == ms_Result_OK;
-                };
-            }
-        } else {
-            if (startLivePlayNoteInternal = (ms_MuseSampler_start_liveplay_note)getLibFunc(m_lib, "ms_MuseSampler_start_liveplay_note");
-                startLivePlayNoteInternal != nullptr) {
-                startLivePlayNote = [this](ms_MuseSampler ms, ms_Track track, ms_LivePlayStartNoteEvent_2 evt2) {
-                    ms_LivePlayStartNoteEvent evt{ evt2._pitch, evt2._dynamics };
-                    return startLivePlayNoteInternal(ms, track, evt) == ms_Result_OK;
-                };
-            }
-        }
-
-        if (at_least_v_0_6) {
-            getInstrumentVendorName = (ms_Instrument_get_vendor_name)getLibFunc(m_lib, "ms_Instrument_get_vendor_name");
-            getInstrumentPackName = (ms_Instrument_get_pack_name)getLibFunc(m_lib, "ms_Instrument_get_pack_name");
-            getInstrumentInfoJson = (ms_Instrument_get_info_json)getLibFunc(m_lib, "ms_Instrument_get_info_json");
-            createPresetChange = (ms_MuseSampler_create_preset_change)getLibFunc(m_lib, "ms_MuseSampler_create_preset_change");
-            addPreset = (ms_MuseSampler_add_preset)getLibFunc(m_lib, "ms_MuseSampler_add_preset");
-            getTextArticulations = (ms_get_text_articulations)getLibFunc(m_lib, "ms_get_text_articulations");
-            addTextArticulationEvent = (ms_MuseSampler_add_track_text_articulation_event)
-                                       getLibFunc(m_lib, "ms_MuseSampler_add_track_text_articulation_event");
-            getDrumMapping = (ms_get_drum_mapping)getLibFunc(m_lib, "ms_get_drum_mapping");
-        } else {
-            getInstrumentVendorName = [](ms_InstrumentInfo) { return ""; };
-            getInstrumentPackName = [](ms_InstrumentInfo) { return ""; };
-            getInstrumentInfoJson = [](ms_InstrumentInfo) { return ""; };
-            createPresetChange = [](ms_MuseSampler, ms_Track, long long) { return -1; };
-            addPreset = [](ms_MuseSampler, ms_Track, ms_PresetChange, const char*) { return ms_Result_Error; };
-            getTextArticulations = [](int, const char*) { return ""; };
-            addTextArticulationEvent = [](ms_MuseSampler, ms_Track, ms_TextArticulationEvent) { return ms_Result_Error; };
-            getDrumMapping = [](int) { return ""; };
-        }
-
-        if (at_least_v_0_5) {
-            addPitchBend = (ms_MuseSampler_add_pitch_bend)getLibFunc(m_lib, "ms_MuseSampler_add_pitch_bend");
-            addVibrato = (ms_MuseSampler_add_vibrato)getLibFunc(m_lib, "ms_MuseSampler_add_vibrato");
-        }
-
-        stopLivePlayNote = (ms_MuseSampler_stop_liveplay_note)getLibFunc(m_lib, "ms_MuseSampler_stop_liveplay_note");
-
-        startOfflineMode = (ms_MuseSampler_start_offline_mode)getLibFunc(m_lib, "ms_MuseSampler_start_offline_mode");
-        stopOfflineMode = (ms_MuseSampler_stop_offline_mode)getLibFunc(m_lib, "ms_MuseSampler_stop_offline_mode");
-        processOffline = (ms_MuseSampler_process_offline)getLibFunc(m_lib, "ms_MuseSampler_process_offline");
-
-        setPosition = (ms_MuseSampler_set_position)getLibFunc(m_lib, "ms_MuseSampler_set_position");
-        setPlaying = (ms_MuseSampler_set_playing)getLibFunc(m_lib, "ms_MuseSampler_set_playing");
-        process = (ms_MuseSampler_process)getLibFunc(m_lib, "ms_MuseSampler_process");
-        allNotesOff = (ms_MuseSampler_all_notes_off)getLibFunc(m_lib, "ms_MuseSampler_all_notes_off");
-    }
+    MuseSamplerLibHandler() = default;
 
     ~MuseSamplerLibHandler()
     {
-        if (!m_lib) {
-            return;
+        if (m_lib) {
+            muse::closeLib(m_lib);
+        }
+    }
+
+    bool loadLib(const io::path_t& path)
+    {
+        m_lib = muse::loadLib(path);
+        return m_lib != nullptr;
+    }
+
+    bool loadApi(const Version& minSupportedVersion, bool useLegacyAudition = false)
+    {
+        IF_ASSERT_FAILED(m_lib) {
+            return false;
         }
 
-        closeLib(m_lib);
+        auto getVersionMajor = (ms_get_version_major)muse::getLibFunc(m_lib, "ms_get_version_major");
+        auto getVersionMinor = (ms_get_version_minor)muse::getLibFunc(m_lib, "ms_get_version_minor");
+        auto getVersionRevision = (ms_get_version_revision)muse::getLibFunc(m_lib, "ms_get_version_revision");
+        auto getBuildNumber = (ms_get_version_build_number)muse::getLibFunc(m_lib, "ms_get_version_build_number");
+
+        // Invalid...
+        if (!getVersionMajor || !getVersionMinor || !getVersionRevision) {
+            return false;
+        }
+
+        m_version = Version(getVersionMajor(), getVersionMinor(), getVersionRevision());
+
+        if (getBuildNumber) {
+            m_buildNumber = getBuildNumber();
+        }
+
+        if (m_version < minSupportedVersion) {
+            LOGE() << "MuseSampler " << m_version.toString() << " is not supported (too old -- update MuseSampler); ignoring";
+            return false;
+        }
+
+        // Major versions have incompatible changes; we can only support interfaces we know about
+        constexpr int maximumMajorVersion = 0;
+
+        if (m_version.major() > maximumMajorVersion) {
+            LOGE() << "MuseSampler " << m_version.toString() << " is not supported (too new -- update MuseScore Studio); ignoring";
+            return false;
+        }
+
+        // Check versions here; define optional functions below
+        bool at_least_v_0_102 = (m_version.major() == 0 && m_version.minor() >= 102) || m_version.major() > 0;
+        bool at_least_v_0_103 = (m_version.major() == 0 && m_version.minor() >= 103) || m_version.major() > 0;
+        bool at_least_v_0_104 = (m_version.major() == 0 && m_version.minor() >= 104) || m_version.major() > 0;
+
+        initLib = (ms_init)muse::getLibFunc(m_lib, "ms_init");
+
+        getInstrumentList = (ms_get_instrument_list)muse::getLibFunc(m_lib, "ms_get_instrument_list");
+        getMatchingInstrumentList = (ms_get_matching_instrument_list)muse::getLibFunc(m_lib, "ms_get_matching_instrument_list");
+        getNextInstrument = (ms_InstrumentList_get_next)muse::getLibFunc(m_lib, "ms_InstrumentList_get_next");
+        getInstrumentId = (ms_Instrument_get_id)muse::getLibFunc(m_lib, "ms_Instrument_get_id");
+        getInstrumentName = (ms_Instrument_get_name)muse::getLibFunc(m_lib, "ms_Instrument_get_name");
+        getInstrumentCategory = (ms_Instrument_get_category)muse::getLibFunc(m_lib, "ms_Instrument_get_category");
+
+        getMusicXmlSoundId = (ms_Instrument_get_musicxml_sound)muse::getLibFunc(m_lib, "ms_Instrument_get_musicxml_sound");
+        getMpeSoundId = (ms_Instrument_get_mpe_sound)muse::getLibFunc(m_lib, "ms_Instrument_get_mpe_sound");
+
+        getPresetList = (ms_Instrument_get_preset_list)muse::getLibFunc(m_lib, "ms_Instrument_get_preset_list");
+        getNextPreset = (ms_PresetList_get_next)muse::getLibFunc(m_lib, "ms_PresetList_get_next");
+
+        create = (ms_MuseSampler_create)muse::getLibFunc(m_lib, "ms_MuseSampler_create");
+        destroy = (ms_MuseSampler_destroy)muse::getLibFunc(m_lib, "ms_MuseSampler_destroy");
+
+        if (useLegacyAudition) {
+            LOGI() << "Use legacy audition (ms_MuseSampler_init)";
+
+            initSamplerInternal = (ms_MuseSampler_init)muse::getLibFunc(m_lib, "ms_MuseSampler_init");
+            initSampler = [this](ms_MuseSampler ms, double sample_rate, int block_size, int channel_count) {
+                return initSamplerInternal(ms, sample_rate, block_size, channel_count) == ms_Result_OK;
+            };
+        } else {
+            initSamplerInternal2 = (ms_MuseSampler_init_2)muse::getLibFunc(m_lib, "ms_MuseSampler_init_2");
+            initSampler = [this](ms_MuseSampler ms, double sample_rate, int block_size, int channel_count) {
+                return initSamplerInternal2(ms, sample_rate, block_size, channel_count) == ms_Result_OK;
+            };
+        }
+
+        addTrack = (ms_MuseSampler_add_track)muse::getLibFunc(m_lib, "ms_MuseSampler_add_track");
+        finalizeTrack = (ms_MuseSampler_finalize_track)muse::getLibFunc(m_lib, "ms_MuseSampler_finalize_track");
+        clearTrack = (ms_MuseSampler_clear_track)muse::getLibFunc(m_lib, "ms_MuseSampler_clear_track");
+
+        disableReverb = (ms_disable_reverb)muse::getLibFunc(m_lib, "ms_disable_reverb");
+        getReverbLevel = (ms_Instrument_get_reverb_level)muse::getLibFunc(m_lib, "ms_Instrument_get_reverb_level");
+
+        addDynamicsEvent = (ms_MuseSampler_add_track_dynamics_event_2)muse::getLibFunc(m_lib,
+                                                                                       "ms_MuseSampler_add_track_dynamics_event_2");
+        addPedalEvent = (ms_MuseSampler_add_track_pedal_event_2)muse::getLibFunc(m_lib, "ms_MuseSampler_add_track_pedal_event_2");
+
+        if (at_least_v_0_102) {
+            addNoteEventInternal6 = (ms_MuseSampler_add_track_note_event_6)muse::getLibFunc(m_lib, "ms_MuseSampler_add_track_note_event_6");
+            addNoteEvent = [this](ms_MuseSampler ms, ms_Track track, const NoteEvent& ev, long long& event_id) {
+                return addNoteEventInternal6(ms, track, ev, event_id) == ms_Result_OK;
+            };
+        } else {
+            addNoteEventInternal5 = (ms_MuseSampler_add_track_note_event_5)muse::getLibFunc(m_lib, "ms_MuseSampler_add_track_note_event_5");
+            addNoteEvent = [this](ms_MuseSampler ms, ms_Track track, const NoteEvent& ev, long long& event_id) {
+                ms_NoteEvent_4 ev4{ ev._voice, ev._location_us, ev._duration_us, ev._pitch, ev._tempo, ev._offset_cents,
+                                    ev._articulation, ev._notehead };
+
+                return addNoteEventInternal5(ms, track, ev4, event_id) == ms_Result_OK;
+            };
+        }
+
+        if (at_least_v_0_102) {
+            startAuditionNoteInternal5 = (ms_MuseSampler_start_audition_note_5)muse::getLibFunc(m_lib,
+                                                                                                "ms_MuseSampler_start_audition_note_5");
+            startAuditionNote = [this](ms_MuseSampler ms, ms_Track track, ms_AuditionStartNoteEvent_5 ev) {
+                return startAuditionNoteInternal5(ms, track, ev) == ms_Result_OK;
+            };
+        } else {
+            startAuditionNoteInternal4 = (ms_MuseSampler_start_audition_note_4)muse::getLibFunc(m_lib,
+                                                                                                "ms_MuseSampler_start_audition_note_4");
+            startAuditionNote = [this](ms_MuseSampler ms, ms_Track track, ms_AuditionStartNoteEvent_5 ev) {
+                ms_AuditionStartNoteEvent_4 ev4{ ev._pitch, ev._offset_cents, ev._articulation, ev._notehead, ev._dynamics,
+                                                 ev._active_presets, ev._active_text_articulation, ev._active_syllable,
+                                                 ev._articulation_text_starts_at_note, ev._syllable_starts_at_note };
+
+                return startAuditionNoteInternal4(ms, track, ev4) == ms_Result_OK;
+            };
+        }
+
+        isRangedArticulation = (ms_MuseSampler_is_ranged_articulation)muse::getLibFunc(m_lib, "ms_MuseSampler_is_ranged_articulation");
+        addTrackEventRangeStart
+            = (ms_MuseSampler_add_track_event_range_start)muse::getLibFunc(m_lib, "ms_MuseSampler_add_track_event_range_start");
+        addTrackEventRangeEnd
+            = (ms_MuseSampler_add_track_event_range_end)muse::getLibFunc(m_lib, "ms_MuseSampler_add_track_event_range_end");
+
+        stopAuditionNote = (ms_MuseSampler_stop_audition_note)muse::getLibFunc(m_lib, "ms_MuseSampler_stop_audition_note");
+
+        if (at_least_v_0_102) {
+            addSyllableEventInternal2 = (ms_MuseSampler_add_track_syllable_event_2)muse::getLibFunc(m_lib,
+                                                                                                    "ms_MuseSampler_add_track_syllable_event_2");
+
+            addSyllableEvent = [this](ms_MuseSampler ms, ms_Track track, const SyllableEvent& ev) {
+                return addSyllableEventInternal2(ms, track, ev) == ms_Result_OK;
+            };
+        } else {
+            addSyllableEventInternal = (ms_MuseSampler_add_track_syllable_event)muse::getLibFunc(m_lib,
+                                                                                                 "ms_MuseSampler_add_track_syllable_event");
+
+            addSyllableEvent = [this](ms_MuseSampler ms, ms_Track track, const SyllableEvent& ev) {
+                ms_SyllableEvent ev1 { ev._text, ev._position_us };
+                return addSyllableEventInternal(ms, track, ev1) == ms_Result_OK;
+            };
+        }
+
+        getInstrumentVendorName = (ms_Instrument_get_vendor_name)muse::getLibFunc(m_lib, "ms_Instrument_get_vendor_name");
+        getInstrumentPackName = (ms_Instrument_get_pack_name)muse::getLibFunc(m_lib, "ms_Instrument_get_pack_name");
+        getInstrumentInfoJson = (ms_Instrument_get_info_json)muse::getLibFunc(m_lib, "ms_Instrument_get_info_json");
+        createPresetChange = (ms_MuseSampler_create_preset_change)muse::getLibFunc(m_lib, "ms_MuseSampler_create_preset_change");
+        addPreset = (ms_MuseSampler_add_preset)muse::getLibFunc(m_lib, "ms_MuseSampler_add_preset");
+        getTextArticulations = (ms_get_text_articulations)muse::getLibFunc(m_lib, "ms_get_text_articulations");
+        addTextArticulationEvent = (ms_MuseSampler_add_track_text_articulation_event)
+                                   muse::getLibFunc(m_lib, "ms_MuseSampler_add_track_text_articulation_event");
+        getDrumMapping = (ms_get_drum_mapping)muse::getLibFunc(m_lib, "ms_get_drum_mapping");
+
+        addPitchBend = (ms_MuseSampler_add_pitch_bend)muse::getLibFunc(m_lib, "ms_MuseSampler_add_pitch_bend");
+        addVibrato = (ms_MuseSampler_add_vibrato)muse::getLibFunc(m_lib, "ms_MuseSampler_add_vibrato");
+
+        startOfflineMode = (ms_MuseSampler_start_offline_mode)muse::getLibFunc(m_lib, "ms_MuseSampler_start_offline_mode");
+        stopOfflineMode = (ms_MuseSampler_stop_offline_mode)muse::getLibFunc(m_lib, "ms_MuseSampler_stop_offline_mode");
+        processOffline = (ms_MuseSampler_process_offline)muse::getLibFunc(m_lib, "ms_MuseSampler_process_offline");
+
+        setPosition = (ms_MuseSampler_set_position)muse::getLibFunc(m_lib, "ms_MuseSampler_set_position");
+        setPlaying = (ms_MuseSampler_set_playing)muse::getLibFunc(m_lib, "ms_MuseSampler_set_playing");
+        process = (ms_MuseSampler_process)muse::getLibFunc(m_lib, "ms_MuseSampler_process");
+        allNotesOff = (ms_MuseSampler_all_notes_off)muse::getLibFunc(m_lib, "ms_MuseSampler_all_notes_off");
+
+        reloadAllInstruments = (ms_reload_all_instruments)muse::getLibFunc(m_lib, "ms_reload_all_instruments");
+        readyToPlay = (ms_MuseSampler_ready_to_play)muse::getLibFunc(m_lib, "ms_MuseSampler_ready_to_play");
+
+        if (at_least_v_0_102) {
+            setLoggingCallback = (ms_set_logging_callback)muse::getLibFunc(m_lib, "ms_set_logging_callback");
+            isOnlineInstrument = (ms_Instrument_is_online)muse::getLibFunc(m_lib, "ms_Instrument_is_online");
+            setScoreId = (ms_MuseSampler_set_score_id)muse::getLibFunc(m_lib, "ms_MuseSampler_set_score_id");
+            setAutoRenderInterval = (ms_MuseSampler_set_auto_render_interval)muse::getLibFunc(m_lib,
+                                                                                              "ms_MuseSampler_set_auto_render_interval");
+            triggerRender = (ms_MuseSampler_trigger_render)muse::getLibFunc(m_lib, "ms_MuseSampler_trigger_render");
+            clearOnlineCache = (ms_MuseSampler_clear_online_cache)muse::getLibFunc(m_lib, "ms_MuseSampler_clear_online_cache");
+            addAuditionCCEvent = (ms_MuseSampler_add_audition_cc_event)muse::getLibFunc(m_lib, "ms_MuseSampler_add_audition_cc_event");
+        } else {
+            setLoggingCallback = [](ms_logging_callback) {};
+            isOnlineInstrument = [](ms_InstrumentInfo) { return false; };
+            setScoreId = [](ms_MuseSampler, const char*) {};
+            setAutoRenderInterval = [](ms_MuseSampler, double) {};
+            triggerRender = [](ms_MuseSampler) {};
+            clearOnlineCache = [](ms_MuseSampler) {};
+            addAuditionCCEvent = [](ms_MuseSampler, ms_Track, int, float) { return ms_Result_Error; };
+        }
+
+        if (at_least_v_0_103) {
+            setRenderingStateChangedCallback = (ms_MuseSampler_set_rendering_state_changed_callback)muse::getLibFunc(m_lib,
+                                                                                                                     "ms_MuseSampler_set_rendering_state_changed_callback");
+        } else {
+            setRenderingStateChangedCallback = [](ms_MuseSampler, ms_rendering_state_changed_callback, void*) {};
+        }
+
+        if (at_least_v_0_104) {
+            getNextRenderProgressInfo2Internal
+                = (ms_RenderProgressInfo2_get_next)muse::getLibFunc(m_lib, "ms_RenderProgressInfo2_get_next");
+            getNextRenderProgressInfo = [this](ms_RenderingRangeList list) {
+                return getNextRenderProgressInfo2Internal(list);
+            };
+        } else if (at_least_v_0_102) {
+            getNextRenderProgressInfoInternal = (ms_RenderProgressInfo_get_next)muse::getLibFunc(m_lib, "ms_RenderProgressInfo_get_next");
+            getNextRenderProgressInfo = [this](ms_RenderingRangeList list) {
+                ms_RenderRangeInfo info = getNextRenderProgressInfoInternal(list);
+                return RenderRangeInfo { info._start_us, info._end_us, info._state, nullptr };
+            };
+        } else {
+            getNextRenderProgressInfo = [](ms_RenderingRangeList) {
+                return RenderRangeInfo { 0, 0, ms_RenderingState_ErrorRendering, nullptr };
+            };
+        }
+
+        return isValid();
     }
 
     bool init()
@@ -416,77 +287,87 @@ public:
     {
         return m_lib
                && initLib
-               && getVersionMajor
-               && getVersionMinor
-               && getVersionRevision
-               && getVersionString
-               && containsInstrument
-               && getMatchingInstrumentId
+               && disableReverb
                && getInstrumentList
                && getMatchingInstrumentList
                && getNextInstrument
                && getInstrumentId
                && getInstrumentName
                && getInstrumentCategory
-               && getInstrumentPackage
                && getInstrumentPackName
                && getInstrumentVendorName
+               && getInstrumentInfoJson
                && getMusicXmlSoundId
                && getMpeSoundId
                && getPresetList
                && getNextPreset
+               && getReverbLevel
+               && getTextArticulations
+               && getDrumMapping
                && create
                && destroy
                && initSampler
-               && clearScore
                && addTrack
                && finalizeTrack
                && clearTrack
                && addDynamicsEvent
                && addPedalEvent
-               && addNoteEvent
+               && (addNoteEventInternal6 || addNoteEventInternal5)
+               && (addSyllableEventInternal2 || addSyllableEventInternal)
+               && addPitchBend
+               && addVibrato
+               && addTextArticulationEvent
+               && addPreset
+               && createPresetChange
                && setPosition
                && setPlaying
                && isRangedArticulation
                && addTrackEventRangeStart
                && addTrackEventRangeEnd
-               && startAuditionNote
+               && (startAuditionNoteInternal5 || startAuditionNoteInternal4)
                && stopAuditionNote
-               && startLivePlayMode
-               && stopLivePlayMode
-               && startLivePlayNote
-               && stopLivePlayNote
                && startOfflineMode
                && stopOfflineMode
                && processOffline
                && process
-               && allNotesOff;
+               && allNotesOff
+               && readyToPlay
+               && setLoggingCallback
+               && setRenderingStateChangedCallback
+               && isOnlineInstrument
+               && setScoreId
+               && getNextRenderProgressInfo
+               && setAutoRenderInterval
+               && triggerRender
+               && clearOnlineCache
+               && addAuditionCCEvent;
     }
 
-    //! NOTE: There was a bug in ms_MuseSampler_add_track
-    //! that prevented adding more than 1 track (fixed in v0.6)
-    bool supportsMultipleTracks() const
+    const Version& version() const
     {
-        return m_supportsMultipleTracks;
+        return m_version;
     }
 
-private:
+    int buildNumber() const
+    {
+        return m_buildNumber;
+    }
+
     void printApiStatus() const
     {
         LOGI() << "MuseSampler API status:"
-               << "\n ms_get_version_major -" << reinterpret_cast<uint64_t>(getVersionMajor)
-               << "\n ms_get_version_minor -" << reinterpret_cast<uint64_t>(getVersionMinor)
-               << "\n ms_get_version_revision -" << reinterpret_cast<uint64_t>(getVersionRevision)
-               << "\n ms_get_version_string -" << reinterpret_cast<uint64_t>(getVersionString)
-               << "\n ms_contains_instrument -" << reinterpret_cast<uint64_t>(containsInstrument)
-               << "\n ms_get_matching_instrument_id -" << reinterpret_cast<uint64_t>(getMatchingInstrumentId)
+               << "\n ms_init -" << reinterpret_cast<uint64_t>(initLib)
+               << "\n ms_disable_reverb - " << reinterpret_cast<uint64_t>(disableReverb)
                << "\n ms_get_instrument_list -" << reinterpret_cast<uint64_t>(getInstrumentList)
-               << "\n ms_get_matching_instrument_list -" << reinterpret_cast<uint64_t>(getMatchingInstrumentList)
+               << "\n ms_get_matching_instrument_list - " << reinterpret_cast<uint64_t>(getMatchingInstrumentList)
+               << "\n ms_get_drum_mapping - " << reinterpret_cast<uint64_t>(getDrumMapping)
                << "\n ms_InstrumentList_get_next - " << reinterpret_cast<uint64_t>(getNextInstrument)
+               << "\n ms_Instrument_get_info_json - " << reinterpret_cast<uint64_t>(getInstrumentInfoJson)
                << "\n ms_Instrument_get_id - " << reinterpret_cast<uint64_t>(getInstrumentId)
                << "\n ms_Instrument_get_name - " << reinterpret_cast<uint64_t>(getInstrumentName)
+               << "\n ms_Instrument_get_vendor_name - " << reinterpret_cast<uint64_t>(getInstrumentVendorName)
                << "\n ms_Instrument_get_category - " << reinterpret_cast<uint64_t>(getInstrumentCategory)
-               << "\n ms_Instrument_get_package - " << reinterpret_cast<uint64_t>(getInstrumentPackage)
+               << "\n ms_Instrument_get_pack_name - " << reinterpret_cast<uint64_t>(getInstrumentPackName)
                << "\n ms_Instrument_get_musicxml_sound - " << reinterpret_cast<uint64_t>(getMusicXmlSoundId)
                << "\n ms_Instrument_get_mpe_sound - " << reinterpret_cast<uint64_t>(getMpeSoundId)
                << "\n ms_Instrument_get_reverb_level - " << reinterpret_cast<uint64_t>(getReverbLevel)
@@ -498,43 +379,137 @@ private:
                << "\n ms_MuseSampler_add_track_text_articulation_event - " << reinterpret_cast<uint64_t>(addTextArticulationEvent)
                << "\n ms_MuseSampler_create - " << reinterpret_cast<uint64_t>(create)
                << "\n ms_MuseSampler_destroy - " << reinterpret_cast<uint64_t>(destroy)
-               << "\n ms_MuseSampler_init - " << reinterpret_cast<uint64_t>(initSampler)
-               << "\n ms_disable_reverb - " << reinterpret_cast<uint64_t>(disableReverb)
-               << "\n ms_MuseSampler_clear_score - " << reinterpret_cast<uint64_t>(clearScore)
+               << "\n ms_MuseSampler_init - " << reinterpret_cast<uint64_t>(initSamplerInternal)
+               << "\n ms_MuseSampler_init_2 - " << reinterpret_cast<uint64_t>(initSamplerInternal2)
                << "\n ms_MuseSampler_add_track - " << reinterpret_cast<uint64_t>(addTrack)
+               << "\n ms_MuseSampler_clear_track - " << reinterpret_cast<uint64_t>(clearTrack)
                << "\n ms_MuseSampler_finalize_track - " << reinterpret_cast<uint64_t>(finalizeTrack)
-               << "\n ms_MuseSampler_add_track_dynamics_event - " << reinterpret_cast<uint64_t>(addDynamicsEventInternal)
-               << "\n ms_MuseSampler_add_track_dynamics_event_2 - " << reinterpret_cast<uint64_t>(addDynamicsEventInternal2)
-               << "\n ms_MuseSampler_add_track_pedal_event - " << reinterpret_cast<uint64_t>(addPedalEventInternal)
-               << "\n ms_MuseSampler_add_track_pedal_event_2 - " << reinterpret_cast<uint64_t>(addPedalEventInternal2)
-               << "\n ms_MuseSampler_add_track_note_event - " << reinterpret_cast<uint64_t>(addNoteEventInternal)
-               << "\n ms_MuseSampler_add_track_note_event_2 - " << reinterpret_cast<uint64_t>(addNoteEventInternal2)
-               << "\n ms_MuseSampler_add_track_note_event_3 - " << reinterpret_cast<uint64_t>(addNoteEventInternal3)
-               << "\n ms_MuseSampler_add_track_note_event_4 - " << reinterpret_cast<uint64_t>(addNoteEventInternal4)
+               << "\n ms_MuseSampler_add_track_dynamics_event_2 - " << reinterpret_cast<uint64_t>(addDynamicsEvent)
+               << "\n ms_MuseSampler_add_track_pedal_event_2 - " << reinterpret_cast<uint64_t>(addPedalEvent)
                << "\n ms_MuseSampler_add_pitch_bend - " << reinterpret_cast<uint64_t>(addPitchBend)
-               << "\n ms_MuseSampler_start_audition_note - " << reinterpret_cast<uint64_t>(startAuditionNoteInternal)
-               << "\n ms_MuseSampler_start_audition_note_2 - " << reinterpret_cast<uint64_t>(startAuditionNoteInternal2)
-               << "\n ms_MuseSampler_start_audition_note_3 - " << reinterpret_cast<uint64_t>(startAuditionNoteInternal3)
+               << "\n ms_MuseSampler_add_track_note_event_5 - " << reinterpret_cast<uint64_t>(addNoteEventInternal5)
+               << "\n ms_MuseSampler_add_track_note_event_6 - " << reinterpret_cast<uint64_t>(addNoteEventInternal6)
+               << "\n ms_MuseSampler_start_audition_note_4 - " << reinterpret_cast<uint64_t>(startAuditionNoteInternal4)
+               << "\n ms_MuseSampler_start_audition_note_5 - " << reinterpret_cast<uint64_t>(startAuditionNoteInternal5)
                << "\n ms_MuseSampler_stop_audition_note - " << reinterpret_cast<uint64_t>(stopAuditionNote)
-               << "\n ms_MuseSampler_start_liveplay_mode - " << reinterpret_cast<uint64_t>(startLivePlayMode)
-               << "\n ms_MuseSampler_stop_liveplay_mode - " << reinterpret_cast<uint64_t>(stopLivePlayMode)
-               << "\n ms_MuseSampler_start_liveplay_note - " << reinterpret_cast<uint64_t>(startLivePlayNoteInternal)
-               << "\n ms_MuseSampler_start_liveplay_note_2 - " << reinterpret_cast<uint64_t>(startLivePlayNoteInternal2)
-               << "\n ms_MuseSampler_stop_liveplay_note - " << reinterpret_cast<uint64_t>(stopLivePlayNote)
+               << "\n ms_MuseSampler_add_pitch_bend - " << reinterpret_cast<uint64_t>(addPitchBend)
+               << "\n ms_MuseSampler_add_vibrato - " << reinterpret_cast<uint64_t>(addVibrato)
+               << "\n ms_MuseSampler_is_ranged_articulation - " << reinterpret_cast<uint64_t>(isRangedArticulation)
+               << "\n ms_MuseSampler_add_track_event_range_start - " << reinterpret_cast<uint64_t>(addTrackEventRangeStart)
+               << "\n ms_MuseSampler_add_track_event_range_end - " << reinterpret_cast<uint64_t>(addTrackEventRangeEnd)
+               << "\n ms_MuseSampler_add_audition_cc_event - " << reinterpret_cast<uint64_t>(addAuditionCCEvent)
                << "\n ms_MuseSampler_start_offline_mode - " << reinterpret_cast<uint64_t>(startOfflineMode)
                << "\n ms_MuseSampler_stop_offline_mode - " << reinterpret_cast<uint64_t>(stopOfflineMode)
                << "\n ms_MuseSampler_process_offline - " << reinterpret_cast<uint64_t>(processOffline)
                << "\n ms_MuseSampler_set_position - " << reinterpret_cast<uint64_t>(setPosition)
                << "\n ms_MuseSampler_set_playing - " << reinterpret_cast<uint64_t>(setPlaying)
                << "\n ms_MuseSampler_process - " << reinterpret_cast<uint64_t>(process)
-               << "\n ms_MuseSampler_all_notes_off - " << reinterpret_cast<uint64_t>(allNotesOff);
+               << "\n ms_MuseSampler_all_notes_off - " << reinterpret_cast<uint64_t>(allNotesOff)
+               << "\n ms_MuseSampler_ready_to_play - " << reinterpret_cast<uint64_t>(readyToPlay)
+               << "\n ms_Instrument_is_online - " << reinterpret_cast<uint64_t>(isOnlineInstrument)
+               << "\n ms_RenderProgressInfo_get_next - " << reinterpret_cast<uint64_t>(getNextRenderProgressInfoInternal)
+               << "\n ms_RenderProgressInfo2_get_next - " << reinterpret_cast<uint64_t>(getNextRenderProgressInfo2Internal)
+               << "\n ms_MuseSampler_trigger_render - " << reinterpret_cast<uint64_t>(triggerRender)
+               << "\n ms_MuseSampler_set_auto_render_interval - " << reinterpret_cast<uint64_t>(setAutoRenderInterval)
+               << "\n ms_MuseSampler_add_track_syllable_event - " << reinterpret_cast<uint64_t>(addSyllableEventInternal)
+               << "\n ms_MuseSampler_add_track_syllable_event_2 - " << reinterpret_cast<uint64_t>(addSyllableEventInternal2)
+               << "\n ms_reload_all_instruments - " << reinterpret_cast<uint64_t>(reloadAllInstruments)
+               << "\n ms_set_logging_callback - " << reinterpret_cast<uint64_t>(setLoggingCallback)
+               << "\n ms_MuseSampler_set_rendering_state_changed_callback - "
+               << reinterpret_cast<uint64_t>(setRenderingStateChangedCallback)
+               << "\n ms_MuseSampler_set_score_id - " << reinterpret_cast<uint64_t>(setScoreId)
+               << "\n ms_MuseSampler_clear_online_cache - " << reinterpret_cast<uint64_t>(clearOnlineCache);
     }
 
+    ms_get_instrument_list getInstrumentList = nullptr;
+    ms_get_matching_instrument_list getMatchingInstrumentList = nullptr;
+    ms_InstrumentList_get_next getNextInstrument = nullptr;
+    ms_Instrument_get_id getInstrumentId = nullptr;
+    ms_Instrument_get_name getInstrumentName = nullptr;
+    ms_Instrument_get_category getInstrumentCategory = nullptr;
+    ms_Instrument_get_pack_name getInstrumentPackName = nullptr;
+    ms_Instrument_get_info_json getInstrumentInfoJson = nullptr;
+    ms_Instrument_get_vendor_name getInstrumentVendorName = nullptr;
+    ms_Instrument_get_musicxml_sound getMusicXmlSoundId = nullptr;
+    ms_Instrument_get_mpe_sound getMpeSoundId = nullptr;
+    ms_Instrument_get_reverb_level getReverbLevel = nullptr;
+
+    ms_Instrument_get_preset_list getPresetList = nullptr;
+    ms_PresetList_get_next getNextPreset = nullptr;
+    ms_MuseSampler_create_preset_change createPresetChange = nullptr;
+    ms_MuseSampler_add_preset addPreset = nullptr;
+    ms_get_text_articulations getTextArticulations = nullptr;
+    ms_MuseSampler_add_track_text_articulation_event addTextArticulationEvent = nullptr;
+    ms_get_drum_mapping getDrumMapping = nullptr;
+
+    ms_MuseSampler_create create = nullptr;
+    ms_MuseSampler_destroy destroy = nullptr;
+
+    std::function<bool(ms_MuseSampler ms, double sample_rate, int block_size, int channel_count)> initSampler = nullptr;
+
+    ms_MuseSampler_add_track addTrack = nullptr;
+    ms_MuseSampler_finalize_track finalizeTrack = nullptr;
+    ms_MuseSampler_clear_track clearTrack = nullptr;
+
+    ms_MuseSampler_add_track_dynamics_event_2 addDynamicsEvent = nullptr;
+    ms_MuseSampler_add_track_pedal_event_2 addPedalEvent = nullptr;
+    std::function<bool(ms_MuseSampler ms, ms_Track track, const NoteEvent& ev, long long& event_id)> addNoteEvent = nullptr;
+
+    ms_MuseSampler_is_ranged_articulation isRangedArticulation = nullptr;
+    ms_MuseSampler_add_track_event_range_start addTrackEventRangeStart = nullptr;
+    ms_MuseSampler_add_track_event_range_end addTrackEventRangeEnd = nullptr;
+
+    ms_MuseSampler_add_pitch_bend addPitchBend = nullptr;
+    ms_MuseSampler_add_vibrato addVibrato = nullptr;
+
+    std::function<bool(ms_MuseSampler ms, ms_Track track, const SyllableEvent& ev)> addSyllableEvent = nullptr;
+
+    std::function<bool(ms_MuseSampler ms, ms_Track track, ms_AuditionStartNoteEvent_5)> startAuditionNote = nullptr;
+    ms_MuseSampler_stop_audition_note stopAuditionNote = nullptr;
+    ms_MuseSampler_add_audition_cc_event addAuditionCCEvent = nullptr;
+
+    ms_MuseSampler_start_offline_mode startOfflineMode = nullptr;
+    ms_MuseSampler_stop_offline_mode stopOfflineMode = nullptr;
+    ms_MuseSampler_process_offline processOffline = nullptr;
+
+    ms_MuseSampler_ready_to_play readyToPlay = nullptr;
+
+    ms_MuseSampler_set_position setPosition = nullptr;
+    ms_MuseSampler_set_playing setPlaying = nullptr;
+    ms_MuseSampler_process process = nullptr;
+    ms_MuseSampler_all_notes_off allNotesOff = nullptr;
+
+    ms_reload_all_instruments reloadAllInstruments = nullptr;
+
+    ms_set_logging_callback setLoggingCallback = nullptr;
+    ms_MuseSampler_set_rendering_state_changed_callback setRenderingStateChangedCallback = nullptr;
+
+    ms_MuseSampler_set_score_id setScoreId = nullptr;
+    ms_Instrument_is_online isOnlineInstrument = nullptr;
+    std::function<RenderRangeInfo(ms_RenderingRangeList range_list)> getNextRenderProgressInfo = nullptr;
+    ms_MuseSampler_set_auto_render_interval setAutoRenderInterval = nullptr;
+    ms_MuseSampler_trigger_render triggerRender = nullptr;
+    ms_MuseSampler_clear_online_cache clearOnlineCache = nullptr;
+
+private:
+    ms_init initLib = nullptr;
+    ms_disable_reverb disableReverb = nullptr;
+    ms_MuseSampler_add_track_note_event_5 addNoteEventInternal5 = nullptr;
+    ms_MuseSampler_add_track_note_event_6 addNoteEventInternal6 = nullptr;
+    ms_MuseSampler_start_audition_note_4 startAuditionNoteInternal4 = nullptr;
+    ms_MuseSampler_start_audition_note_5 startAuditionNoteInternal5 = nullptr;
+    ms_MuseSampler_add_track_syllable_event addSyllableEventInternal = nullptr;
+    ms_MuseSampler_add_track_syllable_event_2 addSyllableEventInternal2 = nullptr;
+    ms_MuseSampler_init initSamplerInternal = nullptr;
+    ms_MuseSampler_init_2 initSamplerInternal2 = nullptr;
+    ms_RenderProgressInfo_get_next getNextRenderProgressInfoInternal = nullptr;
+    ms_RenderProgressInfo2_get_next getNextRenderProgressInfo2Internal = nullptr;
+
+private:
     MuseSamplerLib m_lib = nullptr;
-    bool m_supportsMultipleTracks = false;
+    Version m_version;
+    int m_buildNumber = -1;
 };
 
 using MuseSamplerLibHandlerPtr = std::shared_ptr<MuseSamplerLibHandler>;
 }
-
-#endif // MU_MUSESAMPLER_LIBHANDLER_H

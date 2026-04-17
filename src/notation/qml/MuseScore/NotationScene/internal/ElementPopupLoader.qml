@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2022 MuseScore BVBA and others
+ * Copyright (C) 2022 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,16 +22,17 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 
-import MuseScore.Ui 1.0
-import MuseScore.UiComponents 1.0
-import MuseScore.NotationScene 1.0
+import Muse.Ui 1.0
+import Muse.UiComponents 1.0
 
+import MuseScore.Inspector 1.0
+import MuseScore.NotationScene 1.0
 import MuseScore.Playback 1.0
 
 Item {
     id: container
 
-    property var popup: loader.item
+    property AbstractElementPopup popup: loader.item as AbstractElementPopup
     property bool isPopupOpened: Boolean(popup) && popup.isOpened
 
 
@@ -41,7 +42,7 @@ Item {
                                         ? loader.item.navigationOrderEnd
                                         : navigationOrderStart
 
-    signal opened()
+    signal opened(var popupType)
     signal closed()
 
     QtObject {
@@ -49,29 +50,40 @@ Item {
 
         function componentByType(type) {
             switch (type) {
-            case Notation.TYPE_HARP_DIAGRAM: return harpPedalComp
-            case Notation.TYPE_CAPO: return capoComp
-            case Notation.TYPE_STRING_TUNINGS: return stringTuningsComp
-            case Notation.TYPE_SOUND_FLAG: return soundFlagComp
+            case AbstractElementPopupModel.TYPE_HARP_DIAGRAM: return harpPedalComp
+            case AbstractElementPopupModel.TYPE_CAPO: return capoComp
+            case AbstractElementPopupModel.TYPE_STRING_TUNINGS: return stringTuningsComp
+            case AbstractElementPopupModel.TYPE_SOUND_FLAG: return soundFlagComp
+            case AbstractElementPopupModel.TYPE_STAFF_VISIBILITY: return staffVisibilityComp
+            case AbstractElementPopupModel.TYPE_DYNAMIC: return dynamicComp
+            case AbstractElementPopupModel.TYPE_TEXT: return textStyleComp
+            case AbstractElementPopupModel.TYPE_PARTIAL_TIE: return partialTieComp
+            case AbstractElementPopupModel.TYPE_SHADOW_NOTE: return shadowNoteComp
             }
 
             return null
         }
 
-        function updateContainerPosition(elementRect) {
+        function updateContainerPosition() {
+            if (!Boolean(container.popup)) {
+                return
+            }
+
+            const elementRect = container.popup.elementRect
+
             container.x = elementRect.x
             container.y = elementRect.y
             container.height = elementRect.height
             container.width = elementRect.width
 
-            loader.item.updatePosition()
+            container.popup.updatePosition()
         }
     }
 
-    function show(elementType, elementRect) {
+    function show(popupType) {
         close()
 
-        var popup = loader.loadPopup(prv.componentByType(elementType), elementRect)
+        var popup = loader.loadPopup(popupType)
         popup.open()
     }
 
@@ -87,17 +99,17 @@ Item {
         anchors.fill: parent
         active: false
 
-        function loadPopup(comp, elementRect) {
-            loader.sourceComponent = comp
+        function loadPopup(popupType) {
+            loader.sourceComponent = prv.componentByType(popupType)
             loader.active = true
 
-            const popup = loader.item
+            const popup = loader.item as AbstractElementPopup
             console.assert(popup)
 
             popup.parent = container
 
             popup.opened.connect(function() {
-                container.opened()
+                container.opened(popupType)
             })
 
             popup.closed.connect(function() {
@@ -105,15 +117,14 @@ Item {
                 container.closed()
             })
 
-            prv.updateContainerPosition(elementRect)
-            popup.elementRectChanged.connect(function(elementRect) {
-                prv.updateContainerPosition(elementRect)
-            })
+            prv.updateContainerPosition()
+            popup.elementRectChanged.connect(prv.updateContainerPosition)
 
             //! NOTE: All navigation panels in popups must be in the notation view section.
             //        This is necessary so that popups do not activate navigation in the new section,
             //        but at the same time, when clicking on the component (text input), the focus in popup's window should be activated
             popup.navigationSection = null
+            popup.openPolicies = PopupView.NoActivateFocus
 
             popup.notationViewNavigationSection = container.notationViewNavigationSection
             popup.navigationOrderStart = container.navigationOrderStart
@@ -148,6 +159,36 @@ Item {
     Component {
         id: soundFlagComp
         SoundFlagPopup {
+        }
+    }
+
+    Component {
+        id: staffVisibilityComp
+        StaffVisibilityPopup {
+        }
+    }
+
+    Component {
+        id: dynamicComp
+        DynamicPopup {
+        }
+    }
+
+    Component {
+        id: textStyleComp
+        TextStylePopup {
+        }
+    }
+
+    Component {
+        id: partialTieComp
+        PartialTiePopup {
+        }
+    }
+
+    Component {
+        id: shadowNoteComp
+        ShadowNotePopup {
         }
     }
 }

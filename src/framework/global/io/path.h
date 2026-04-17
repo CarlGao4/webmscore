@@ -19,31 +19,32 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_IO_PATH_H
-#define MU_IO_PATH_H
+#ifndef MUSE_IO_PATH_H
+#define MUSE_IO_PATH_H
 
 #include <string>
 
-#include "types/string.h"
-#include "framework/global/logstream.h"
+#include "global/types/string.h"
+#include "global/logstream.h"
 
 #ifndef NO_QT_SUPPORT
 #include <QString>
 #include <QUrl>
 #endif
 
-namespace mu::io {
+namespace muse::io {
 struct path_t;
 using paths_t = std::vector<path_t>;
 struct path_t {
     path_t() = default;
     path_t(const String& s);
     path_t(const std::string& s);
+    path_t(std::string&& s);
     path_t(const char* s);
 
     bool empty() const;
     size_t size() const;
-    bool withSuffix(const char* str) const;
+    bool hasSuffix(const char* str) const;
 
     path_t appendingComponent(const path_t& other) const;
     path_t appendingSuffix(const path_t& suffix) const;
@@ -67,7 +68,7 @@ struct path_t {
     inline bool operator<(const path_t& other) const { return m_path < other.m_path; }
 
     String toString() const;
-    std::string toStdString() const;
+    const std::string& toStdString() const;
     const char* c_str() const;
 
 #ifndef NO_QT_SUPPORT
@@ -92,7 +93,7 @@ inline path_t operator+(const char* one, const path_t& other) { return path_t(on
 inline path_t operator+(const QString& one, const path_t& other) { return path_t(one) + other; }
 #endif
 
-inline mu::logger::Stream& operator<<(mu::logger::Stream& s, const mu::io::path_t& p)
+inline muse::logger::Stream& operator<<(muse::logger::Stream& s, const muse::io::path_t& p)
 {
     s << p.toStdString();
     return s;
@@ -118,4 +119,4 @@ paths_t pathsFromString(const std::string& str, const std::string& delim = ";");
 std::string pathsToString(const paths_t& ps, const std::string& delim = ";");
 }
 
-#endif // MU_IO_PATH_H
+#endif // MUSE_IO_PATH_H

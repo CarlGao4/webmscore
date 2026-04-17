@@ -19,18 +19,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_ACTIONS_ACTIONSMODULE_H
-#define MU_ACTIONS_ACTIONSMODULE_H
+#ifndef MUSE_ACTIONS_ACTIONSMODULE_H
+#define MUSE_ACTIONS_ACTIONSMODULE_H
 
 #include "modularity/imodulesetup.h"
 
-namespace mu::actions {
+namespace muse::actions {
 class ActionsModule : public modularity::IModuleSetup
 {
 public:
     std::string moduleName() const override;
     void registerExports() override;
+    void registerApi() override;
 };
 }
 
-#endif // MU_ACTIONS_ACTIONSMODULE_H
+#endif // MUSE_ACTIONS_ACTIONSMODULE_H

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -21,15 +21,14 @@
  */
 import QtQuick 2.15
 
-import MuseScore.Ui 1.0
-import MuseScore.UiComponents 1.0
-import MuseScore.Dock 1.0
+import Muse.Ui 1.0
+import Muse.UiComponents 1.0
+import Muse.Dock 1.0
 
+import Muse.Cloud 1.0
+import Muse.Learn 1.0
 import MuseScore.Project 1.0
-import MuseScore.Cloud 1.0
-import MuseScore.Learn 1.0
-
-import "../dockwindow"
+import MuseScore.MuseSounds 1.0
 
 DockPage {
     id: root
@@ -65,8 +64,9 @@ DockPage {
 
         switch (name) {
         case "scores": root.central = scoresComp; break
-        case "plugins": root.central = pluginsComp; break
-        case "audio": root.central = audioComp; break
+        case "plugins": root.central = extensionsComp; break // backward compatibility
+        case "extensions": root.central = extensionsComp; break
+        case "musesounds": root.central = museSoundsComp; break
         case "learn": root.central = learnComp; break
         case "account": root.central = accountComp; break
         }
@@ -118,7 +118,7 @@ DockPage {
     }
 
     Component {
-        id: pluginsComp
+        id: extensionsComp
 
         PluginsPage {
             section: root.subSection
@@ -126,12 +126,9 @@ DockPage {
     }
 
     Component {
-        id: audioComp
+        id: museSoundsComp
 
-        StyledTextLabel {
-            anchors.centerIn: parent
-            text: "Audio & VST"
-        }
+        MuseSoundsPage {}
     }
 
     Component {

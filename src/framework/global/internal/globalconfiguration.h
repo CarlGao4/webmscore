@@ -19,17 +19,22 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_FRAMEWORK_GLOBALCONFIGURATION_H
-#define MU_FRAMEWORK_GLOBALCONFIGURATION_H
+#ifndef MUSE_GLOBAL_GLOBALCONFIGURATION_H
+#define MUSE_GLOBAL_GLOBALCONFIGURATION_H
 
 #include "../iglobalconfiguration.h"
-#include "modularity/ioc.h"
 
-namespace mu::framework {
-class GlobalConfiguration : public IGlobalConfiguration
+#include "modularity/ioc.h"
+#include "../iapplication.h"
+
+namespace muse {
+class GlobalConfiguration : public IGlobalConfiguration, public Injectable
 {
+    Inject<IApplication> application{ this };
+
 public:
-    GlobalConfiguration() = default;
+    GlobalConfiguration(const modularity::ContextPtr& ctx)
+        : Injectable(ctx) {}
 
     void init();
 
@@ -56,6 +61,9 @@ public:
     void setMetricUnit(bool metricUnit) override;
 
     std::string museScoreUrl() const override;
+    std::string museHubWebUrl() const override;
+
+    bool highResolutionTimers() const override;
 
 private:
     QString resolveAppDataPath() const;
@@ -66,4 +74,4 @@ private:
 };
 }
 
-#endif // MU_FRAMEWORK_GLOBALCONFIGURATION_H
+#endif // MUSE_GLOBAL_GLOBALCONFIGURATION_H

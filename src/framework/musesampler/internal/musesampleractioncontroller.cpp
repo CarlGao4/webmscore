@@ -22,25 +22,51 @@
 #include "musesampleractioncontroller.h"
 
 #include "translation.h"
+#include "log.h"
 
-using namespace mu::musesampler;
+using namespace muse::musesampler;
 
-void MuseSamplerActionController::init()
+void MuseSamplerActionController::init(std::weak_ptr<MuseSamplerResolver> resolver)
 {
+    m_museSamplerResolver = resolver;
+
     dispatcher()->reg(this, "musesampler-check", this, &MuseSamplerActionController::checkLibraryIsDetected);
+    dispatcher()->reg(this, "musesampler-reload", this, &MuseSamplerActionController::reloadMuseSampler);
 }
 
 void MuseSamplerActionController::checkLibraryIsDetected()
 {
-    std::string libVersion = museSamplerInfo()->version();
-    std::string status;
-
-    if (libVersion.empty()) {
-        status = trc("musesampler", "Muse Sampler library is not found");
-    } else {
-        status = qtrc("musesampler", "Muse Sampler library is detected, version %1")
-                 .arg(QString::fromStdString(libVersion)).toStdString();
+    std::shared_ptr<MuseSamplerResolver> resolver = m_museSamplerResolver.lock();
+    if (!resolver) {
+        return;
     }
 
-    interactive()->info(status, std::string());
+    const Version& libVersion = resolver->version();
+    String libVersionStr = libVersion.toString();
+
+    if (configuration()->shouldShowBuildNumber() && resolver->buildNumber() >= 0) {
+        libVersionStr += u"." + String::number(resolver->buildNumber());
+    }
+
+    String status;
+
+    if (resolver->isLoaded()) {
+        status = muse::mtrc("musesampler", "MuseSampler library is detected, version %1")
+                 .arg(libVersionStr);
+    } else if (!libVersion.isNull() && libVersion < configuration()->minSupportedVersion()) {
+        status = muse::mtrc("musesampler", "Installed MuseSampler library is not supported, version %1")
+                 .arg(libVersionStr);
+    } else {
+        status = muse::mtrc("musesampler", "MuseSampler library is not found");
+    }
+
+    interactive()->info(status.toStdString(), std::string());
+}
+
+void MuseSamplerActionController::reloadMuseSampler()
+{
+    std::shared_ptr<MuseSamplerResolver> resolver = m_museSamplerResolver.lock();
+    if (resolver && resolver->reloadAllInstruments()) {
+        interactive()->error("", std::string("Could not reload MuseSampler library"));
+    }
 }

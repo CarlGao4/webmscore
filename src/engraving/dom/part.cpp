@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -91,6 +91,10 @@ Part* Part::clone() const
 
 Staff* Part::staff(staff_idx_t idx) const
 {
+    if (idx >= m_staves.size()) {
+        return nullptr;
+    }
+
     return m_staves[idx];
 }
 
@@ -101,7 +105,7 @@ Staff* Part::staff(staff_idx_t idx) const
 String Part::familyId() const
 {
     if (m_instruments.empty()) {
-        return String(u"");
+        return String();
     }
 
     InstrumentIndex ii = searchTemplateIndexForId(instrumentId());
@@ -241,7 +245,7 @@ void Part::insertStaff(Staff* staff, staff_idx_t idx)
 
 void Part::removeStaff(Staff* staff)
 {
-    if (!mu::remove(m_staves, staff)) {
+    if (!muse::remove(m_staves, staff)) {
         LOGD("Part::removeStaff: not found %p", staff);
         return;
     }
@@ -435,7 +439,7 @@ const StringData* Part::stringData(const Fraction& tick, staff_idx_t staffIdx) c
 
     bool reflectTranspositionInLinkedTab = true;
 
-    const Staff* staff = staffIdx != mu::nidx ? score()->staff(staffIdx) : nullptr;
+    const Staff* staff = staffIdx != muse::nidx ? score()->staff(staffIdx) : nullptr;
     if (staff && staff->isTabStaff(tick)) {
         if (const Staff* primaryStaff = staff->primaryStaff()) {
             reflectTranspositionInLinkedTab = primaryStaff->reflectTranspositionInLinkedTab();
@@ -445,7 +449,7 @@ const StringData* Part::stringData(const Fraction& tick, staff_idx_t staffIdx) c
     StringTunings* stringTunings = nullptr;
 
     if (reflectTranspositionInLinkedTab) {
-        auto it = findLessOrEqual(m_stringTunings, tick.ticks());
+        auto it = muse::findLessOrEqual(m_stringTunings, tick.ticks());
         if (it != m_stringTunings.end()) {
             stringTunings = it->second;
         }
@@ -598,6 +602,10 @@ PropertyValue Part::getProperty(Pid id) const
     switch (id) {
     case Pid::VISIBLE:
         return PropertyValue(m_show);
+    case Pid::HIDE_WHEN_EMPTY:
+        return PropertyValue(m_hideWhenEmpty);
+    case Pid::HIDE_STAVES_WHEN_INDIVIDUALLY_EMPTY:
+        return PropertyValue(m_hideStavesWhenIndividuallyEmpty);
     case Pid::USE_DRUMSET:
         return instrument()->useDrumset();
     case Pid::PREFER_SHARP_FLAT:
@@ -616,6 +624,12 @@ bool Part::setProperty(Pid id, const PropertyValue& property)
     switch (id) {
     case Pid::VISIBLE:
         setShow(property.toBool());
+        break;
+    case Pid::HIDE_WHEN_EMPTY:
+        setHideWhenEmpty(property.value<AutoOnOff>());
+        break;
+    case Pid::HIDE_STAVES_WHEN_INDIVIDUALLY_EMPTY:
+        setHideStavesWhenIndividuallyEmpty(property.toBool());
         break;
     case Pid::USE_DRUMSET:
         instrument()->setUseDrumset(property.toBool());
@@ -638,7 +652,7 @@ bool Part::setProperty(Pid id, const PropertyValue& property)
 track_idx_t Part::startTrack() const
 {
     IF_ASSERT_FAILED(!m_staves.empty()) {
-        return mu::nidx;
+        return muse::nidx;
     }
 
     return m_staves.front()->idx() * VOICES;
@@ -651,7 +665,7 @@ track_idx_t Part::startTrack() const
 track_idx_t Part::endTrack() const
 {
     IF_ASSERT_FAILED(!m_staves.empty()) {
-        return mu::nidx;
+        return muse::nidx;
     }
 
     return m_staves.back()->idx() * VOICES + VOICES;

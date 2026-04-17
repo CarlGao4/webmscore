@@ -25,12 +25,42 @@
 
 #include "log.h"
 
-using namespace mu::uicomponents;
+static const QString POPUP_WINDOW_NAME("PopupWindow");
+static const QString POPUP_WINDOW_VIEW_NAME(POPUP_WINDOW_NAME + "_QQuickView");
 
-PopupWindow_QQuickView::PopupWindow_QQuickView(QObject* parent)
-    : IPopupWindow(parent)
+using namespace muse::uicomponents;
+
+static Qt::WindowFlags resolveWindowFlags()
 {
-    setObjectName("PopupWindow");
+    Qt::WindowFlags flags;
+
+    static bool isWayland = qGuiApp->platformName().contains("wayland");
+    if (isWayland) {
+        flags = Qt::Popup;
+    } else {
+        flags = Qt::Tool;
+    }
+
+    static int sIsKde = -1;
+    if (sIsKde == -1) {
+        QString desktop = qEnvironmentVariable("XDG_CURRENT_DESKTOP").toLower();
+        QString session = qEnvironmentVariable("XDG_SESSION_DESKTOP").toLower();
+        sIsKde = desktop.contains("kde") || session.contains("kde");
+    }
+    if (!sIsKde) {
+        flags |= Qt::BypassWindowManagerHint;        // Otherwise, it does not work correctly on Gnome (Linux) when resizing)
+    }
+
+    flags |= Qt::FramelessWindowHint               // Without border
+             | Qt::NoDropShadowWindowHint;          // Without system shadow
+
+    return flags;
+}
+
+PopupWindow_QQuickView::PopupWindow_QQuickView(const modularity::ContextPtr& iocCtx, QObject* parent)
+    : IPopupWindow(parent), muse::Injectable(iocCtx)
+{
+    setObjectName(POPUP_WINDOW_NAME);
 }
 
 PopupWindow_QQuickView::~PopupWindow_QQuickView()
@@ -40,6 +70,8 @@ PopupWindow_QQuickView::~PopupWindow_QQuickView()
 
 void PopupWindow_QQuickView::init(QQmlEngine* engine, bool isDialogMode, bool isFrameless)
 {
+    QQuickWindow::setDefaultAlphaBuffer(!isDialogMode);
+
     //! NOTE: do not set the window when constructing the view
     //! This causes different bugs on different OS (e.g., no transparency for popups on windows)
     m_view = new QQuickView(engine, nullptr);
@@ -48,12 +80,20 @@ void PopupWindow_QQuickView::init(QQmlEngine* engine, bool isDialogMode, bool is
     //! Otherwise, the garbage collector may take ownership of the view and destroy it when we don't expect it
     m_view->QObject::setParent(this);
 
-    m_view->setObjectName("PopupWindow_QQuickView");
+    m_view->setObjectName(POPUP_WINDOW_VIEW_NAME);
     m_view->setResizeMode(QQuickView::SizeRootObjectToView);
+
+    //! NOTE It is important that there is a connection to this signal with an error,
+    //! otherwise the default action will be performed - displaying a message and terminating.
+    //! We will not be able to switch to another backend.
+    QObject::connect(m_view, &QQuickWindow::sceneGraphError, this, [](QQuickWindow::SceneGraphError, const QString& msg) {
+        LOGE() << "[PopupWindow] scene graph error: " << msg;
+    });
 
     // dialog
     if (isDialogMode) {
         m_view->setFlags(Qt::Dialog);
+        m_view->setIcon(QIcon(uiConfiguration()->appIconPath().toString()));
 
         if (isFrameless) {
             m_view->setColor(QColor(Qt::transparent));
@@ -67,23 +107,14 @@ void PopupWindow_QQuickView::init(QQmlEngine* engine, bool isDialogMode, bool is
                 m_view->setColor(QColor(bgColorStr));
             };
 
-            uiConfiguration()->currentThemeChanged().onNotify(this, [updateBackgroundColor]() {
-                updateBackgroundColor();
-            });
+            uiConfiguration()->currentThemeChanged().onNotify(this, updateBackgroundColor);
 
             updateBackgroundColor();
         }
     }
     // popup
     else {
-        Qt::WindowFlags flags(
-            Qt::Tool
-            | Qt::FramelessWindowHint            // Without border
-            | Qt::NoDropShadowWindowHint         // Without system shadow
-            | Qt::BypassWindowManagerHint        // Otherwise, it does not work correctly on Gnome (Linux) when resizing)
-            );
-
-        m_view->setFlags(flags);
+        m_view->setFlags(resolveWindowFlags());
         m_view->setColor(QColor(Qt::transparent));
     }
 
@@ -102,7 +133,7 @@ void PopupWindow_QQuickView::setContent(QQmlComponent* component, QQuickItem* it
     m_view->setContent(QUrl(), component, item);
     m_view->setObjectName(item->objectName() + "_(PopupWindow_QQuickView)");
 
-    connect(item, &QQuickItem::implicitWidthChanged, [this, item]() {
+    connect(item, &QQuickItem::implicitWidthChanged, this, [this, item]() {
         if (!m_view->isVisible()) {
             return;
         }
@@ -111,7 +142,7 @@ void PopupWindow_QQuickView::setContent(QQmlComponent* component, QQuickItem* it
         }
     });
 
-    connect(item, &QQuickItem::implicitHeightChanged, [this, item]() {
+    connect(item, &QQuickItem::implicitHeightChanged, this, [this, item]() {
         if (!m_view->isVisible()) {
             return;
         }
@@ -126,6 +157,9 @@ void PopupWindow_QQuickView::forceActiveFocus()
     if (!m_view) {
         return;
     }
+
+    m_view->setFlags(m_view->flags() & (~Qt::WindowDoesNotAcceptFocus));
+    m_view->requestActivate();
 
     QQuickItem* rootObject = m_view->rootObject();
     if (!rootObject) {
@@ -167,7 +201,7 @@ void PopupWindow_QQuickView::show(QScreen* screen, QRect geometry, bool activate
     updateSize(QSize(item->implicitWidth(), item->implicitHeight()));
 
     if (activateFocus) {
-        QTimer::singleShot(0, [this]() {
+        QTimer::singleShot(0, this, [this]() {
             forceActiveFocus();
         });
     }
@@ -235,26 +269,45 @@ void PopupWindow_QQuickView::setPosition(const QPoint& position) const
     m_view->setPosition(position);
 }
 
+bool PopupWindow_QQuickView::hasActiveFocus() const
+{
+    return m_view && m_view->activeFocusItem() != nullptr;
+}
+
 void PopupWindow_QQuickView::setOnHidden(const std::function<void()>& callback)
 {
     m_onHidden = callback;
 }
 
+void PopupWindow_QQuickView::setTakeFocusOnClick(bool takeFocusOnClick)
+{
+    m_takeFocusOnClick = takeFocusOnClick;
+}
+
 bool PopupWindow_QQuickView::eventFilter(QObject* watched, QEvent* event)
 {
     if (watched == m_view) {
-        if (event->type() == QEvent::Hide) {
+        switch (event->type()) {
+        case QEvent::Hide:
             if (m_onHidden) {
                 m_onHidden();
             }
-        }
-
-        if (event->type() == QEvent::FocusIn) {
+            break;
+        case QEvent::FocusIn:
             m_view->rootObject()->forceActiveFocus();
-        }
-
-        if (event->type() == QEvent::MouseButtonPress) {
-            forceActiveFocus();
+            break;
+        case QEvent::FocusOut:
+            if (!m_takeFocusOnClick) {
+                // Undo what's done in TextInput{Field,Area}.qml ensureActiveFocus
+                m_view->setFlag(Qt::WindowDoesNotAcceptFocus);
+            }
+            break;
+        case QEvent::MouseButtonPress:
+            if (m_takeFocusOnClick) {
+                forceActiveFocus();
+            }
+            break;
+        default: break;
         }
     }
 

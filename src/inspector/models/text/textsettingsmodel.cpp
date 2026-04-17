@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -41,13 +41,17 @@ TextSettingsModel::TextSettingsModel(QObject* parent, IElementRepositoryService*
     : AbstractInspectorModel(parent, repository)
 {
     setSectionType(InspectorSectionType::SECTION_TEXT);
-    setTitle(qtrc("inspector", "Text"));
+    setTitle(muse::qtrc("inspector", "Text"));
     createProperties();
 
     isTextEditingChanged().onNotify(this, [this]() {
         loadProperties();
         setIsSpecialCharactersInsertionAvailable(isTextEditingStarted());
+        updateTextPropertiesAvailability();
     });
+
+    setIsSpecialCharactersInsertionAvailable(isTextEditingStarted());
+    updateTextPropertiesAvailability();
 }
 
 void TextSettingsModel::createProperties()
@@ -72,6 +76,7 @@ void TextSettingsModel::createProperties()
         emit requestReloadPropertyItems();
     });
 
+    m_symbolSize = buildPropertyItem(mu::engraving::Pid::MUSIC_SYMBOL_SIZE);
     m_isSizeSpatiumDependent = buildPropertyItem(mu::engraving::Pid::SIZE_SPATIUM_DEPENDENT);
 
     m_frameType = buildPropertyItem(mu::engraving::Pid::FRAME_TYPE, [this](const mu::engraving::Pid pid, const QVariant& newValue) {
@@ -86,7 +91,10 @@ void TextSettingsModel::createProperties()
     m_frameMargin = buildPropertyItem(mu::engraving::Pid::FRAME_PADDING);
     m_frameCornerRadius = buildPropertyItem(mu::engraving::Pid::FRAME_ROUND);
 
-    m_textType = buildPropertyItem(mu::engraving::Pid::TEXT_STYLE);
+    m_textType = buildPropertyItem(mu::engraving::Pid::TEXT_STYLE, [this](const mu::engraving::Pid pid, const QVariant& newValue) {
+        onPropertyValueChanged(pid, newValue);
+        emit requestReloadPropertyItems();
+    });
     m_textPlacement = buildPropertyItem(mu::engraving::Pid::PLACEMENT);
     m_textScriptAlignment = buildPropertyItem(mu::engraving::Pid::TEXT_SCRIPT_ALIGN);
 }
@@ -98,60 +106,123 @@ void TextSettingsModel::requestElements()
 
 void TextSettingsModel::loadProperties()
 {
-    loadPropertyItem(m_fontFamily, [](const QVariant& elementPropertyValue) -> QVariant {
-        return elementPropertyValue.toString() == mu::engraving::TextBase::UNDEFINED_FONT_FAMILY
-               ? QVariant() : elementPropertyValue.toString();
-    });
+    static const PropertyIdSet propertyIdSet {
+        Pid::FONT_FACE,
+        Pid::FONT_STYLE,
+        Pid::FONT_SIZE,
+        Pid::TEXT_LINE_SPACING,
+        Pid::ALIGN,
+        Pid::MUSIC_SYMBOL_SIZE,
+        Pid::TEXT_SIZE_SPATIUM_DEPENDENT,
+        Pid::FRAME_TYPE,
+        Pid::FRAME_BG_COLOR,
+        Pid::FRAME_FG_COLOR,
+        Pid::FRAME_WIDTH,
+        Pid::FRAME_PADDING,
+        Pid::FRAME_ROUND,
+        Pid::TEXT_STYLE,
+        Pid::PLACEMENT,
+        Pid::TEXT_SCRIPT_ALIGN
+    };
 
-    m_fontFamily->setIsEnabled(true);
+    loadProperties(propertyIdSet);
+}
 
-    loadPropertyItem(m_fontStyle, [](const QVariant& elementPropertyValue) -> QVariant {
-        return elementPropertyValue.toInt() == static_cast<int>(mu::engraving::FontStyle::Undefined)
-               ? QVariant() : elementPropertyValue.toInt();
-    });
+void TextSettingsModel::loadProperties(const PropertyIdSet& propertyIdSet)
+{
+    if (muse::contains(propertyIdSet, Pid::FONT_FACE)) {
+        loadPropertyItem(m_fontFamily, [](const QVariant& elementPropertyValue) -> QVariant {
+            return elementPropertyValue.toString() == mu::engraving::TextBase::UNDEFINED_FONT_FAMILY
+                   ? QVariant() : elementPropertyValue.toString();
+        });
 
-    m_fontStyle->setIsEnabled(true);
+        m_fontFamily->setIsEnabled(true);
+    }
 
-    loadPropertyItem(m_fontSize, [](const QVariant& elementPropertyValue) -> QVariant {
-        return RealIsEqual(elementPropertyValue.toDouble(), mu::engraving::TextBase::UNDEFINED_FONT_SIZE)
-               ? QVariant() : elementPropertyValue.toDouble();
-    });
+    if (muse::contains(propertyIdSet, Pid::FONT_STYLE)) {
+        loadPropertyItem(m_fontStyle, [](const QVariant& elementPropertyValue) -> QVariant {
+            return elementPropertyValue.toInt() == static_cast<int>(mu::engraving::FontStyle::Undefined)
+                   ? QVariant() : elementPropertyValue.toInt();
+        });
 
-    m_fontSize->setIsEnabled(true);
+        m_fontStyle->setIsEnabled(true);
+    }
 
-    loadPropertyItem(m_textLineSpacing, formatDoubleFunc);
+    if (muse::contains(propertyIdSet, Pid::FONT_SIZE)) {
+        loadPropertyItem(m_fontSize, [](const QVariant& elementPropertyValue) -> QVariant {
+            return muse::RealIsEqual(elementPropertyValue.toDouble(), mu::engraving::TextBase::UNDEFINED_FONT_SIZE)
+                   ? QVariant() : elementPropertyValue.toDouble();
+        });
 
-    loadPropertyItem(m_horizontalAlignment, [](const QVariant& elementPropertyValue) -> QVariant {
-        QVariantList list = elementPropertyValue.toList();
-        return list.size() >= 2 ? list[0] : QVariant();
-    });
+        m_fontSize->setIsEnabled(true);
+    }
 
-    loadPropertyItem(m_verticalAlignment, [](const QVariant& elementPropertyValue) -> QVariant {
-        QVariantList list = elementPropertyValue.toList();
-        return list.size() >= 2 ? list[1] : QVariant();
-    });
+    if (muse::contains(propertyIdSet, Pid::TEXT_LINE_SPACING)) {
+        loadPropertyItem(m_textLineSpacing, formatDoubleFunc);
+    }
 
-    loadPropertyItem(m_isSizeSpatiumDependent);
+    if (muse::contains(propertyIdSet, Pid::ALIGN)) {
+        loadPropertyItem(m_horizontalAlignment, [](const QVariant& elementPropertyValue) -> QVariant {
+            QVariantList list = elementPropertyValue.toList();
+            return list.size() >= 2 ? list[0] : QVariant();
+        });
 
-    loadPropertyItem(m_frameType);
-    loadPropertyItem(m_frameBorderColor);
-    loadPropertyItem(m_frameFillColor);
+        loadPropertyItem(m_verticalAlignment, [](const QVariant& elementPropertyValue) -> QVariant {
+            QVariantList list = elementPropertyValue.toList();
+            return list.size() >= 2 ? list[1] : QVariant();
+        });
+    }
 
-    loadPropertyItem(m_frameThickness, formatDoubleFunc);
-    loadPropertyItem(m_frameMargin, formatDoubleFunc);
-    loadPropertyItem(m_frameCornerRadius, formatDoubleFunc);
+    if (muse::contains(propertyIdSet, Pid::MUSIC_SYMBOL_SIZE)) {
+        loadPropertyItem(m_symbolSize);
+    }
 
-    loadPropertyItem(m_textType);
-    loadPropertyItem(m_textPlacement);
-    loadPropertyItem(m_textScriptAlignment, [](const QVariant& elementPropertyValue) -> QVariant {
-        return elementPropertyValue.toInt() == static_cast<int>(mu::engraving::VerticalAlignment::AlignUndefined)
-               ? QVariant() : elementPropertyValue.toInt();
-    });
+    if (muse::contains(propertyIdSet, Pid::TEXT_SIZE_SPATIUM_DEPENDENT)) {
+        loadPropertyItem(m_isSizeSpatiumDependent);
+    }
 
+    if (muse::contains(propertyIdSet, Pid::FRAME_TYPE)) {
+        loadPropertyItem(m_frameType);
+    }
+    if (muse::contains(propertyIdSet, Pid::FRAME_FG_COLOR)) {
+        loadPropertyItem(m_frameBorderColor);
+    }
+    if (muse::contains(propertyIdSet, Pid::FRAME_BG_COLOR)) {
+        loadPropertyItem(m_frameFillColor);
+    }
+
+    if (muse::contains(propertyIdSet, Pid::FRAME_WIDTH)) {
+        loadPropertyItem(m_frameThickness, formatDoubleFunc);
+    }
+    if (muse::contains(propertyIdSet, Pid::FRAME_PADDING)) {
+        loadPropertyItem(m_frameMargin, formatDoubleFunc);
+    }
+    if (muse::contains(propertyIdSet, Pid::FRAME_ROUND)) {
+        loadPropertyItem(m_frameCornerRadius, formatDoubleFunc);
+    }
+
+    if (muse::contains(propertyIdSet, Pid::TEXT_STYLE)) {
+        loadPropertyItem(m_textType);
+    }
+    if (muse::contains(propertyIdSet, Pid::PLACEMENT)) {
+        loadPropertyItem(m_textPlacement);
+    }
+    if (muse::contains(propertyIdSet, Pid::TEXT_SCRIPT_ALIGN)) {
+        loadPropertyItem(m_textScriptAlignment, [](const QVariant& elementPropertyValue) -> QVariant {
+            return elementPropertyValue.toInt() == static_cast<int>(mu::engraving::VerticalAlignment::AlignUndefined)
+                   ? QVariant() : elementPropertyValue.toInt();
+        });
+    }
+
+    updateTextPropertiesAvailability();
     updateFramePropertiesAvailability();
     updateStaffPropertiesAvailability();
     updateIsDynamicSpecificSettings();
     updateIsHorizontalAlignmentAvailable();
+    updateIsSystemObjectBelowBottomStaff();
+    updateIsSymbolSizeAvailable();
+    updateIsScriptSizeAvailable();
+    updateIsLineSpacingAvailable();
 }
 
 void TextSettingsModel::resetProperties()
@@ -161,6 +232,7 @@ void TextSettingsModel::resetProperties()
     m_fontSize->resetToDefault();
     m_textLineSpacing->resetToDefault();
     m_isSizeSpatiumDependent->resetToDefault();
+    m_symbolSize->resetToDefault();
 
     m_frameType->resetToDefault();
     m_frameBorderColor->resetToDefault();
@@ -176,6 +248,8 @@ void TextSettingsModel::resetProperties()
 
 void TextSettingsModel::onNotationChanged(const PropertyIdSet& changedProperyIds, const StyleIdSet& changedStyleIds)
 {
+    loadProperties(changedProperyIds);
+
     for (Sid s : {
         Sid::user1Name,
         Sid::user2Name,
@@ -193,15 +267,9 @@ void TextSettingsModel::onNotationChanged(const PropertyIdSet& changedProperyIds
         if (changedStyleIds.find(s) != changedStyleIds.cend()) {
             m_textStyles.clear();
             emit textStylesChanged();
-            return;
+            break;
         }
     }
-
-    if (mu::contains(changedProperyIds, Pid::PLACEMENT)) {
-        loadPropertyItem(m_textPlacement);
-    }
-
-    updateIsHorizontalAlignmentAvailable();
 }
 
 void TextSettingsModel::insertSpecialCharacters()
@@ -242,6 +310,11 @@ PropertyItem* TextSettingsModel::horizontalAlignment() const
 PropertyItem* TextSettingsModel::verticalAlignment() const
 {
     return m_verticalAlignment;
+}
+
+PropertyItem* TextSettingsModel::symbolSize() const
+{
+    return m_symbolSize;
 }
 
 PropertyItem* TextSettingsModel::isSizeSpatiumDependent() const
@@ -316,6 +389,11 @@ QVariantList TextSettingsModel::textStyles()
     return m_textStyles;
 }
 
+bool TextSettingsModel::areTextPropertiesAvailable() const
+{
+    return m_areTextPropertiesAvailable;
+}
+
 bool TextSettingsModel::areStaffTextPropertiesAvailable() const
 {
     return m_areStaffTextPropertiesAvailable;
@@ -334,6 +412,31 @@ bool TextSettingsModel::isDynamicSpecificSettings() const
 bool TextSettingsModel::isHorizontalAlignmentAvailable() const
 {
     return m_isHorizontalAlignmentAvailable;
+}
+
+bool TextSettingsModel::isSymbolSizeAvailable() const
+{
+    return m_isSymbolSizeAvailable;
+}
+
+bool TextSettingsModel::isScriptSizeAvailable() const
+{
+    return m_isScriptSizeAvailable;
+}
+
+bool TextSettingsModel::isLineSpacingAvailable() const
+{
+    return m_isLineSpacingAvailable;
+}
+
+void TextSettingsModel::setAreTextPropertiesAvailable(bool areTextPropertiesAvailable)
+{
+    if (m_areTextPropertiesAvailable == areTextPropertiesAvailable) {
+        return;
+    }
+
+    m_areTextPropertiesAvailable = areTextPropertiesAvailable;
+    emit areTextPropertiesAvailableChanged(m_areTextPropertiesAvailable);
 }
 
 void TextSettingsModel::setAreStaffTextPropertiesAvailable(bool areStaffTextPropertiesAvailable)
@@ -374,6 +477,36 @@ void TextSettingsModel::setIsHorizontalAlignmentAvailable(bool isHorizontalAlign
 
     m_isHorizontalAlignmentAvailable = isHorizontalAlignmentAvailable;
     emit isHorizontalAlignmentAvailableChanged(m_isHorizontalAlignmentAvailable);
+}
+
+void TextSettingsModel::setIsSymbolSizeAvailable(bool isSymbolSizeAvailable)
+{
+    if (isSymbolSizeAvailable == m_isSymbolSizeAvailable) {
+        return;
+    }
+
+    m_isSymbolSizeAvailable = isSymbolSizeAvailable;
+    emit isSymbolSizeAvailableChanged(m_isSymbolSizeAvailable);
+}
+
+void TextSettingsModel::setIsScriptSizeAvailable(bool isScriptSizeAvailable)
+{
+    if (isScriptSizeAvailable == m_isScriptSizeAvailable) {
+        return;
+    }
+
+    m_isScriptSizeAvailable = isScriptSizeAvailable;
+    emit isScriptSizeAvailableChanged(m_isScriptSizeAvailable);
+}
+
+void TextSettingsModel::setIsLineSpacingAvailable(bool isLineSpacingAvailable)
+{
+    if (isLineSpacingAvailable == m_isLineSpacingAvailable) {
+        return;
+    }
+
+    m_isLineSpacingAvailable = isLineSpacingAvailable;
+    emit isLineSpacingAvailableChanged(m_isLineSpacingAvailable);
 }
 
 void TextSettingsModel::updateFramePropertiesAvailability()
@@ -422,6 +555,48 @@ void TextSettingsModel::updateIsHorizontalAlignmentAvailable()
     setIsHorizontalAlignmentAvailable(available);
 }
 
+void TextSettingsModel::updateIsSymbolSizeAvailable()
+{
+    bool available = false;
+    for (EngravingItem* item : m_elementList) {
+        if (!item->isTextBase()) {
+            continue;
+        }
+
+        if (toTextBase(item)->hasSymbolSize()) {
+            available = true;
+            break;
+        }
+    }
+    setIsSymbolSizeAvailable(available);
+}
+
+void TextSettingsModel::updateIsScriptSizeAvailable()
+{
+    bool available = true;
+    for (EngravingItem* item : m_elementList) {
+        if (item->isHarmony()) {
+            available = false;
+            break;
+        }
+    }
+
+    setIsScriptSizeAvailable(available);
+}
+
+void TextSettingsModel::updateIsLineSpacingAvailable()
+{
+    bool available = true;
+    for (EngravingItem* item : m_elementList) {
+        if (item->isHarmony()) {
+            available = false;
+            break;
+        }
+    }
+
+    setIsLineSpacingAvailable(available);
+}
+
 bool TextSettingsModel::isTextEditingStarted() const
 {
     IF_ASSERT_FAILED(context() && context()->currentNotation()) {
@@ -431,11 +606,23 @@ bool TextSettingsModel::isTextEditingStarted() const
     return context()->currentNotation()->interaction()->isTextEditingStarted();
 }
 
-mu::async::Notification TextSettingsModel::isTextEditingChanged() const
+muse::async::Notification TextSettingsModel::isTextEditingChanged() const
 {
     IF_ASSERT_FAILED(context() && context()->currentNotation()) {
-        return mu::async::Notification();
+        return muse::async::Notification();
     }
 
     return context()->currentNotation()->interaction()->textEditingChanged();
+}
+
+void TextSettingsModel::updateTextPropertiesAvailability()
+{
+    bool available = true;
+    for (EngravingItem* item : m_elementList) {
+        if (item->isHarmony() && isTextEditingStarted()) {
+            available = false;
+        }
+    }
+
+    setAreTextPropertiesAvailable(available);
 }

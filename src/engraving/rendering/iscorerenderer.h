@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2023 MuseScore BVBA and others
+ * Copyright (C) 2023 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -19,16 +19,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_ENGRAVING_ISCORERENDERER_H
-#define MU_ENGRAVING_ISCORERENDERER_H
+#pragma once
 
 #include <variant>
 
 #include "modularity/imoduleinterface.h"
-#include "draw/types/geometry.h"
-#include "types/fraction.h"
 
-namespace mu::draw {
+#include "../types/types.h"
+
+namespace muse::draw {
 class Painter;
 }
 
@@ -55,11 +54,15 @@ class EngravingItem;
 
 class FiguredBassItem;
 
+class FretDiagram;
+
 class Harmony;
 
 class Image;
 
-enum class KerningType;
+class IndicatorIcon;
+
+enum class KerningType : unsigned char;
 class KeySig;
 
 class LedgerLine;
@@ -69,18 +72,23 @@ class Lyrics;
 
 class NoteDot;
 
+class Parenthesis;
+
 class Rest;
 
 class ShadowNote;
 class Spanner;
 class Slur;
+class SlurSegment;
 class SlurTie;
+class Spacer;
 class StaffText;
 class Stem;
 
 class TextBase;
 class Text;
 class TextLineBaseSegment;
+class TieSegment;
 class TimeSig;
 }
 
@@ -109,14 +117,14 @@ public:
         int trimMarginPixelSize = -1;
         int deviceDpi = -1;
 
-        std::function<void(draw::Painter* painter, const Page* page, const RectF& pageRect)> onPaintPageSheet;
+        std::function<void(muse::draw::Painter* painter, const Page* page, const RectF& pageRect)> onPaintPageSheet;
         std::function<void()> onNewPage;
     };
 
     virtual SizeF pageSizeInch(const Score* score) const = 0;
     virtual SizeF pageSizeInch(const Score* score, const PaintOptions& opt) const = 0;
-    virtual void paintScore(draw::Painter* painter, Score* score, const IScoreRenderer::PaintOptions& opt) const = 0;
-    virtual void paintItem(draw::Painter& painter, const EngravingItem* item) const = 0;
+    virtual void paintScore(muse::draw::Painter* painter, Score* score, const IScoreRenderer::PaintOptions& opt) const = 0;
+    virtual void paintItem(muse::draw::Painter& painter, const EngravingItem* item) const = 0;
 
     // Temporary compatibility interface
     using Supported = std::variant<std::monostate,
@@ -129,19 +137,23 @@ public:
                                    Clef*,
                                    Dynamic*,
                                    FiguredBassItem*,
+                                   FretDiagram*,
                                    Harmony*,
                                    Image*,
+                                   IndicatorIcon*,
                                    KeySig*,
                                    LedgerLine*,
                                    SLine*,
                                    LineSegment*,
                                    Lyrics*,
                                    NoteDot*,
+                                   Parenthesis*,
                                    Rest*,
                                    ShadowNote*,
                                    Spanner*,
                                    Slur*,
                                    SlurTie*,
+                                   Spacer*,
                                    StaffText*,
                                    Stem*,
                                    TextBase*,
@@ -178,17 +190,18 @@ public:
     // Layout Text 1
     virtual void layoutText1(TextBase* item, bool base = false) = 0;
 
-    void drawItem(const EngravingItem* item, draw::Painter* p)
+    void drawItem(const EngravingItem* item, muse::draw::Painter* p)
     {
         doDrawItem(item, p);
     }
+
+    virtual void computeBezier(TieSegment* tieSeg, PointF shoulderOffset = PointF()) = 0;
+    virtual void computeBezier(SlurSegment* slurSeg, PointF shoulderOffser = PointF()) = 0;
 
 private:
     // Layout Single Item
     virtual void doLayoutItem(EngravingItem* item) = 0;
 
-    virtual void doDrawItem(const EngravingItem* item, draw::Painter* p) = 0;
+    virtual void doDrawItem(const EngravingItem* item, muse::draw::Painter* p) = 0;
 };
 }
-
-#endif // MU_ENGRAVING_ISCORERENDERER_H

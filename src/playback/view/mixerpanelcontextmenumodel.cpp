@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -26,10 +26,11 @@
 
 using namespace mu;
 using namespace mu::playback;
-using namespace mu::ui;
-using namespace mu::uicomponents;
-using namespace mu::actions;
-using namespace mu::audio;
+using namespace muse;
+using namespace muse::ui;
+using namespace muse::uicomponents;
+using namespace muse::actions;
+using namespace muse::audio;
 
 static const ActionCode TOGGLE_MIXER_SECTION_ACTION("toggle-mixer-section");
 static const ActionCode TOGGLE_AUX_SEND_ACTION("toggle-aux-send");
@@ -127,6 +128,22 @@ void MixerPanelContextMenuModel::load()
     dispatcher()->reg(this, TOGGLE_MIXER_SECTION_ACTION, this, &MixerPanelContextMenuModel::toggleMixerSection);
     dispatcher()->reg(this, TOGGLE_AUX_SEND_ACTION, this, &MixerPanelContextMenuModel::toggleAuxSend);
     dispatcher()->reg(this, TOGGLE_AUX_CHANNEL_ACTION, this, &MixerPanelContextMenuModel::toggleAuxChannel);
+
+    configuration()->isAuxSendVisibleChanged().onReceive(this, [this](aux_channel_idx_t auxSendIndex, bool newVisibilityValue) {
+        setViewMenuItemChecked(auxSendVisibleMenuItemId(auxSendIndex), newVisibilityValue);
+
+        emit auxSendsSectionVisibleChanged();
+    });
+
+    configuration()->isAuxChannelVisibleChanged().onReceive(this, [this](aux_channel_idx_t auxChannelIndex, bool newVisibilityValue) {
+        setViewMenuItemChecked(auxChannelVisibleMenuItemId(auxChannelIndex), newVisibilityValue);
+    });
+
+    configuration()->isMixerSectionVisibleChanged().onReceive(this, [this](MixerSectionType sectionType, bool newVisibilityValue) {
+        setViewMenuItemChecked(QString::number(static_cast<int>(sectionType)), newVisibilityValue);
+
+        emitMixerSectionVisibilityChanged(sectionType);
+    });
 
     MenuItemList viewMenuItems {
         buildSectionVisibleItem(MixerSectionType::Labels),
@@ -234,7 +251,48 @@ void MixerPanelContextMenuModel::toggleMixerSection(const ActionData& args)
 
     bool newVisibilityValue = !isSectionVisible(sectionType);
     configuration()->setMixerSectionVisible(sectionType, newVisibilityValue);
+}
 
+void MixerPanelContextMenuModel::toggleAuxSend(const ActionData& args)
+{
+    if (args.empty()) {
+        return;
+    }
+
+    aux_channel_idx_t auxSendIndex = static_cast<aux_channel_idx_t>(args.arg<int>(0));
+    bool newVisibilityValue = !configuration()->isAuxSendVisible(auxSendIndex);
+
+    configuration()->setAuxSendVisible(auxSendIndex, newVisibilityValue);
+}
+
+void MixerPanelContextMenuModel::toggleAuxChannel(const ActionData& args)
+{
+    if (args.empty()) {
+        return;
+    }
+
+    aux_channel_idx_t auxChannelIndex = static_cast<aux_channel_idx_t>(args.arg<int>(0));
+    bool newVisibilityValue = !configuration()->isAuxChannelVisible(auxChannelIndex);
+
+    configuration()->setAuxChannelVisible(auxChannelIndex, newVisibilityValue);
+}
+
+void MixerPanelContextMenuModel::setViewMenuItemChecked(const QString& itemId, bool checked)
+{
+    MenuItem& viewMenu = findMenu(VIEW_MENU_ID);
+
+    for (MenuItem* item : viewMenu.subitems()) {
+        if (item->id() == itemId) {
+            UiActionState state = item->state();
+            state.checked = checked;
+            item->setState(state);
+            return;
+        }
+    }
+}
+
+void MixerPanelContextMenuModel::emitMixerSectionVisibilityChanged(MixerSectionType sectionType)
+{
     switch (sectionType) {
     case MixerSectionType::Labels:
         emit labelsSectionVisibleChanged();
@@ -262,49 +320,5 @@ void MixerPanelContextMenuModel::toggleMixerSection(const ActionData& args)
         break;
     case MixerSectionType::Unknown:
         break;
-    }
-
-    setViewMenuItemChecked(QString::number(sectionTypeInt), newVisibilityValue);
-}
-
-void MixerPanelContextMenuModel::toggleAuxSend(const ActionData& args)
-{
-    if (args.empty()) {
-        return;
-    }
-
-    aux_channel_idx_t auxSendIndex = static_cast<aux_channel_idx_t>(args.arg<int>(0));
-    bool newVisibilityValue = !configuration()->isAuxSendVisible(auxSendIndex);
-
-    configuration()->setAuxSendVisible(auxSendIndex, newVisibilityValue);
-    setViewMenuItemChecked(auxSendVisibleMenuItemId(auxSendIndex), newVisibilityValue);
-
-    emit auxSendsSectionVisibleChanged();
-}
-
-void MixerPanelContextMenuModel::toggleAuxChannel(const actions::ActionData& args)
-{
-    if (args.empty()) {
-        return;
-    }
-
-    aux_channel_idx_t auxChannelIndex = static_cast<aux_channel_idx_t>(args.arg<int>(0));
-    bool newVisibilityValue = !configuration()->isAuxChannelVisible(auxChannelIndex);
-
-    configuration()->setAuxChannelVisible(auxChannelIndex, newVisibilityValue);
-    setViewMenuItemChecked(auxChannelVisibleMenuItemId(auxChannelIndex), newVisibilityValue);
-}
-
-void MixerPanelContextMenuModel::setViewMenuItemChecked(const QString& itemId, bool checked)
-{
-    MenuItem& viewMenu = findMenu(VIEW_MENU_ID);
-
-    for (MenuItem* item : viewMenu.subitems()) {
-        if (item->id() == itemId) {
-            UiActionState state = item->state();
-            state.checked = checked;
-            item->setState(state);
-            return;
-        }
     }
 }

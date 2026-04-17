@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -28,14 +28,14 @@
 
 using namespace mu::inspector;
 
-using Icon = mu::ui::IconCode::Code;
+using Icon = muse::ui::IconCode::Code;
 
 TupletSettingsModel::TupletSettingsModel(QObject* parent, IElementRepositoryService* repository)
     : AbstractInspectorModel(parent, repository, mu::engraving::ElementType::TUPLET)
 {
     setModelType(InspectorModelType::TYPE_TUPLET);
-    setTitle(qtrc("inspector", "Tuplet"));
-    setIcon(ui::IconCode::Code::TUPLET_NUMBER_WITH_BRACKETS);
+    setTitle(muse::qtrc("inspector", "Tuplet"));
+    setIcon(muse::ui::IconCode::Code::TUPLET_NUMBER_WITH_BRACKETS);
     createProperties();
 }
 
@@ -64,9 +64,9 @@ QVariantList TupletSettingsModel::possibleNumberTypes() const
     using Type = mu::engraving::TupletNumberType;
 
     QVariantList types {
-        object(Type::SHOW_NUMBER, qtrc("inspector", "Number")),
-        object(Type::SHOW_RELATION, qtrc("inspector", "Ratio")),
-        object(Type::NO_TEXT, qtrc("inspector", "None"))
+        object(Type::SHOW_NUMBER, muse::qtrc("inspector", "Number")),
+        object(Type::SHOW_RELATION, muse::qtrc("inspector", "Ratio")),
+        object(Type::NO_TEXT, muse::qtrc("inspector", "None"))
     };
 
     return types;
@@ -77,9 +77,9 @@ QVariantList TupletSettingsModel::possibleBracketTypes() const
     using Type = mu::engraving::TupletBracketType;
 
     QVariantList types {
-        object(Type::AUTO_BRACKET, qtrc("inspector", "Auto")),
-        object(Type::SHOW_BRACKET, qtrc("inspector", "Bracket"), Icon::TUPLET_NUMBER_WITH_BRACKETS),
-        object(Type::SHOW_NO_BRACKET, qtrc("inspector", "None"), Icon::TUPLET_NUMBER_ONLY)
+        object(Type::AUTO_BRACKET, muse::qtrc("inspector", "Auto")),
+        object(Type::SHOW_BRACKET, muse::qtrc("inspector", "Bracket"), Icon::TUPLET_NUMBER_WITH_BRACKETS),
+        object(Type::SHOW_NO_BRACKET, muse::qtrc("inspector", "None"), Icon::TUPLET_NUMBER_ONLY)
     };
 
     return types;

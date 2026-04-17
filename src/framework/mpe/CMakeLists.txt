@@ -18,7 +18,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-set(MODULE mpe)
+declare_module(muse_mpe)
+set(MODULE_ALIAS muse::mpe)
 
 set(MODULE_SRC
     ${CMAKE_CURRENT_LIST_DIR}/mpemodule.cpp
@@ -45,8 +46,12 @@ set(MODULE_QRC mpe.qrc)
 
 set(MODULE_QML_IMPORT ${CMAKE_CURRENT_LIST_DIR}/qml)
 
-include(SetupModule)
+if (QT_SUPPORT)
+    list(APPEND MODULE_LINK Qt::Qml)
+endif()
 
-if (MUE_BUILD_UNIT_TESTS)
+setup_module()
+
+if (MUSE_MODULE_MPE_TESTS)
     add_subdirectory(tests)
 endif()

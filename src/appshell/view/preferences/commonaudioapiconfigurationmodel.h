@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2025 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -19,8 +19,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_APPSHELL_COMMONAUDIOAPICONFIGURATIONMODEL_H
-#define MU_APPSHELL_COMMONAUDIOAPICONFIGURATIONMODEL_H
+
+#pragma once
 
 #include <QObject>
 
@@ -28,10 +28,10 @@
 
 #include "modularity/ioc.h"
 #include "audio/iaudioconfiguration.h"
-#include "audio/iaudiodriver.h"
+#include "audio/iaudiodrivercontroller.h"
 
 namespace mu::appshell {
-class CommonAudioApiConfigurationModel : public QObject, public async::Asyncable
+class CommonAudioApiConfigurationModel : public QObject, public muse::Injectable, public muse::async::Asyncable
 {
     Q_OBJECT
 
@@ -41,8 +41,11 @@ class CommonAudioApiConfigurationModel : public QObject, public async::Asyncable
     Q_PROPERTY(unsigned int bufferSize READ bufferSize NOTIFY bufferSizeChanged)
     Q_PROPERTY(QList<unsigned int> bufferSizeList READ bufferSizeList NOTIFY bufferSizeListChanged)
 
-    INJECT(audio::IAudioConfiguration, audioConfiguration)
-    INJECT(audio::IAudioDriver, audioDriver)
+    Q_PROPERTY(unsigned int sampleRate READ sampleRate NOTIFY sampleRateChanged)
+    Q_PROPERTY(QList<unsigned int> sampleRateList READ sampleRateList NOTIFY sampleRateListChanged)
+
+    muse::Inject<muse::audio::IAudioConfiguration> audioConfiguration = { this };
+    muse::Inject<muse::audio::IAudioDriverController> audioDriverController = { this };
 
 public:
     explicit CommonAudioApiConfigurationModel(QObject* parent = nullptr);
@@ -57,13 +60,21 @@ public:
     QList<unsigned int> bufferSizeList() const;
     Q_INVOKABLE void bufferSizeSelected(const QString& bufferSizeStr);
 
+    unsigned int sampleRate() const;
+    QList<unsigned int> sampleRateList() const;
+    Q_INVOKABLE void sampleRateSelected(const QString& sampleRateStr);
+
 signals:
     void currentDeviceIdChanged();
     void deviceListChanged();
 
+    void sampleRateChanged();
+    void sampleRateListChanged();
+
     void bufferSizeChanged();
     void bufferSizeListChanged();
+
+private:
+    muse::audio::IAudioDriverPtr audioDriver() const;
 };
 }
-
-#endif // MU_APPSHELL_COMMONAUDIOAPICONFIGURATIONMODEL_H

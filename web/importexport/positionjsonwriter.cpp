@@ -17,10 +17,8 @@
 using namespace mu::project;
 using namespace mu::notation;
 using namespace mu::engraving;
-using namespace mu::io;
-using namespace mu::framework;
 
-static void writeElementPosition(QJsonArray& elements, const std::string& id, const mu::PointF& pos, const mu::PointF& sPos,
+static void writeElementPosition(QJsonArray& elements, const std::string& id, const PointF& pos, const PointF& sPos,
                                  page_idx_t pageIndex)
 {
     QJsonObject el;
@@ -93,17 +91,17 @@ QByteArray PositionJsonWriter::jsonData(INotationPtr notation) {
     return jsonData(score);
 }
 
-mu::Ret PositionJsonWriter::write(INotationPtr notation, QIODevice& destinationDevice, const Options&)
+muse::Ret PositionJsonWriter::write(INotationPtr notation, muse::io::IODevice& destinationDevice, const Options&)
 {
     destinationDevice.write(jsonData(notation));
     destinationDevice.close();
-    return true;
+    return muse::Ret(muse::Ret::Code::Ok);
 }
 
-mu::Ret PositionJsonWriter::writeList(const INotationPtrList&, QIODevice&, const Options&)
+muse::Ret PositionJsonWriter::writeList(const INotationPtrList&, muse::io::IODevice&, const Options&)
 {
     NOT_SUPPORTED;
-    return Ret(Ret::Code::NotSupported);
+    return muse::Ret(muse::Ret::Code::NotSupported);
 }
 
 qreal PositionJsonWriter::pngDpiResolution() const
@@ -160,7 +158,7 @@ void PositionJsonWriter::writeSegmentsPositions(QJsonObject& json, const mu::eng
         size_t tracks = score->nstaves() * mu::engraving::VOICES;
         for (size_t track = 0; track < tracks; track++) {
             EngravingItem* e = segment->element(static_cast<int>(track));
-            if (e && e->m_bbox.isValid()) { // HACK: `e` may be an instance of `EngravingObject` ???, thus no `bbox()` method
+            if (e && e->bbox().isValid()) { // HACK: `e` may be an instance of `EngravingObject` ???, thus no `bbox()` method
                 sx = qMax(sx, e->width());
             }
         }

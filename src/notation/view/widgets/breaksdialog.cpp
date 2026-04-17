@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -31,7 +31,7 @@ static constexpr int DEFAULT_INTERVAL = 4;
 //---------------------------------------------------------
 
 BreaksDialog::BreaksDialog(QWidget* parent)
-    : QDialog(parent)
+    : QDialog(parent), muse::Injectable(muse::iocCtxForQWidget(this))
 {
     setupUi(this);
     setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
@@ -40,7 +40,7 @@ BreaksDialog::BreaksDialog(QWidget* parent)
 
     //: `%1` will be replaced with a number input field.
     //: Text before it will appear before that number field, text after will appear after the field.
-    QString text = qtrc("notation/add-remove-system-breaks", "Break systems every %1 measures");
+    QString text = muse::qtrc("notation/add-remove-system-breaks", "Lock layout with %1 measure(s) per system");
     QStringList pieces = text.split(QStringLiteral("%1"));
 
     IF_ASSERT_FAILED(pieces.size() >= 2) {
@@ -51,11 +51,6 @@ BreaksDialog::BreaksDialog(QWidget* parent)
     QString part2 = pieces[1].trimmed();
     intervalButton->setText(part1);
     intervalLabel2->setText(part2);
-}
-
-BreaksDialog::BreaksDialog(const BreaksDialog& dialog)
-    : BreaksDialog(dialog.parentWidget())
-{
 }
 
 //---------------------------------------------------------
@@ -72,15 +67,15 @@ void BreaksDialog::accept()
     INotationInteractionPtr interaction = notation->interaction();
 
     int interval = intervalButton->isChecked() ? intervalBox->value() : 0;
-    BreaksSpawnIntervalType intervalType = BreaksSpawnIntervalType::MeasuresInterval;
+    AddRemoveSystemLockType intervalType = AddRemoveSystemLockType::MeasuresInterval;
 
     if (removeButton->isChecked()) {
-        intervalType = BreaksSpawnIntervalType::None;
+        intervalType = AddRemoveSystemLockType::None;
     } else if (lockButton->isChecked()) {
-        intervalType = BreaksSpawnIntervalType::AfterEachSystem;
+        intervalType = AddRemoveSystemLockType::AfterEachSystem;
     }
 
-    interaction->setBreaksSpawnInterval(intervalType, interval);
+    interaction->addRemoveSystemLocks(intervalType, interval);
 
     if (_allSelected) {
         interaction->clearSelection();

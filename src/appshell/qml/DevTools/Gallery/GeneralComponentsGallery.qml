@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -23,8 +23,8 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 
-import MuseScore.UiComponents 1.0
-import MuseScore.Ui 1.0
+import Muse.UiComponents 1.0
+import Muse.Ui 1.0
 
 Rectangle {
     id: root
@@ -39,7 +39,7 @@ Rectangle {
         order: 4
     }
 
-    Flickable {
+    StyledFlickable {
         id: flickableWrapper
 
         anchors.fill: parent
@@ -64,6 +64,7 @@ Rectangle {
                     { textRole: "StyledMenuScrollable", componentRole: styledScrollableMenuComponent },
                     { textRole: "CheckBox", componentRole: checkBoxSample },
                     { textRole: "VisibilityBox", componentRole: visibilityBoxSample },
+                    { textRole: "ColorBlend", componentRole: colorBlendSample },
                     { textRole: "ColorPicker", componentRole: colorPickerSample },
                     { textRole: "ExpandableBlank", componentRole: expandableBlankSample },
                     { textRole: "FlatButton", componentRole: flatButtonSample },
@@ -75,6 +76,8 @@ Rectangle {
                     { textRole: "ToggleButton", componentRole: toggleButtonSample },
                     { textRole: "RoundedRectangle (which allows to round the particular corners)", componentRole: roundedRectangleSample },
                     { textRole: "TextInputField", componentRole: textInputFieldSample },
+                    { textRole: "RealInputField", componentRole: realInputFieldSample },
+                    { textRole: "TextInputArea", componentRole: textInputAreaSample },
                     { textRole: "SearchField", componentRole: searchFieldSample },
                     { textRole: "FilePicker", componentRole: filePickerSample },
                     { textRole: "DirectoriesPicker", componentRole: directoriesPickerSample },
@@ -222,7 +225,7 @@ Rectangle {
         Row {
             spacing: 12
 
-            FlatButton {
+            component SampleMenuButton : FlatButton {
                 text: "Show Menu"
 
                 onClicked: {
@@ -256,6 +259,16 @@ Rectangle {
                         console.log("selected " + itemId)
                     }
                 }
+            }
+
+            SampleMenuButton {}
+
+            SampleMenuButton {
+                text: "With right-click and menu indicator triangle"
+
+                FlatButtonMenuIndicatorTriangle {}
+
+                mouseArea.acceptedButtons: Qt.LeftButton | Qt.RightButton
             }
         }
     }
@@ -322,12 +335,44 @@ Rectangle {
     }
 
     Component {
+        id: colorBlendSample
+
+        Row {
+            spacing: 12
+            Rectangle {
+                height: 20
+                width: 20
+                color: "#FFFFFF"
+            }
+
+            Rectangle {
+                height: 20
+                width: 20
+                color: "#677CE4"
+            }
+
+            Rectangle {
+                height: 20
+                width: 20
+                color: ui.blendColors("#FFFFFF", ui.colorWithAlphaF("#677CE4", 0.8))
+            }
+
+            Rectangle {
+                height: 20
+                width: 20
+                color: ui.blendColors("#FFFFFF", "#677CE4", 0.8)
+            }
+        }
+    }
+
+    Component {
         id: colorPickerSample
 
         ColorPicker {
             width: 200
 
             color: "black"
+            allowAlpha: true
 
             onNewColorSelected: function(newColor) {
                 color = newColor
@@ -742,6 +787,35 @@ Rectangle {
     }
 
     Component {
+        id: realInputFieldSample
+
+        RealInputField {
+            height: 40
+            width: 200
+
+            currentValue: 0.123456
+            decimals: 4
+            min: -100.0
+            max: 100.0
+
+            onCurrentValueChanged: {
+                console.info("onCurrentValueChanged: " + currentValue)
+            }
+        }
+    }
+
+    Component {
+        id: textInputAreaSample
+
+        TextInputArea {
+            height: 200
+            width: 200
+
+            hint: "This is a text area..."
+        }
+    }
+
+    Component {
         id: searchFieldSample
 
         SearchField {}
@@ -755,7 +829,7 @@ Rectangle {
 
             path: "/some/test/path/foo.txt"
 
-            onPathEdited: {
+            onPathEdited: function(newPath) {
                 path = newPath
             }
         }
@@ -771,7 +845,7 @@ Rectangle {
 
             path: "/some/test/path1;/some/test/path2"
 
-            onPathEdited: {
+            onPathEdited: function(newPath) {
                 path = newPath
             }
         }

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,11 +22,12 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 
-import MuseScore.Ui 1.0
-import MuseScore.UiComponents 1.0
+import Muse.Ui 1.0
+import Muse.UiComponents 1.0
 import MuseScore.Inspector 1.0
 
 import "../../common"
+import "internal"
 
 Column {
     id: root
@@ -46,13 +47,28 @@ Column {
 
     FlatRadioButtonGroupPropertyView {
         id: lineSection
-        titleText: qsTrc("inspector", "Glissando line")
+        titleText: qsTrc("inspector", "Line type")
         propertyItem: root.model ? root.model.lineType : null
         model: root.model ? root.model.possibleLineTypes() : null
 
         navigationPanel: root.navigationPanel
         navigationRowStart: root.navigationRowStart
     }
+
+    LineStyleSection {
+        id: lineStyleSection
+
+        thickness: root.model ? root.model.thickness : null
+
+        lineStyle: root.model ? root.model.lineStyle : null
+        dashLineLength: root.model ? root.model.dashLineLength : null
+        dashGapLength: root.model ? root.model.dashGapLength : null
+
+        navigationPanel: root.navigationPanel
+        navigationRowStart: lineSection.navigationRowEnd + 1
+    }
+
+    SeparatorLine { anchors.margins: -12; visible: hooksSection.visible }
 
     PropertyCheckBox {
         id: showTextCheckBox
@@ -61,7 +77,7 @@ Column {
 
         navigation.name: "ShowTextCheckBox"
         navigation.panel: root.navigationPanel
-        navigation.row: lineSection.navigationRowEnd + 1
+        navigation.row: lineStyleSection.navigationRowEnd + 1
     }
 
     TextSection {

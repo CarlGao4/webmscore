@@ -21,14 +21,22 @@
  */
 #include "drawmodule.h"
 
-#include "modularity/ioc.h"
+#include "global/modularity/ioc.h"
 
 #ifndef DRAW_NO_INTERNAL
 #include "internal/qfontprovider.h"
 #include "internal/qimageprovider.h"
+
+#include "internal/fontproviderdispatcher.h"
+#include "internal/fontprovider.h"
+#include "internal/fontsengine.h"
+#include "internal/fontsdatabase.h"
 #endif
 
-using namespace mu::draw;
+#include "muse_framework_config.h"
+
+using namespace muse::draw;
+using namespace muse::modularity;
 
 std::string DrawModule::moduleName() const
 {
@@ -38,7 +46,24 @@ std::string DrawModule::moduleName() const
 void DrawModule::registerExports()
 {
 #ifndef DRAW_NO_INTERNAL
-    mu::modularity::ioc()->registerExport<draw::IFontProvider>(moduleName(), new QFontProvider());
-    mu::modularity::ioc()->registerExport<draw::IImageProvider>(moduleName(), new QImageProvider());
-#endif
+
+    ioc()->registerExport<draw::IImageProvider>(moduleName(), new QImageProvider());
+
+    auto mainFProvider = std::make_shared<FontProvider>(iocContext());
+    auto qtFProvider = std::make_shared<QFontProvider>();
+    auto fdispatcher = std::make_shared<FontProviderDispatcher>(mainFProvider, qtFProvider);
+
+    m_fontsEngine = std::make_shared<FontsEngine>(iocContext());
+    ioc()->registerExport<draw::IFontProvider>(moduleName(), fdispatcher);
+    ioc()->registerExport<draw::IFontsEngine>(moduleName(), m_fontsEngine);
+    ioc()->registerExport<draw::IFontsDatabase>(moduleName(), new FontsDatabase());
+
+#endif // DRAW_NO_INTERNAL
+}
+
+void DrawModule::onInit(const IApplication::RunMode&)
+{
+#ifndef DRAW_NO_INTERNAL
+    m_fontsEngine->init();
+#endif // DRAW_NO_INTERNAL
 }

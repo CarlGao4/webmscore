@@ -19,15 +19,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_DRAW_GEOMETRY_H
-#define MU_DRAW_GEOMETRY_H
+#ifndef MUSE_DRAW_GEOMETRY_H
+#define MUSE_DRAW_GEOMETRY_H
 
 #include <vector>
 #include <cmath>
 #include <cassert>
+#include <string>
+#include <sstream>
 
 #include "global/realfn.h"
 #include "global/logstream.h"
+#include "global/types/number.h"
 
 #ifndef NO_QT_SUPPORT
 #include <QPair>
@@ -38,7 +41,7 @@
 #include <QPolygonF>
 #endif
 
-namespace mu {
+namespace muse {
 template<typename T>
 inline bool isEqual(T a1, T a2)
 {
@@ -60,7 +63,7 @@ public:
     inline PointX(T x, T y)
         : m_x(x), m_y(y) {}
 
-    inline bool isNull() const { return isEqual(m_x, T()) && isEqual(m_y, T()); }
+    inline bool isNull() const { return m_x.is_zero() && m_y.is_zero(); }
 
     inline void setX(T x) { m_x = x; }
     inline void setY(T y) { m_y = y; }
@@ -69,10 +72,10 @@ public:
     inline T y() const { return m_y; }
 
     //! NOTE I don't like this methods, but now it a lot of using
-    inline T& rx() { return m_x; }
-    inline T& ry() { return m_y; }
+    inline number_t<T>& rx() { return m_x; }
+    inline number_t<T>& ry() { return m_y; }
 
-    inline bool operator==(const PointX<T>& p) const { return isEqual(p.m_x, m_x) && isEqual(p.m_y, m_y); }
+    inline bool operator==(const PointX<T>& p) const { return p.m_x == m_x && p.m_y == m_y; }
     inline bool operator!=(const PointX<T>& p) const { return !this->operator ==(p); }
 
     inline PointX<T> operator-() const { return PointX<T>(-m_x, -m_y); }
@@ -121,9 +124,23 @@ private:
     //! NOTE We should not swap fields
     //! We should not add new fields
     //! If we really need to do this, then we need to change the implementation of QPainterProvider
-    T m_x = T();
-    T m_y = T();
+    number_t<T> m_x;
+    number_t<T> m_y;
 };
+
+template<typename T>
+inline void dump(const PointX<T>& p, std::stringstream& ss)
+{
+    ss << "{x: " << p.x() << ", y: " << p.y() << "}";
+}
+
+template<typename T>
+inline std::string dump(const PointX<T>& p)
+{
+    std::stringstream ss;
+    dump(p, ss);
+    return ss.str();
+}
 
 template<typename T>
 inline PointX<T> operator*(const PointX<T>& p, T c) { return PointX<T>(p.x() * c, p.y() * c); }
@@ -216,7 +233,7 @@ public:
     inline SizeX(T w, T h)
         : m_w(w), m_h(h) {}
 
-    inline bool isNull() const { return isEqual(m_w, T()) && isEqual(m_h, T()); }
+    inline bool isNull() const { return m_w.is_zero() && m_h.is_zero(); }
 
     inline T width() const { return m_w; }
     inline T height() const { return m_h; }
@@ -224,7 +241,7 @@ public:
     inline void setWidth(T w) { m_w = w; }
     inline void setHeight(T h) { m_h = h; }
 
-    inline bool operator==(const SizeX<T>& s) const { return isEqual(s.m_w, m_w) && isEqual(s.m_h, m_h); }
+    inline bool operator==(const SizeX<T>& s) const { return s.m_w == m_w && s.m_h == m_h; }
     inline bool operator!=(const SizeX<T>& s) const { return !this->operator ==(s); }
 
     inline SizeX<T> transposed() const { return SizeX<T>(m_h, m_w); }
@@ -235,8 +252,8 @@ public:
 #endif
 
 private:
-    T m_w = T();
-    T m_h = T();
+    number_t<T> m_w;
+    number_t<T> m_h;
 };
 
 template<typename T>
@@ -278,7 +295,7 @@ public:
     inline RectX(const PointX<T>& atopLeft, const SizeX<T>& asize)
         : m_x(atopLeft.x()), m_y(atopLeft.y()), m_w(asize.width()), m_h(asize.height()) {}
 
-    inline bool isNull() const { return isEqual(m_w, T()) && isEqual(m_h, T()); }
+    inline bool isNull() const { return m_w.is_zero() && m_h.is_zero(); }
     inline bool isEmpty() const { return m_w <= T() || m_h <= T(); }
     inline bool isValid() const { return m_w > T() && m_h > T(); }
 
@@ -297,7 +314,7 @@ public:
     inline PointX<T> bottomRight() const { return PointX<T>(m_x + m_w, m_y + m_h); }
     inline PointX<T> topRight() const { return PointX<T>(m_x + m_w, m_y); }
     inline PointX<T> bottomLeft() const { return PointX<T>(m_x, m_y + m_h); }
-    inline PointX<T> center() const { return PointX<T>(m_x + m_w / 2, m_y + m_h / 2); }
+    inline PointX<T> center() const { return PointX<T>(m_x + m_w / number_t<T>::cast(2), m_y + m_h / number_t<T>::cast(2)); }
 
     inline void setCoords(T xp1, T yp1, T xp2, T yp2) { m_x = xp1; m_y = yp1; m_w = xp2 - xp1; m_h = yp2 - yp1; }
     inline void setRect(double ax, double ay, double aaw, double aah) { m_x = ax; m_y = ay; m_w = aaw; m_h = aah; }
@@ -320,14 +337,14 @@ public:
 
     inline bool operator==(const RectX<T>& r) const
     {
-        return isEqual(r.m_x, m_x) && isEqual(r.m_y, m_y) && isEqual(r.m_w, m_w) && isEqual(r.m_h, m_h);
+        return r.m_x == m_x && r.m_y == m_y && r.m_w == m_w && r.m_h == m_h;
     }
 
     inline bool operator!=(const RectX<T>& r) const { return !this->operator ==(r); }
 
     inline void moveTo(double ax, double ay) { m_x = ax; m_y = ay; }
     inline void moveTo(const PointX<T>& p) { m_x = p.x(); m_y = p.y(); }
-    inline void moveCenter(const PointX<T>& p) { m_x = p.x() - m_w / 2; m_y = p.y() - m_h / 2; }
+    inline void moveCenter(const PointX<T>& p) { m_x = p.x() - m_w / number_t<T>::cast(2); m_y = p.y() - m_h / number_t<T>::cast(2); }
     inline void moveTop(double pos) { m_y = pos; }
 
     inline void translate(T dx, T dy) { m_x += dx; m_y += dy; }
@@ -338,6 +355,9 @@ public:
 
     inline void adjust(double xp1, double yp1, double xp2, double yp2) { m_x += xp1; m_y += yp1; m_w += xp2 - xp1; m_h += yp2 - yp1; }
     inline RectX<T> adjusted(T xp1, T yp1, T xp2, T yp2) const { return RectX<T>(m_x + xp1, m_y + yp1, m_w + xp2 - xp1, m_h + yp2 - yp1); }
+
+    inline void pad(double p) { adjust(-p, -p, p, p); }
+    inline RectX<T> padded(double p) const { return adjusted(-p, -p, p, p); }
 
     inline RectX<T>& scale(const SizeX<T>& mag)
     {
@@ -355,6 +375,8 @@ public:
 
     bool contains(const PointX<T>& p) const;
     bool contains(const RectX<T>& r) const;
+
+    T distanceTo(const PointX<T>& p) const;
 
     bool intersects(const RectX<T>& r) const;
 
@@ -383,11 +405,25 @@ public:
 #endif
 
 private:
-    T m_x = T();
-    T m_y = T();
-    T m_w = T();
-    T m_h = T();
+    number_t<T> m_x;
+    number_t<T> m_y;
+    number_t<T> m_w;
+    number_t<T> m_h;
 };
+
+template<typename T>
+inline void dump(const RectX<T>& r, std::stringstream& ss)
+{
+    ss << "{x: " << r.x() << ", y: " << r.y() << ", w: " << r.width() << ", h: " << r.height() << "}";
+}
+
+template<typename T>
+inline std::string dump(const RectX<T>& r)
+{
+    std::stringstream ss;
+    dump(r, ss);
+    return ss.str();
+}
 
 using RectF = RectX<double>;
 class Rect : public RectX<int>
@@ -413,10 +449,15 @@ class PolygonX : public std::vector<PointX<T> >
 {
 public:
 
-    inline PolygonX<T>() = default;
-    inline PolygonX<T>(const std::vector<PointX<T> >& v) : std::vector<PointX<T> >(v) {
+    inline PolygonX() = default;
+    inline PolygonX(const std::vector<PointX<T> >& v)
+        : std::vector<PointX<T> >(v)
+    {
     }
-    inline PolygonX<T>(size_t size) : std::vector<PointX<T> >(size) {
+
+    inline PolygonX(size_t size)
+        : std::vector<PointX<T> >(size)
+    {
     }
 
     inline PolygonX<T>& operator<<(const PointX<T>& p)
@@ -491,32 +532,32 @@ RectX<T> RectX<T>::united(const RectX<T>& r) const
 
     T left = m_x;
     T right = m_x;
-    if (m_w < 0) {
+    if (m_w.is_negative()) {
         left += m_w;
     } else {
         right += m_w;
     }
-    if (r.m_w < 0) {
-        left = std::min(left, r.m_x + r.m_w);
-        right = std::max(right, r.m_x);
+    if (r.m_w.is_negative()) {
+        left = std::min(left, r.m_x.raw() + r.m_w.raw());
+        right = std::max(right, r.m_x.raw());
     } else {
-        left = std::min(left, r.m_x);
-        right = std::max(right, r.m_x + r.m_w);
+        left = std::min(left, r.m_x.raw());
+        right = std::max(right, r.m_x.raw() + r.m_w.raw());
     }
 
     double top = m_y;
     double bottom = m_y;
-    if (m_h < 0) {
+    if (m_h.is_negative()) {
         top += m_h;
     } else {
         bottom += m_h;
     }
-    if (r.m_h < 0) {
-        top = std::min(top, r.m_y + r.m_h);
-        bottom = std::max(bottom, r.m_y);
+    if (r.m_h.is_negative()) {
+        top = std::min(top, r.m_y.raw() + r.m_h.raw());
+        bottom = std::max(bottom, r.m_y.raw());
     } else {
-        top = std::min(top, r.m_y);
-        bottom = std::max(bottom, r.m_y + r.m_h);
+        top = std::min(top, r.m_y.raw());
+        bottom = std::max(bottom, r.m_y.raw() + r.m_h.raw());
     }
     return RectX<T>(left, top, right - left, bottom - top);
 }
@@ -526,7 +567,7 @@ RectX<T> RectX<T>::intersected(const RectX<T>& r) const
 {
     T l1 = m_x;
     T r1 = m_x;
-    if (m_w < 0) {
+    if (m_w.is_negative()) {
         l1 += m_w;
     } else {
         r1 += m_w;
@@ -536,7 +577,7 @@ RectX<T> RectX<T>::intersected(const RectX<T>& r) const
     }
     T l2 = r.m_x;
     T r2 = r.m_x;
-    if (r.m_w < 0) {
+    if (r.m_w.is_negative()) {
         l2 += r.m_w;
     } else {
         r2 += r.m_w;
@@ -549,7 +590,7 @@ RectX<T> RectX<T>::intersected(const RectX<T>& r) const
     }
     T t1 = m_y;
     T b1 = m_y;
-    if (m_h < 0) {
+    if (m_h.is_negative()) {
         t1 += m_h;
     } else {
         b1 += m_h;
@@ -559,7 +600,7 @@ RectX<T> RectX<T>::intersected(const RectX<T>& r) const
     }
     T t2 = r.m_y;
     T b2 = r.m_y;
-    if (r.m_h < 0) {
+    if (r.m_h.is_negative()) {
         t2 += r.m_h;
     } else {
         b2 += r.m_h;
@@ -583,7 +624,7 @@ bool RectX<T>::intersects(const RectX<T>& r) const
 {
     T l1 = m_x;
     T r1 = m_x;
-    if (m_w < 0) {
+    if (m_w.is_negative()) {
         l1 += m_w;
     } else {
         r1 += m_w;
@@ -593,7 +634,7 @@ bool RectX<T>::intersects(const RectX<T>& r) const
     }
     T l2 = r.m_x;
     T r2 = r.m_x;
-    if (r.m_w < 0) {
+    if (r.m_w.is_negative()) {
         l2 += r.m_w;
     } else {
         r2 += r.m_w;
@@ -606,7 +647,7 @@ bool RectX<T>::intersects(const RectX<T>& r) const
     }
     T t1 = m_y;
     T b1 = m_y;
-    if (m_h < 0) {
+    if (m_h.is_negative()) {
         t1 += m_h;
     } else {
         b1 += m_h;
@@ -616,7 +657,7 @@ bool RectX<T>::intersects(const RectX<T>& r) const
     }
     T t2 = r.m_y;
     T b2 = r.m_y;
-    if (r.m_h < 0) {
+    if (r.m_h.is_negative()) {
         t2 += r.m_h;
     } else {
         b2 += r.m_h;
@@ -635,7 +676,7 @@ bool RectX<T>::contains(const PointX<T>& p) const
 {
     T l = m_x;
     T r = m_x;
-    if (m_w < 0) {
+    if (m_w.is_negative()) {
         l += m_w;
     } else {
         r += m_w;
@@ -648,7 +689,7 @@ bool RectX<T>::contains(const PointX<T>& p) const
     }
     T t = m_y;
     T b = m_y;
-    if (m_h < 0) {
+    if (m_h.is_negative()) {
         t += m_h;
     } else {
         b += m_h;
@@ -667,7 +708,7 @@ bool RectX<T>::contains(const RectX<T>& r) const
 {
     T l1 = m_x;
     T r1 = m_x;
-    if (m_w < 0) {
+    if (m_w.is_negative()) {
         l1 += m_w;
     } else {
         r1 += m_w;
@@ -677,7 +718,7 @@ bool RectX<T>::contains(const RectX<T>& r) const
     }
     T l2 = r.m_x;
     T r2 = r.m_x;
-    if (r.m_w < 0) {
+    if (r.m_w.is_negative()) {
         l2 += r.m_w;
     } else {
         r2 += r.m_w;
@@ -690,7 +731,7 @@ bool RectX<T>::contains(const RectX<T>& r) const
     }
     T t1 = m_y;
     T b1 = m_y;
-    if (m_h < 0) {
+    if (m_h.is_negative()) {
         t1 += m_h;
     } else {
         b1 += m_h;
@@ -700,7 +741,7 @@ bool RectX<T>::contains(const RectX<T>& r) const
     }
     T t2 = r.m_y;
     T b2 = r.m_y;
-    if (r.m_h < 0) {
+    if (r.m_h.is_negative()) {
         t2 += r.m_h;
     } else {
         b2 += r.m_h;
@@ -715,14 +756,22 @@ bool RectX<T>::contains(const RectX<T>& r) const
 }
 
 template<typename T>
+T RectX<T>::distanceTo(const PointX<T>& p) const
+{
+    T dx = std::max({ bottomLeft().x() - p.x(), 0.0, p.x() - bottomRight().x() });
+    T dy = std::max({ bottomLeft().y() - p.y(), 0.0, p.y() - topLeft().y() });
+    return std::sqrt(dx * dx + dy * dy);
+}
+
+template<typename T>
 RectX<T> RectX<T>::normalized() const
 {
     RectX<T> r = *this;
-    if (r.m_w < 0) {
+    if (r.m_w.is_negative()) {
         r.m_x += r.m_w;
         r.m_w = -r.m_w;
     }
-    if (r.m_h < 0) {
+    if (r.m_h.is_negative()) {
         r.m_y += r.m_h;
         r.m_h = -r.m_h;
     }
@@ -731,17 +780,17 @@ RectX<T> RectX<T>::normalized() const
 }
 
 template<typename T>
-inline mu::logger::Stream& operator<<(mu::logger::Stream& s, const mu::RectX<T>& r)
+inline muse::logger::Stream& operator<<(muse::logger::Stream& s, const muse::RectX<T>& r)
 {
-    s << "{x: " << r.x() << ", y: " << r.y() << ", w: " << r.width() << ", h: " << r.height() << "}";
+    s << muse::dump(r);
     return s;
 }
 
 template<typename T>
-inline mu::logger::Stream& operator<<(mu::logger::Stream& s, const mu::PointX<T>& p)
+inline muse::logger::Stream& operator<<(muse::logger::Stream& s, const muse::PointX<T>& p)
 {
-    s << "{x: " << p.x() << ", y: " << p.y() << "}";
+    s << muse::dump(p);
     return s;
 }
 
-#endif // MU_DRAW_GEOMETRY_H
+#endif // MUSE_DRAW_GEOMETRY_H

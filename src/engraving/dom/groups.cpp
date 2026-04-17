@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -24,6 +24,7 @@
 
 #include "chordrest.h"
 #include "durationtype.h"
+#include "measure.h"
 #include "staff.h"
 #include "tuplet.h"
 
@@ -123,7 +124,7 @@ BeamMode Groups::endBeam(const ChordRest* cr, const ChordRest* prev)
     TDuration crDuration = cr->durationType();
     const Groups& g = cr->staff()->group(cr->tick());
     Fraction stretch = cr->staff()->timeStretch(cr->tick());
-    Fraction tick = cr->rtick() * stretch;
+    Fraction tick = cr->rtick() * stretch + cr->measure()->anacrusisOffset();
 
     // We can choose to break beams based on its place in the measure, or by its duration. These
     // can be consolidated mostly, with bias towards its duration.
@@ -168,7 +169,14 @@ BeamMode Groups::beamMode(int tick, DurationType d) const
         break;
     case DurationType::V_16TH:   shift = 4;
         break;
-    case DurationType::V_32ND:   shift = 8;
+    case DurationType::V_32ND:
+    // All beams shorter than 32nds break in the same place
+    case DurationType::V_64TH:
+    case DurationType::V_128TH:
+    case DurationType::V_256TH:
+    case DurationType::V_512TH:
+    case DurationType::V_1024TH:
+        shift = 8;
         break;
     default:
         return BeamMode::AUTO;

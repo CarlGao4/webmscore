@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -25,9 +25,9 @@
 
 #include <functional>
 
-#include "durationelement.h"
-#include "types/types.h"
+#include "../types/types.h"
 
+#include "durationelement.h"
 #include "fermata.h"
 
 namespace mu::engraving {
@@ -39,6 +39,7 @@ enum class CrossMeasure : signed char {
 };
 
 class Articulation;
+class BeamBase;
 class Lyrics;
 class Measure;
 class Score;
@@ -86,19 +87,7 @@ public:
     virtual double upPos()   const = 0;
     virtual double downPos() const = 0;
 
-    int line(bool up) const { return up ? upLine() : downLine(); }
-    int line() const { return m_up ? upLine() : downLine(); }
-    virtual int upLine() const = 0;
-    virtual int downLine() const = 0;
-    virtual mu::PointF stemPos() const = 0;
-    virtual double stemPosX() const = 0;
-    virtual mu::PointF stemPosBeam() const = 0;
     virtual double rightEdge() const = 0;
-
-    void setUp(bool val) { m_up = val; }
-    bool up() const { return m_up; }
-    bool usesAutoUp() const { return m_usesAutoUp; }
-    void setUsesAutoUp(bool val) { m_usesAutoUp = val; }
 
     bool isSmall() const { return m_isSmall; }
     void setSmall(bool val) { m_isSmall = val; }
@@ -132,6 +121,8 @@ public:
     {
         return m_crossMeasure == CrossMeasure::FIRST ? m_crossMeasureTDur.ticks() : m_durationType.ticks();
     }
+
+    Fraction endTick() const { return tick() + actualTicks(); }
 
     String durationUserName() const;
 
@@ -193,7 +184,7 @@ public:
     bool isFullMeasureRest() const { return m_durationType == DurationType::V_MEASURE; }
     virtual void removeMarkings(bool keepTremolo = false);
 
-    bool isBefore(const ChordRest*) const;
+    bool isBefore(const EngravingItem*) const override;
 
     void undoAddAnnotation(EngravingItem*);
 
@@ -201,6 +192,21 @@ public:
 
     TabDurationSymbol* tabDur() const { return m_tabDur; }
     void setTabDur(TabDurationSymbol* s) { m_tabDur = s; }
+
+    bool isBelowCrossBeam(const BeamBase* beamBase) const;
+
+    bool hasFollowingJumpItem() const;
+    bool hasPrecedingJumpItem() const;
+
+    struct LayoutData : public DurationElement::LayoutData {
+        ld_field<bool> up = { "[ChordRest] up", true }; // actual stem direction
+    };
+    DECLARE_LAYOUTDATA_METHODS(ChordRest)
+
+    //! DEPRECATED ------
+    void setUp(bool val) { mutldata()->up = val; }
+    bool up() const { return ldata()->up; }
+    //! -----------------
 
 protected:
 
@@ -214,8 +220,6 @@ protected:
     Beam* m_beam = nullptr;
     BeamSegment* m_beamlet = nullptr;
     BeamMode m_beamMode = BeamMode::INVALID;
-    bool m_up = false;                      // actual stem direction
-    bool m_usesAutoUp = false;
     bool m_isSmall = false;
     bool m_melismaEnd = false;
 

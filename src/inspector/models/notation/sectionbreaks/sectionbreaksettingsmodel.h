@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -32,6 +32,8 @@ class SectionBreakSettingsModel : public AbstractInspectorModel
     Q_PROPERTY(PropertyItem * shouldStartWithLongInstrNames READ shouldStartWithLongInstrNames CONSTANT)
     Q_PROPERTY(PropertyItem * shouldResetBarNums READ shouldResetBarNums CONSTANT)
     Q_PROPERTY(PropertyItem * pauseDuration READ pauseDuration CONSTANT)
+    Q_PROPERTY(PropertyItem * firstSystemIndent READ firstSystemIndent CONSTANT)
+    Q_PROPERTY(PropertyItem * showCourtesySignatures READ showCourtesySignatures CONSTANT)
 
 public:
     explicit SectionBreakSettingsModel(QObject* parent, IElementRepositoryService* repository);
@@ -44,11 +46,15 @@ public:
     PropertyItem* shouldStartWithLongInstrNames() const;
     PropertyItem* shouldResetBarNums() const;
     PropertyItem* pauseDuration() const;
+    PropertyItem* firstSystemIndent() const;
+    PropertyItem* showCourtesySignatures() const;
 
 private:
     PropertyItem* m_shouldStartWithLongInstrNames = nullptr;
     PropertyItem* m_shouldResetBarNums = nullptr;
     PropertyItem* m_pauseDuration = nullptr;
+    PropertyItem* m_firstSystemIndent = nullptr;
+    PropertyItem* m_showCourtesySignatures = nullptr;
 };
 }
 

@@ -19,16 +19,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_UI_IUICONTEXTRESOLVER_H
-#define MU_UI_IUICONTEXTRESOLVER_H
+#ifndef MUSE_UI_IUICONTEXTRESOLVER_H
+#define MUSE_UI_IUICONTEXTRESOLVER_H
 
 #include <memory>
 
 #include "modularity/imoduleinterface.h"
-#include "uitypes.h"
-#include "async/notification.h"
+#include "global/async/notification.h"
+#include "uiaction.h"
 
-namespace mu::ui {
+namespace muse::ui {
 class IUiContextResolver : MODULE_EXPORT_INTERFACE
 {
     INTERFACE_ID(IUiContextResolver)
@@ -48,4 +48,4 @@ public:
 using IUiContextResolverPtr = std::shared_ptr<IUiContextResolver>;
 }
 
-#endif // MU_UI_IUICONTEXTRESOLVER_H
+#endif // MUSE_UI_IUICONTEXTRESOLVER_H

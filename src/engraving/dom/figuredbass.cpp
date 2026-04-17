@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -41,7 +41,7 @@
 #include "log.h"
 
 using namespace mu;
-using namespace mu::io;
+using namespace muse::io;
 using namespace mu::engraving;
 
 namespace mu::engraving {
@@ -662,7 +662,7 @@ FiguredBass::FiguredBass(Segment* parent)
     }
     setOnNote(true);
     setTicks(Fraction(0, 1));
-    DeleteAll(m_items);
+    muse::DeleteAll(m_items);
     m_items.clear();
 }
 
@@ -702,10 +702,6 @@ Sid FiguredBass::getPropertyStyle(Pid id) const
     return EngravingItem::getPropertyStyle(id);
 }
 
-//---------------------------------------------------------
-//   startEdit / edit / endEdit
-//---------------------------------------------------------
-
 void FiguredBass::startEdit(EditData& ed)
 {
     clearItems();
@@ -742,7 +738,7 @@ void FiguredBass::regenerateText()
     }
 
     // split text into lines and create an item for each line
-    StringList list = txt.split(u'\n', mu::SkipEmptyParts);
+    StringList list = txt.split(u'\n', muse::SkipEmptyParts);
     clearItems();
     String normalizedText;
     int idx = 0;
@@ -750,7 +746,8 @@ void FiguredBass::regenerateText()
         FiguredBassItem* pItem = new FiguredBassItem(this, idx++);
         if (!pItem->parse(str)) {               // if any item fails parsing
             clearItems();
-            score()->startCmd();
+            // TODO: this `startCmd` call is possibly invalid
+            score()->startCmd(TranslatableString("undoableAction", "Regenerate figured bass text"));
             triggerLayout();
             score()->endCmd();
             delete pItem;
@@ -769,7 +766,8 @@ void FiguredBass::regenerateText()
         undoChangeProperty(Pid::TEXT, normalizedText);
     }
 
-    score()->startCmd();
+    // TODO: this `startCmd` call is possibly invalid
+    score()->startCmd(TranslatableString("undoableAction", "Regenerate figured bass text"));
     triggerLayout();
     score()->endCmd();
 }
@@ -894,7 +892,7 @@ void FiguredBass::clearItems()
             continue;
         }
         if (linkedObject == this) {
-            DeleteAll(m_items);
+            muse::DeleteAll(m_items);
             m_items.clear();
         } else {
             bool isThisTextLinked = getProperty(Pid::TEXT_LINKED_TO_MASTER).toBool();
@@ -904,7 +902,7 @@ void FiguredBass::clearItems()
                 continue;
             }
             FiguredBass* linkedFb = toFiguredBass(linkedObject);
-            DeleteAll(linkedFb->m_items);
+            muse::DeleteAll(linkedFb->m_items);
             linkedFb->m_items.clear();
         }
     }
@@ -1009,7 +1007,8 @@ FiguredBass* FiguredBass::addFiguredBassToSegment(Segment* seg, track_idx_t trac
         // locate previous FB for same staff
         Segment* prevSegm;
         FiguredBass* prevFB = 0;
-        for (prevSegm = seg->prev1(SegmentType::ChordRest); prevSegm; prevSegm = prevSegm->prev1(SegmentType::ChordRest)) {
+        for (prevSegm = seg->prev1(Segment::CHORD_REST_OR_TIME_TICK_TYPE); prevSegm;
+             prevSegm = prevSegm->prev1(Segment::CHORD_REST_OR_TIME_TICK_TYPE)) {
             for (EngravingItem* e : prevSegm->annotations()) {
                 if (e->type() == ElementType::FIGURED_BASS && (e->track()) == track) {
                     prevFB = toFiguredBass(e);             // previous FB found
@@ -1215,7 +1214,7 @@ bool FiguredBass::fontData(int nIdx, String* pFamily, String* pDisplayName,
 //   return true if any FiguredBassItem starts with a parenthesis
 //---------------------------------------------------------
 
-bool FiguredBass::hasParentheses() const
+bool FiguredBass::parenthesesMode() const
 {
     for (FiguredBassItem* item : m_items) {
         if (item->startsWithParenthesis()) {

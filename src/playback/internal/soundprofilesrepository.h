@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2022 MuseScore BVBA and others
+ * Copyright (C) 2022 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -25,7 +25,7 @@
 
 #include <map>
 
-#include "audio/iplayback.h"
+#include "audio/main/iplayback.h"
 #include "async/asyncable.h"
 #include "modularity/ioc.h"
 
@@ -33,9 +33,9 @@
 #include "../iplaybackconfiguration.h"
 
 namespace mu::playback {
-class SoundProfilesRepository : public ISoundProfilesRepository, public async::Asyncable
+class SoundProfilesRepository : public ISoundProfilesRepository, public muse::async::Asyncable
 {
-    INJECT_STATIC(audio::IPlayback, playback)
+    INJECT_STATIC(muse::audio::IPlayback, playback)
     INJECT_STATIC(IPlaybackConfiguration, config)
 public:
     SoundProfilesRepository() = default;

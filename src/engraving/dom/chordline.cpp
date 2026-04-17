@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,6 +22,8 @@
 
 #include "chordline.h"
 
+#include <functional>
+
 #include "types/translatablestring.h"
 #include "types/typesconv.h"
 
@@ -31,12 +33,10 @@
 #include "log.h"
 
 using namespace mu;
-using namespace mu::draw;
+using namespace muse::draw;
 using namespace mu::engraving;
 
 namespace mu::engraving {
-const SymIdList ChordLine::WAVE_SYMBOLS = { SymId::wiggleVIbratoMediumSlower, SymId::wiggleVIbratoMediumSlower };
-
 //---------------------------------------------------------
 //   ChordLine
 //---------------------------------------------------------
@@ -69,7 +69,7 @@ void ChordLine::setChordLineType(ChordLineType st)
 
 const TranslatableString& ChordLine::chordLineTypeName() const
 {
-    return TConv::userName(m_chordLineType, m_straight);
+    return TConv::userName(m_chordLineType, m_straight, m_wavy);
 }
 
 //---------------------------------------------------------
@@ -90,7 +90,7 @@ void ChordLine::startEditDrag(EditData& ed)
 
 void ChordLine::editDrag(EditData& ed)
 {
-    const draw::PainterPath& path = mutldata()->path;
+    const PainterPath& path = mutldata()->path;
 
     auto n = path.elementCount();
     PainterPath p;
@@ -182,7 +182,7 @@ std::vector<PointF> ChordLine::gripsPositions(const EditData&) const
         return {};
     }
 
-    const draw::PainterPath& path = ldata()->path;
+    const PainterPath& path = ldata()->path;
 
     size_t n = path.elementCount();
     PointF cp(pagePos());
@@ -219,15 +219,16 @@ std::vector<PointF> ChordLine::gripsPositions(const EditData&) const
 
 static Note::SlideType slideType(ChordLineType type)
 {
-    static std::unordered_map<ChordLineType, Note::SlideType> chordLineToSlideTypes {
+    static const std::unordered_map<ChordLineType, Note::SlideType> chordLineToSlideTypes {
         { ChordLineType::FALL, Note::SlideType::DownFromNote },
         { ChordLineType::DOIT, Note::SlideType::UpFromNote },
         { ChordLineType::SCOOP, Note::SlideType::UpToNote },
         { ChordLineType::PLOP, Note::SlideType::DownToNote }
     };
 
-    if (chordLineToSlideTypes.find(type) != chordLineToSlideTypes.end()) {
-        return chordLineToSlideTypes.at(type);
+    auto it = chordLineToSlideTypes.find(type);
+    if (it != chordLineToSlideTypes.end()) {
+        return it->second;
     }
 
     return Note::SlideType::Undefined;
@@ -246,6 +247,15 @@ void ChordLine::setNote(Note* note)
     }
 }
 
+SymId ChordLine::waveSym() const
+{
+    if (m_chordLineType == ChordLineType::FALL || m_chordLineType == ChordLineType::PLOP) {
+        return SymId::brassFallRoughShort;
+    }
+
+    return SymId::brassLiftShort;
+}
+
 //---------------------------------------------------------
 //   accessibleInfo
 //---------------------------------------------------------
@@ -257,6 +267,20 @@ String ChordLine::accessibleInfo() const
         rez = String(u"%1: %2").arg(rez, chordLineTypeName().translated());
     }
     return rez;
+}
+
+int ChordLine::subtype() const
+{
+    size_t h1 = std::hash<ChordLineType> {}(m_chordLineType);
+    size_t h2 = std::hash<bool> {}(m_straight);
+    size_t h3 = std::hash<bool> {}(m_wavy);
+
+    return static_cast<int>(h1 ^ (h2 << 1) ^ (h3 << 2));
+}
+
+muse::TranslatableString ChordLine::subtypeUserName() const
+{
+    return chordLineTypeName();
 }
 
 //---------------------------------------------------------

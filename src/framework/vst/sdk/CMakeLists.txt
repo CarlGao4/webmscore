@@ -18,10 +18,32 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-set(MODULE vst_sdk_3)
+declare_thirdparty_module(vst_sdk_3)
 
-if (NOT VST3_SDK_PATH)
-    message(FATAL_ERROR "VST3_SDK path is not setted")
+if(MUSE_MODULE_VST_VST3_SDK_PATH)
+    set(VST3_SDK_PATH ${MUSE_MODULE_VST_VST3_SDK_PATH})
+else()
+
+    # If not set MUSE_MODULE_VST_VST3_SDK_PATH
+    # download vst3sdk source
+
+    set(REMOTE_ROOT_URL https://raw.githubusercontent.com/musescore/muse_deps/main)
+    set(remote_url ${REMOTE_ROOT_URL}/vst3sdk/v3.7.12_build_20)
+    set(local_path ${PROJECT_BINARY_DIR}/_deps/vst3sdk)
+    if (NOT EXISTS ${local_path}/vst3sdk.cmake)
+        file(MAKE_DIRECTORY ${local_path})
+        file(DOWNLOAD ${remote_url}/vst3sdk.cmake ${local_path}/vst3sdk.cmake
+            HTTPHEADER "Cache-Control: no-cache"
+        )
+    endif()
+
+    include(${local_path}/vst3sdk.cmake)
+
+    # func from ${name}.cmake)
+    cmake_language(CALL vst3sdk_Populate ${remote_url} ${local_path} "source" "" "")
+
+    set(VST3_SDK_PATH ${local_path})
+
 endif()
 
 include(GetPlatformInfo)
@@ -34,9 +56,7 @@ else()
     set(MODULE_DEF -DRELEASE)
 endif()
 
-set(MODULE_USE_UNITY_NONE ON)
-
-set(MODULE_USE_PCH_NONE ON)
+set(MODULE_USE_UNITY OFF)
 
 if (OS_IS_WIN)
     set(PLATFORM_SRC
@@ -115,6 +135,8 @@ set(VST_PLUGIN_INTERFACES_SRC
 
 set(VST_SDK_COMMON_SRC
     ${VST3_SDK_PATH}/public.sdk/source/common/commoniids.cpp
+    ${VST3_SDK_PATH}/public.sdk/source/common/commonstringconvert.cpp
+    ${VST3_SDK_PATH}/public.sdk/source/common/commonstringconvert.h
     ${VST3_SDK_PATH}/public.sdk/source/common/openurl.cpp
     ${VST3_SDK_PATH}/public.sdk/source/common/openurl.h
     ${VST3_SDK_PATH}/public.sdk/source/common/threadchecker.h
@@ -163,7 +185,7 @@ set(MODULE_INCLUDE
     ${VST3_SDK_PATH}
     )
 
-include(${PROJECT_SOURCE_DIR}/build/module.cmake)
+setup_module()
 
 target_no_warning(${MODULE} -w)
 

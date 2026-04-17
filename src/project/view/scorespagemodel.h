@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2023 MuseScore BVBA and others
+ * Copyright (C) 2023 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -38,9 +38,9 @@ class ScoresPageModel : public QObject
     Q_OBJECT
 
     INJECT(IProjectConfiguration, configuration)
-    INJECT(actions::IActionsDispatcher, dispatcher)
-    INJECT(framework::IInteractive, interactive)
-    INJECT(cloud::IMuseScoreComService, museScoreComService)
+    INJECT(muse::actions::IActionsDispatcher, dispatcher)
+    INJECT(muse::IInteractive, interactive)
+    INJECT(muse::cloud::IMuseScoreComService, museScoreComService)
 
     Q_PROPERTY(int tabIndex READ tabIndex WRITE setTabIndex NOTIFY tabIndexChanged)
     Q_PROPERTY(ViewType viewType READ viewType WRITE setViewType NOTIFY viewTypeChanged)

@@ -21,16 +21,12 @@
 # We don't use system freetype to avoid conflict
 # if (MUE_COMPILE_USE_SYSTEM_FREETYPE)
 #     find_package(Freetype)
+# 
 #     if (FREETYPE_FOUND)
 #         message(STATUS "Found freetype: ${FREETYPE_VERSION_STRING}")
 #     else()
 #         message(WARNING "Set MUE_COMPILE_USE_SYSTEM_FREETYPE=ON, but system freetype not found, built-in will be used")
 #     endif()
-# endif()
-# 
-# if (NOT FREETYPE_FOUND)
-#     # sets FREETYPE_LIBRARIES and FREETYPE_INCLUDE_DIRS
-#     add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../thirdparty/freetype freetype)
 # endif()
 
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../thirdparty/freetype freetype)

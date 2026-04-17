@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2024 MuseScore BVBA and others
+ * Copyright (C) 2024 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -59,15 +59,14 @@ TEST_F(Engraving_StaffMoveTests, hiddenStaff)
     Staff* staff = score->staff(0);
 
     // Move chord
-    score->startCmd();
+    score->startCmd(TranslatableString::untranslatable("Engraving staff move tests"));
     score->moveUp(c1);
     score->endCmd();
 
     // Hide staff
-    score->startCmd();
-    score->undo(new mu::engraving::ChangeStaff(staff, false, staff->defaultClefType(), staff->userDist(), staff->hideWhenEmpty(),
-                                               staff->showIfEmpty(), staff->cutaway(), staff->hideSystemBarLine(),
-                                               staff->mergeMatchingRests(),
+    score->startCmd(TranslatableString::untranslatable("Engraving staff move tests"));
+    score->undo(new mu::engraving::ChangeStaff(staff, false, staff->defaultClefType(), staff->userDist(), staff->cutaway(),
+                                               staff->hideSystemBarLine(), staff->mergeMatchingRests(),
                                                staff->reflectTranspositionInLinkedTab()));
     score->endCmd();
 
@@ -75,15 +74,14 @@ TEST_F(Engraving_StaffMoveTests, hiddenStaff)
     EXPECT_TRUE(ScoreComp::saveCompareScore(score, u"hiddenStaff1.mscx", STAFF_MOVE_DIR + u"hiddenStaff-ref.mscx"));
 
     // Unhide staff
-    score->startCmd();
-    score->undo(new mu::engraving::ChangeStaff(staff, true, staff->defaultClefType(), staff->userDist(), staff->hideWhenEmpty(),
-                                               staff->showIfEmpty(), staff->cutaway(), staff->hideSystemBarLine(),
-                                               staff->mergeMatchingRests(),
+    score->startCmd(TranslatableString::untranslatable("Engraving staff move tests"));
+    score->undo(new mu::engraving::ChangeStaff(staff, true, staff->defaultClefType(), staff->userDist(), staff->cutaway(),
+                                               staff->hideSystemBarLine(), staff->mergeMatchingRests(),
                                                staff->reflectTranspositionInLinkedTab()));
     score->endCmd();
 
     // Move chord back
-    score->startCmd();
+    score->startCmd(TranslatableString::untranslatable("Engraving staff move tests"));
     score->moveDown(c1);
     score->endCmd();
 
@@ -104,19 +102,19 @@ TEST_F(Engraving_StaffMoveTests, linkedStaff)
     Chord* c2 = toChord(s->element(8));
     EXPECT_TRUE(c2);
 
-    score->startCmd();
+    score->startCmd(TranslatableString::untranslatable("Engraving staff move tests"));
     score->moveDown(c1);
     score->endCmd();
 
     EXPECT_TRUE(ScoreComp::saveCompareScore(score, u"linkedStaff1.mscx", STAFF_MOVE_DIR + u"linkedStaff-ref.mscx"));
 
     // Try to move linked chord - should be no change
-    score->startCmd();
+    score->startCmd(TranslatableString::untranslatable("Engraving staff move tests"));
     score->moveUp(c2);
     score->endCmd();
     EXPECT_TRUE(ScoreComp::saveCompareScore(score, u"linkedStaff2.mscx", STAFF_MOVE_DIR + u"linkedStaff-ref.mscx"));
 
-    score->startCmd();
+    score->startCmd(TranslatableString::untranslatable("Engraving staff move tests"));
     score->moveUp(c1);
     score->endCmd();
     EXPECT_TRUE(ScoreComp::saveCompareScore(score, u"linkedStaff3.mscx", STAFF_MOVE_DIR + u"linkedStaff.mscx"));

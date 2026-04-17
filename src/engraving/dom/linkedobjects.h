@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -32,19 +32,9 @@ class LinkedObjects : public std::list<EngravingObject*>
     OBJECT_ALLOCATOR(engraving, LinkedObjects)
 
 public:
-    LinkedObjects(Score*);
-    LinkedObjects(Score*, int id);
-
-    void setLid(Score*, int val);
-    int lid() const { return m_lid; }
-
     bool contains(const EngravingObject* o) const;
 
     EngravingObject* mainElement();
-
-private:
-
-    int m_lid = 0;               // unique id for every linked list
 };
 }
 

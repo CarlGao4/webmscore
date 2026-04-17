@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -25,12 +25,12 @@
 #include "engraving/dom/instrumentname.h"
 
 using namespace mu::inspector;
-using namespace mu::actions;
+using namespace muse::actions;
 
 InstrumentNameSettingsModel::InstrumentNameSettingsModel(QObject* parent, IElementRepositoryService* repository)
     : AbstractInspectorModel(parent, repository)
 {
-    setTitle(qtrc("inspector", "Instrument names"));
+    setTitle(muse::qtrc("inspector", "Instrument names"));
     setModelType(InspectorModelType::TYPE_INSTRUMENT_NAME);
 }
 

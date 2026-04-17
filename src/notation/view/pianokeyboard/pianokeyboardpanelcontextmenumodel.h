@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2022 MuseScore BVBA and others
+ * Copyright (C) 2022 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -29,20 +29,20 @@
 #include "inotationconfiguration.h"
 #include "actions/iactionsdispatcher.h"
 
-namespace mu {
+namespace muse {
 class TranslatableString;
 }
 
 namespace mu::notation {
-class PianoKeyboardPanelContextMenuModel : public uicomponents::AbstractMenuModel, public actions::Actionable
+class PianoKeyboardPanelContextMenuModel : public muse::uicomponents::AbstractMenuModel, public muse::actions::Actionable
 {
     Q_OBJECT
 
-    INJECT(INotationConfiguration, configuration)
-    INJECT(actions::IActionsDispatcher, dispatcher)
-
     Q_PROPERTY(int numberOfKeys READ numberOfKeys NOTIFY numberOfKeysChanged)
     Q_PROPERTY(qreal keyWidthScaling READ keyWidthScaling WRITE setKeyWidthScaling NOTIFY keyWidthScalingChanged)
+
+    muse::Inject<INotationConfiguration> configuration = { this };
+    muse::Inject<muse::actions::IActionsDispatcher> dispatcher = { this };
 
 public:
     explicit PianoKeyboardPanelContextMenuModel(QObject* parent = nullptr);
@@ -60,14 +60,14 @@ signals:
     void numberOfKeysChanged();
 
 private:
-    uicomponents::MenuItem* makeViewMenu();
+    muse::uicomponents::MenuItem* makeViewMenu();
 
-    uicomponents::MenuItem* makeKeyWidthScalingItem(const TranslatableString& title, qreal scaling);
-    uicomponents::MenuItem* makeNumberOfKeysItem(const TranslatableString& title, int numberOfKeys);
+    muse::uicomponents::MenuItem* makeKeyWidthScalingItem(const muse::TranslatableString& title, qreal scaling);
+    muse::uicomponents::MenuItem* makeNumberOfKeysItem(const muse::TranslatableString& title, int numberOfKeys);
 
     void updateKeyWidthScalingItems();
 
-    uicomponents::MenuItemList m_keyWidthScalingItems;
+    muse::uicomponents::MenuItemList m_keyWidthScalingItems;
 
     qreal m_currentKeyWidthScaling = 0.0;
 };

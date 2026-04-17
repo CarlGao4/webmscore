@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -19,19 +19,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+#pragma once
 
-#ifndef MU_ENGRAVING_AMBITUS_H
-#define MU_ENGRAVING_AMBITUS_H
-
+#include "accidental.h"
 #include "engravingitem.h"
 
 #include "pitchspelling.h"
 
-#include "types/types.h"
-#include "dom/types.h"
-#include "types/dimension.h"
-
-#include "accidental.h"
+#include "../types/dimension.h"
+#include "../types/types.h"
 
 namespace mu::engraving {
 class Factory;
@@ -97,7 +93,7 @@ public:
     double headWidth() const;
 
     // re-implemented virtual functions
-    mu::PointF pagePos() const override;        // position in page coordinates
+    PointF pagePos() const override;        // position in page coordinates
     void scanElements(void* data, void (* func)(void*, EngravingItem*), bool all=true) override;
     void setTrack(track_idx_t val) override;
 
@@ -150,6 +146,4 @@ private:
     int m_topPitch = INVALID_PITCH, m_bottomPitch = INVALID_PITCH;
     int m_topTpc = Tpc::TPC_INVALID, m_bottomTpc = Tpc::TPC_INVALID;
 };
-} // namespace mu::engraving
-
-#endif
+}

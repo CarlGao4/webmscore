@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -49,7 +49,7 @@ inline bool isMuseScoreFile(const std::string& suffix)
     return suffix == MSCZ || suffix == MSCX || suffix == MSCS;
 }
 
-enum class MscIoMode {
+enum class MscIoMode : unsigned char {
     Unknown = 0,
     Zip,
     Dir,
@@ -68,27 +68,27 @@ inline MscIoMode mscIoModeBySuffix(const std::string& suffix)
     return MscIoMode::Unknown;
 }
 
-inline io::path_t containerPath(const io::path_t& path)
+inline muse::io::path_t containerPath(const muse::io::path_t& path)
 {
-    if (io::suffix(path) == MSCX) {
-        return io::absoluteDirpath(path);
+    if (muse::io::suffix(path) == MSCX) {
+        return muse::io::absoluteDirpath(path);
     }
 
     return path;
 }
 
-inline io::path_t mainFilePath(const io::path_t& path)
+inline muse::io::path_t mainFilePath(const muse::io::path_t& path)
 {
-    if (isMuseScoreFile(io::suffix(path))) {
+    if (isMuseScoreFile(muse::io::suffix(path))) {
         return path;
     }
 
-    return path.appendingComponent(io::filename(path)).appendingSuffix(MSCX);
+    return path.appendingComponent(muse::io::filename(path)).appendingSuffix(MSCX);
 }
 
-inline io::path_t mainFileName(const io::path_t& path)
+inline muse::io::path_t mainFileName(const muse::io::path_t& path)
 {
-    return io::filename(path, !isMuseScoreFile(io::suffix(path))).appendingSuffix(MSCX);
+    return muse::io::filename(path, !isMuseScoreFile(muse::io::suffix(path))).appendingSuffix(MSCX);
 }
 }
 

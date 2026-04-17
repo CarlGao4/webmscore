@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2023 MuseScore BVBA and others
+ * Copyright (C) 2023 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -28,11 +28,12 @@
 #include "translation.h"
 
 using namespace mu;
+using namespace muse;
 using namespace mu::notation;
 
 const QString customPreset()
 {
-    return qtrc("notation", "Custom");
+    return muse::qtrc("notation", "Custom");
 }
 
 StringTuningsSettingsModel::StringTuningsSettingsModel(QObject* parent)
@@ -70,9 +71,9 @@ void StringTuningsSettingsModel::init()
 
     const InstrumentStringTuningsMap& stringTuningsPresets = instrumentsRepository()->stringTuningsPresets();
 
-    if (contains(stringTuningsPresets, instrument->id().toStdString())) {
+    if (muse::contains(stringTuningsPresets, instrument->id().toStdString())) {
         m_itemId = instrument->id().toStdString();
-    } else if (contains(stringTuningsPresets, instrument->family().toStdString())) {
+    } else if (muse::contains(stringTuningsPresets, instrument->family().toStdString())) {
         m_itemId = instrument->family().toStdString();
     }
 
@@ -85,7 +86,7 @@ void StringTuningsSettingsModel::init()
         StringTuningsItem* item = new StringTuningsItem(this);
 
         item->blockSignals(true);
-        item->setShow(contains(visibleStrings, instrStringIndex));
+        item->setShow(muse::contains(visibleStrings, instrStringIndex));
         item->setNumber(QString::number(i + 1));
         item->setValue(string.pitch);
         item->setUseFlat(string.useFlat);
@@ -138,7 +139,7 @@ bool StringTuningsSettingsModel::setStringValue(int stringIndex, const QString& 
     bool useFlat = _stringValue.contains(u'♭');
     item->setUseFlat(useFlat);
 
-    beginMultiCommands();
+    beginMultiCommands(TranslatableString("undoableAction", "Set string tuning"));
 
     updateCurrentPreset();
     saveStrings();
@@ -148,16 +149,14 @@ bool StringTuningsSettingsModel::setStringValue(int stringIndex, const QString& 
     return true;
 }
 
-QString StringTuningsSettingsModel::increaseStringValue(const QString& stringValue)
+QString StringTuningsSettingsModel::increaseStringValue(int currentPitch)
 {
-    String value = engraving::convertPitchStringFlatsAndSharpsToUnicode(stringValue);
-    return engraving::pitch2string(engraving::string2pitch(value) + 1, false /* useFlats */);
+    return engraving::pitch2string(currentPitch + 1, false /* useFlats */);
 }
 
-QString StringTuningsSettingsModel::decreaseStringValue(const QString& stringValue)
+QString StringTuningsSettingsModel::decreaseStringValue(int currentPitch)
 {
-    String value = engraving::convertPitchStringFlatsAndSharpsToUnicode(stringValue);
-    return engraving::pitch2string(engraving::string2pitch(value) - 1, true /* useFlats */);
+    return engraving::pitch2string(currentPitch - 1, true /* useFlats */);
 }
 
 QVariantList StringTuningsSettingsModel::presets(bool withCustom) const
@@ -228,7 +227,7 @@ void StringTuningsSettingsModel::setCurrentPreset(const QString& preset)
 {
     bool isCurrentCustom = currentPreset() == customPreset();
 
-    beginMultiCommands();
+    beginMultiCommands(TranslatableString("undoableAction", "Load string tunings preset"));
 
     changeItemProperty(mu::engraving::Pid::STRINGTUNINGS_PRESET, String::fromQString(preset));
     emit currentPresetChanged();
@@ -261,7 +260,7 @@ QVariantList StringTuningsSettingsModel::numbersOfStrings() const
         int number = static_cast<int>(stringTuning.number);
 
         QVariantMap stringNumberMap;
-        stringNumberMap.insert("text", qtrc("notation", "%n string(s)", nullptr, number));
+        stringNumberMap.insert("text", muse::qtrc("notation", "%n string(s)", nullptr, number));
         stringNumberMap.insert("value", number);
         numbersList << stringNumberMap;
     }
@@ -281,7 +280,7 @@ void StringTuningsSettingsModel::setCurrentNumberOfStrings(int number)
         return;
     }
 
-    beginMultiCommands();
+    beginMultiCommands(TranslatableString("undoableAction", "Set number of strings"));
 
     changeItemProperty(mu::engraving::Pid::STRINGTUNINGS_STRINGS_COUNT, number);
 
@@ -352,7 +351,7 @@ void StringTuningsSettingsModel::saveStrings()
         stringList[i].useFlat = item->useFlat();
     }
 
-    beginCommand();
+    beginCommand(TranslatableString("undoableAction", "Edit strings"));
 
     StringData newStringData(originStringData->frets(), stringList);
     stringTunings->undoStringData(newStringData);
@@ -406,7 +405,7 @@ void StringTuningsSettingsModel::updateCurrentPreset()
 
 void StringTuningsSettingsModel::doSetCurrentPreset(const QString& preset)
 {
-    changeItemProperty(mu::engraving::Pid::STRINGTUNINGS_PRESET, String::fromQString(preset));
+    changeItemProperty(mu::engraving::Pid::STRINGTUNINGS_PRESET, muse::String::fromQString(preset));
     emit currentPresetChanged();
 }
 

@@ -1,3 +1,0 @@
-
-# for compatibility
-include(SetupModule)

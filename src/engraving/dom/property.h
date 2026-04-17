@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -20,12 +20,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_ENGRAVING_PROPERTY_H
-#define MU_ENGRAVING_PROPERTY_H
+#pragma once
 
-#include "types/string.h"
+#include "global/types/string.h"
 
-#include "types/propertyvalue.h"
+#include "../types/propertyvalue.h"
 
 namespace mu::engraving {
 //------------------------------------------------------------------------
@@ -44,7 +43,7 @@ namespace mu::engraving {
 //---------------------------------------------------------
 
 #define M_PROPERTY(a, b, c)                                      \
-    a _##b;                                                \
+    a _##b { };                                                \
 public:                                                     \
     const a& b() const { return _##b; }                  \
     void c(const a& val) { _##b = val; }                  \
@@ -77,6 +76,9 @@ enum class Pid {
     VISIBLE,
     Z,
     SMALL,
+    HIDE_WHEN_EMPTY, // hide empty staves
+    HIDE_STAVES_WHEN_INDIVIDUALLY_EMPTY,
+    SHOW_IF_ENTIRE_SYSTEM_EMPTY,
     SHOW_COURTESY,
     KEYSIG_MODE,
     SLUR_STYLE_TYPE,
@@ -94,13 +96,15 @@ enum class Pid {
     ARTICULATION_ANCHOR,
 
     DIRECTION,
+    HORIZONTAL_DIRECTION,
     STEM_DIRECTION,
     NO_STEM,
     SLUR_DIRECTION,
     LEADING_SPACE,
     MIRROR_HEAD,
-    HEAD_HAS_PARENTHESES,
+    HAS_PARENTHESES,
     DOT_POSITION,
+    COMBINE_VOICE,
     TUNING,
     PAUSE,
 
@@ -135,12 +139,22 @@ enum class Pid {
     RIGHT_MARGIN,
     TOP_MARGIN,
     BOTTOM_MARGIN,
+    PADDING_TO_NOTATION_ABOVE,
+    PADDING_TO_NOTATION_BELOW,
     LAYOUT_BREAK,
     AUTOSCALE,
     SIZE,
     IMAGE_HEIGHT,
     IMAGE_WIDTH,
     IMAGE_FRAMED,
+
+    FRET_FRAME_TEXT_SCALE,
+    FRET_FRAME_DIAGRAM_SCALE,
+    FRET_FRAME_COLUMN_GAP,
+    FRET_FRAME_ROW_GAP,
+    FRET_FRAME_CHORDS_PER_ROW,
+    FRET_FRAME_H_ALIGN,
+    FRET_FRAME_DIAGRAMS_ORDER,
 
     SCALE,
     LOCK_ASPECT_RATIO,
@@ -151,13 +165,17 @@ enum class Pid {
     BEAM_POS,
     BEAM_MODE,
     BEAM_NO_SLOPE,
+    BEAM_CROSS_STAFF_MOVE,
     USER_LEN,         // used for stems
+    SHOW_STEM_SLASH,  // used for grace notes
 
     SPACE,            // used for spacer
     TEMPO,
     TEMPO_FOLLOW_TEXT,
+    TEMPO_ALIGN_RIGHT_OF_REHEARSAL_MARK,
     ACCIDENTAL_BRACKET,
     ACCIDENTAL_TYPE,
+    ACCIDENTAL_STACKING_ORDER_OFFSET,
     NUMERATOR_STRING,
     DENOMINATOR_STRING,
     FBPREFIX,               // used for FiguredBassItem
@@ -183,8 +201,7 @@ enum class Pid {
     VELO_CHANGE_METHOD,
     VELO_CHANGE_SPEED,
     DYNAMIC_TYPE,
-    DYNAMIC_RANGE,
-//100
+
     SINGLE_NOTE_DYNAMICS,
     CHANGE_METHOD,
     PLACEMENT,                // Goes with P_TYPE::PLACEMENT
@@ -196,6 +213,8 @@ enum class Pid {
     CONTINUE_AT,
     LABEL,
     MARKER_TYPE,
+    MUSIC_SYMBOL_SIZE,
+    MARKER_CENTER_ON_SYMBOL,
     ARP_USER_LEN1,
     ARP_USER_LEN2,
     REPEAT_END,
@@ -214,16 +233,15 @@ enum class Pid {
     GROUP_NODES,
     LINE_STYLE,
     LINE_WIDTH,
-    LINE_WIDTH_SPATIUM,
     TIME_STRETCH,
     ORNAMENT_STYLE,
     INTERVAL_ABOVE,
     INTERVAL_BELOW,
     ORNAMENT_SHOW_ACCIDENTAL,
+    ORNAMENT_SHOW_CUE_NOTE,
     START_ON_UPPER_NOTE,
 
     TIMESIG,
-    TIMESIG_GLOBAL,
     TIMESIG_STRETCH,
     TIMESIG_TYPE,
     SPANNER_TICK,
@@ -232,6 +250,7 @@ enum class Pid {
     OFFSET2,
     BREAK_MMR,
     MMREST_NUMBER_POS,
+    MMREST_NUMBER_OFFSET,
     MMREST_NUMBER_VISIBLE,
     MEASURE_REPEAT_NUMBER_POS,
     REPEAT_COUNT,
@@ -264,10 +283,14 @@ enum class Pid {
     FRET_OFFSET,
     FRET_NUM_POS,
     ORIENTATION,
+    FRET_SHOW_FINGERINGS,
+    FRET_FINGERING,
 
     HARMONY_VOICE_LITERAL,
     HARMONY_VOICING,
     HARMONY_DURATION,
+    HARMONY_BASS_SCALE,
+    HARMONY_DO_NOT_STACK_MODIFIERS,
 
     SYSTEM_BRACKET,
     GAP,
@@ -305,7 +328,7 @@ enum class Pid {
 
     BRACKET_COLUMN,
     INAME_LAYOUT_POSITION,
-//200
+
     TEXT_STYLE,
 
     FONT_FACE,
@@ -322,6 +345,7 @@ enum class Pid {
     FRAME_BG_COLOR,
     SIZE_SPATIUM_DEPENDENT,
     TEXT_SIZE_SPATIUM_DEPENDENT, // for text component of textLine items
+    MUSICAL_SYMBOLS_SCALE,
     ALIGN,
     TEXT_SCRIPT_ALIGN,
     SYSTEM_FLAG,
@@ -355,10 +379,19 @@ enum class Pid {
     END_FONT_STYLE,
     END_TEXT_OFFSET,
 
+    NOTELINE_PLACEMENT,
+
     AVOID_BARLINES, // meant for Dynamics
     DYNAMICS_SIZE,
     CENTER_ON_NOTEHEAD,
-    SNAP_TO_DYNAMICS,
+    ANCHOR_TO_END_OF_PREVIOUS,
+
+    SNAP_TO_DYNAMICS, // pre-4.4 version of the property, specific for expression
+    SNAP_BEFORE,
+    SNAP_AFTER,
+
+    VOICE_ASSIGNMENT,
+    CENTER_BETWEEN_STAVES,
 
     POS_ABOVE,
 
@@ -422,6 +455,9 @@ enum class Pid {
     CAPO_GENERATE_TEXT,
 
     TIE_PLACEMENT,
+    MIN_LENGTH,
+
+    PARTIAL_SPANNER_DIRECTION,
 
     POSITION_LINKED_TO_MASTER,
     APPEARANCE_LINKED_TO_MASTER,
@@ -432,20 +468,35 @@ enum class Pid {
     STRINGTUNINGS_PRESET,
     STRINGTUNINGS_VISIBLE_STRINGS,
 
+    SCORE_FONT,
+    SYMBOLS_SIZE,
+    SYMBOL_ANGLE,
+
     APPLY_TO_ALL_STAVES,
+
+    IS_COURTESY,
+
+    EXCLUDE_VERTICAL_ALIGN,
+
+    SHOW_MEASURE_NUMBERS,
+
+    PLAY_COUNT_TEXT_SETTING,
+    PLAY_COUNT_TEXT,
+
+    ALIGN_WITH_OTHER_RESTS,
 
     END
 };
 
 // Determines propagation of properties between score and parts
-enum class PropertyPropagation {
+enum class PropertyPropagation : unsigned char {
     NONE,
     PROPAGATE,
     UNLINK,
 };
 
 // Each group can be propagated differently between score and parts
-enum class PropertyGroup {
+enum class PropertyGroup : unsigned char {
     POSITION,
     TEXT,
     APPEARANCE,
@@ -459,9 +510,8 @@ extern String propertyToString(Pid, const PropertyValue& value, bool mscx);
 extern P_TYPE propertyType(Pid);
 extern const char* propertyName(Pid);
 extern bool propertyLink(Pid id);
+extern bool propertyLinkSameScore(Pid id);
 extern PropertyGroup propertyGroup(Pid id);
-extern Pid propertyId(const AsciiStringView& name);
+extern Pid propertyId(const muse::AsciiStringView& name);
 extern String propertyUserName(Pid);
 } // namespace mu::engraving
-
-#endif

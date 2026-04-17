@@ -19,16 +19,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_SYSTEMINFO_H
-#define MU_SYSTEMINFO_H
+#ifndef MUSE_GLOBAL_SYSTEMINFO_H
+#define MUSE_GLOBAL_SYSTEMINFO_H
 
-#include <map>
+#include <unordered_map>
 
-#include "types/val.h"
-
+#include "../types/val.h"
 #include "../isysteminfo.h"
 
-namespace mu {
+namespace muse {
 class SystemInfo : public ISystemInfo
 {
 public:
@@ -36,11 +35,11 @@ public:
 
     CpuArchitecture cpuArchitecture() const override;
     ProductType productType() const override;
-    framework::Version productVersion() const override;
+    Version productVersion() const override;
 
 private:
     std::unordered_map<std::string, Val> m_params;
 };
 }
 
-#endif // MU_SYSTEMINFO_H
+#endif // MUSE_GLOBAL_SYSTEMINFO_H

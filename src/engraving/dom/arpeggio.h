@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -33,7 +33,7 @@ class Chord;
 //   @@ Arpeggio
 //---------------------------------------------------------
 
-enum class AnchorRebaseDirection : char {
+enum class AnchorRebaseDirection : unsigned char {
     UP,
     DOWN
 };
@@ -51,6 +51,9 @@ public:
     ArpeggioType arpeggioType() const { return m_arpeggioType; }
     void setArpeggioType(ArpeggioType v) { m_arpeggioType = v; }
     const TranslatableString& arpeggioTypeName() const;
+
+    int subtype() const override { return int(m_arpeggioType); }
+    TranslatableString subtypeUserName() const override;
 
     Chord* chord() const { return (Chord*)explicitParent(); }
 
@@ -95,7 +98,7 @@ public:
     int gripsCount() const override { return 2; }
     Grip initialEditModeGrip() const override { return Grip::END; }
     Grip defaultGrip() const override { return Grip::START; }
-    std::vector<mu::PointF> gripsPositions(const EditData& = EditData()) const override;
+    std::vector<PointF> gripsPositions(const EditData& = EditData()) const override;
 
     struct LayoutData : public EngravingItem::LayoutData {
         // cache
@@ -119,8 +122,8 @@ private:
     Arpeggio(Chord* parent);
 
     void spatiumChanged(double /*oldValue*/, double /*newValue*/) override;
-    std::vector<mu::LineF> dragAnchorLines() const override;
-    std::vector<mu::LineF> gripAnchorLines(Grip) const override;
+    std::vector<LineF> dragAnchorLines() const override;
+    std::vector<LineF> gripAnchorLines(Grip) const override;
     void startEdit(EditData&) override;
     void startEditDrag(EditData&) override;
 

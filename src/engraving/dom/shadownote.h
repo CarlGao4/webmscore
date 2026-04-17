@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -20,12 +20,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_ENGRAVING_SHADOWNOTE_H
-#define MU_ENGRAVING_SHADOWNOTE_H
+#pragma once
 
 #include "engravingitem.h"
+
+#include "accidental.h"
 #include "durationtype.h"
-#include "types.h"
+#include "../types/types.h"
 
 namespace mu::engraving {
 //---------------------------------------------------------
@@ -62,9 +63,9 @@ public:
     void setState(SymId noteSymbol, TDuration duration, bool isRest, double segmentSkylineTopY, double segmentSkylineBottomY,
                   AccidentalType accidentalType = AccidentalType::NONE, const std::set<SymId>& articulationIds = {});
 
-    void drawArticulations(mu::draw::Painter* painter) const;
-    void drawMarcato(mu::draw::Painter* painter, const SymId& articulation, mu::RectF& boundRect) const;
-    void drawArticulation(mu::draw::Painter* painter, const SymId& articulation, mu::RectF& boundRect) const;
+    void drawArticulations(muse::draw::Painter* painter) const;
+    void drawMarcato(muse::draw::Painter* painter, const SymId& articulation, RectF& boundRect) const;
+    void drawArticulation(muse::draw::Painter* painter, const SymId& articulation, RectF& boundRect) const;
 
     bool computeUp() const;
     SymId noteheadSymbol() const { return m_noteheadSymbol; }
@@ -73,6 +74,7 @@ public:
     SymId flagSym() const;
     AccidentalType accidentalType() const;
     const std::set<SymId>& articulationIds() const;
+
     double segmentSkylineBottomY() const;
     double segmentSkylineTopY() const;
 
@@ -92,4 +94,3 @@ private:
     double m_segmentSkylineBottomY = 0.0;
 };
 } // namespace mu::engraving
-#endif

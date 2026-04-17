@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -29,7 +29,6 @@
 
 #include "draw/types/geometry.h"
 #include "modularity/ioc.h"
-#include "async/asyncable.h"
 #include "inotationconfiguration.h"
 #include "context/iglobalcontext.h"
 #include "ui/iuiconfiguration.h"
@@ -37,31 +36,31 @@
 #include "abstractnotationpaintview.h"
 
 namespace mu::notation {
-class NotationNavigatorCursorView : public QQuickPaintedItem
+class NotationNavigatorCursorView : public QQuickPaintedItem, public muse::Injectable
 {
     Q_OBJECT
 
-    INJECT(INotationConfiguration, configuration)
+    muse::Inject<INotationConfiguration> configuration = { this };
 
 public:
     NotationNavigatorCursorView(QQuickItem* parent = nullptr);
 
-    void setRect(const RectF& cursorRect);
+    void setRect(const muse::RectF& cursorRect);
 
 private:
     virtual void paint(QPainter* painter) override;
 
-    RectF m_cursorRect;
+    muse::RectF m_cursorRect;
 };
 
 class NotationNavigator : public AbstractNotationPaintView
 {
     Q_OBJECT
 
-    INJECT(context::IGlobalContext, globalContext)
-    INJECT(INotationConfiguration, configuration)
-    INJECT(ui::IUiConfiguration, uiConfiguration)
-    INJECT(engraving::IEngravingConfiguration, engravingConfiguration)
+    muse::Inject<context::IGlobalContext> globalContext = { this };
+    muse::Inject<INotationConfiguration> configuration = { this };
+    muse::Inject<muse::ui::IUiConfiguration> uiConfiguration = { this };
+    muse::Inject<engraving::IEngravingConfiguration> engravingConfiguration = { this };
 
     Q_PROPERTY(int orientation READ orientation NOTIFY orientationChanged)
 
@@ -78,8 +77,6 @@ signals:
     void orientationChanged();
 
 private:
-    INotationPtr currentNotation() const;
-
     void initOrientation();
     void initVisible();
 
@@ -96,15 +93,15 @@ private:
 
     void paintPageNumbers(QPainter* painter);
 
-    bool moveCanvasToRect(const RectF& viewRect);
+    bool moveCanvasToRect(const muse::RectF& viewRect);
 
     bool isVerticalOrientation() const;
 
-    PageList pages() const;
+    const PageList& pages() const;
 
-    RectF m_cursorRect;
+    muse::RectF m_cursorRect;
     NotationNavigatorCursorView* m_cursorRectView = nullptr;
-    PointF m_startMove;
+    muse::PointF m_startMove;
 };
 }
 

@@ -20,14 +20,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_MUSESAMPLER_IMUSESAMPLERINFO_H
-#define MU_MUSESAMPLER_IMUSESAMPLERINFO_H
+#ifndef MUSE_MUSESAMPLER_IMUSESAMPLERINFO_H
+#define MUSE_MUSESAMPLER_IMUSESAMPLERINFO_H
 
 #include "modularity/imoduleinterface.h"
 
 #include "musesamplertypes.h"
+#include "global/types/version.h"
 
-namespace mu::musesampler {
+namespace muse::musesampler {
 class IMuseSamplerInfo : MODULE_EXPORT_INTERFACE
 {
     INTERFACE_ID(IMuseSamplerInfo)
@@ -35,8 +36,8 @@ class IMuseSamplerInfo : MODULE_EXPORT_INTERFACE
 public:
     virtual ~IMuseSamplerInfo() = default;
 
-    virtual std::string version() const = 0;
-    virtual bool isInstalled() const = 0;
+    virtual const Version& version() const = 0;
+    virtual bool isLoaded() const = 0;
 
     virtual float defaultReverbLevel(const String& instrumentSoundId) const = 0;
 
@@ -45,4 +46,4 @@ public:
 };
 }
 
-#endif // MU_MUSESAMPLER_IMUSESAMPLERINFO_H
+#endif // MUSE_MUSESAMPLER_IMUSESAMPLERINFO_H

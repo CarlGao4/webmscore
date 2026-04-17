@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -20,10 +20,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_ENGRAVING_IMAGE_CACHE_H
-#define MU_ENGRAVING_IMAGE_CACHE_H
+#pragma once
 
 #include <list>
+#include <string>
 
 #include "types/string.h"
 #include "types/bytearray.h"
@@ -42,32 +42,28 @@ class Score;
 
 class ImageStoreItem
 {
-    INJECT(ICryptographicHash, cryptographicHash)
+    muse::GlobalInject<muse::ICryptographicHash> cryptographicHash;
 
 public:
-    ImageStoreItem(const io::path_t& p);
+    ImageStoreItem(const std::string& p);
     void dereference(Image*);
     void reference(Image*);
 
-    const io::path_t& path() const { return m_path; }
-    mu::ByteArray& buffer() { return m_buffer; }
-    const mu::ByteArray& buffer() const { return m_buffer; }
+    muse::ByteArray& buffer() { return m_buffer; }
+    const muse::ByteArray& buffer() const { return m_buffer; }
     bool loaded() const { return !m_buffer.empty(); }
-    void setPath(const io::path_t& val);
     bool isUsed(Score*) const;
     bool isUsed() const { return !m_references.empty(); }
-    void load();
-    String hashName() const;
-    const mu::ByteArray& hash() const { return m_hash; }
-    void set(const mu::ByteArray& b, const mu::ByteArray& h) { m_buffer = b; m_hash = h; }
+    std::string hashName() const;
+    const muse::ByteArray& hash() const { return m_hash; }
+    void set(const muse::ByteArray& b, const muse::ByteArray& h) { m_buffer = b; m_hash = h; }
 
 private:
 
     std::list<Image*> m_references;
-    io::path_t m_path;                  // original location of image
-    String m_type;                      // image type (file extension)
-    mu::ByteArray m_buffer;
-    mu::ByteArray m_hash;               // 16 byte md4 hash of _buffer
+    std::string m_type; // image type (file extension)
+    muse::ByteArray m_buffer;
+    muse::ByteArray m_hash; // 16 byte md4 hash of _buffer
 };
 
 //---------------------------------------------------------
@@ -76,7 +72,7 @@ private:
 
 class ImageStore
 {
-    INJECT(ICryptographicHash, cryptographicHash)
+    muse::GlobalInject<muse::ICryptographicHash> cryptographicHash;
 
 public:
     ImageStore() = default;
@@ -84,8 +80,8 @@ public:
     ImageStore& operator=(const ImageStore&) = delete;
     ~ImageStore();
 
-    ImageStoreItem* getImage(const io::path_t& path) const;
-    ImageStoreItem* add(const io::path_t& path, const mu::ByteArray&);
+    ImageStoreItem* getImage(std::string name) const;
+    ImageStoreItem* add(const std::string& name, const muse::ByteArray&);
     void clearUnused();
 
     typedef std::vector<ImageStoreItem*> ItemList;
@@ -104,4 +100,3 @@ private:
 
 extern ImageStore imageStore;       // this is the global imageStore
 } // namespace mu::engraving
-#endif

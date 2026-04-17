@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -31,7 +31,7 @@
 #include "log.h"
 
 using namespace mu::engraving;
-using namespace mu::mpe;
+using namespace muse::mpe;
 
 static const PlaybackSetupData PIANO_SETUP_DATA = {
     SoundId::Piano, SoundCategory::Keyboards
@@ -41,6 +41,7 @@ void PlaybackSetupDataResolver::resolveSetupData(const Instrument* instrument, P
 {
     if (!instrument->soundId().empty()) {
         result = PlaybackSetupData::fromString(instrument->soundId());
+        result.supportsSingleNoteDynamics = instrument->singleNoteDynamics();
         result.musicXmlSoundId = std::make_optional(instrument->musicXmlId().toStdString());
         return;
     }
@@ -71,7 +72,7 @@ void PlaybackSetupDataResolver::resolveSetupData(const Instrument* instrument, P
     result = PIANO_SETUP_DATA;
 }
 
-void PlaybackSetupDataResolver::resolveChordSymbolsSetupData(const Instrument* instrument, mpe::PlaybackSetupData& result) const
+void PlaybackSetupDataResolver::resolveChordSymbolsSetupData(const Instrument* instrument, PlaybackSetupData& result) const
 {
     if (instrument->hasStrings()) {
         static const PlaybackSetupData GUITAR_SETUP_DATA = {
@@ -86,7 +87,7 @@ void PlaybackSetupDataResolver::resolveChordSymbolsSetupData(const Instrument* i
     }
 }
 
-void PlaybackSetupDataResolver::resolveMetronomeSetupData(mpe::PlaybackSetupData& result) const
+void PlaybackSetupDataResolver::resolveMetronomeSetupData(PlaybackSetupData& result) const
 {
     static const PlaybackSetupData METRONOME_SETUP_DATA = {
         SoundId::Block, SoundCategory::Percussions, { SoundSubCategory::Wooden }

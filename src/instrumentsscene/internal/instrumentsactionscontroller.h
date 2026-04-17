@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -23,6 +23,7 @@
 #define MU_INSTRUMENTSSCENE_INSTRUMENTSACTIONSCONTROLLER_H
 
 #include "actions/actionable.h"
+#include "global/async/asyncable.h"
 
 #include "modularity/ioc.h"
 #include "actions/iactionsdispatcher.h"
@@ -30,16 +31,16 @@
 #include "context/iglobalcontext.h"
 
 namespace mu::instrumentsscene {
-class InstrumentsActionsController : public actions::Actionable
+class InstrumentsActionsController : public muse::actions::Actionable, public muse::async::Asyncable
 {
-    INJECT(actions::IActionsDispatcher, dispatcher)
+    INJECT(muse::actions::IActionsDispatcher, dispatcher)
     INJECT(notation::ISelectInstrumentsScenario, selectInstrumentsScenario)
     INJECT(context::IGlobalContext, context)
 
 public:
     virtual ~InstrumentsActionsController() = default;
 
-    bool canReceiveAction(const actions::ActionCode&) const override;
+    bool canReceiveAction(const muse::actions::ActionCode&) const override;
 
     void init();
 

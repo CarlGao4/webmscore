@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -34,13 +34,13 @@ class IProjectAutoSaver : MODULE_EXPORT_INTERFACE
 public:
     virtual ~IProjectAutoSaver() = default;
 
-    virtual bool projectHasUnsavedChanges(const io::path_t& projectPath) const = 0;
-    virtual void removeProjectUnsavedChanges(const io::path_t& projectPath) = 0;
+    virtual bool projectHasUnsavedChanges(const muse::io::path_t& projectPath) const = 0;
+    virtual void removeProjectUnsavedChanges(const muse::io::path_t& projectPath) = 0;
 
-    virtual bool isAutosaveOfNewlyCreatedProject(const io::path_t& projectPath) const = 0;
+    virtual bool isAutosaveOfNewlyCreatedProject(const muse::io::path_t& projectPath) const = 0;
 
-    virtual io::path_t projectOriginalPath(const io::path_t& projectAutoSavePath) const = 0;
-    virtual io::path_t projectAutoSavePath(const io::path_t& projectPath) const = 0;
+    virtual muse::io::path_t projectOriginalPath(const muse::io::path_t& projectAutoSavePath) const = 0;
+    virtual muse::io::path_t projectAutoSavePath(const muse::io::path_t& projectPath) const = 0;
 
     static inline const std::string AUTOSAVE_SUFFIX = "autosave";
 };

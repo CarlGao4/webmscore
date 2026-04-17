@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<museScore version="4.30">
+<museScore version="4.60">
   <Score>
+    <eid>B_B</eid>
     <Division>480</Division>
     <Style>
       <pageWidth>8.50197</pageWidth>
@@ -14,6 +15,8 @@
       <pageOddBottomMargin>0.5</pageOddBottomMargin>
       <pageTwosided>0</pageTwosided>
       <minSystemDistance>12</minSystemDistance>
+      <lyricsOddFontFace>Times New Roman</lyricsOddFontFace>
+      <lyricsEvenFontFace>Times New Roman</lyricsEvenFontFace>
       <barWidth>0.15625</barWidth>
       <endBarWidth>0.5</endBarWidth>
       <stemWidth>0.125</stemWidth>
@@ -21,16 +24,27 @@
       <ledgerLineWidth>0.15625</ledgerLineWidth>
       <chordSymbolAFontFace>Times New Roman</chordSymbolAFontFace>
       <chordSymbolBFontFace>Times New Roman</chordSymbolBFontFace>
+      <romanNumeralFontFace>Times New Roman</romanNumeralFontFace>
       <nashvilleNumberFontFace>Times New Roman</nashvilleNumberFontFace>
       <smallNoteMag>0.75</smallNoteMag>
       <graceNoteMag>0.6</graceNoteMag>
       <slurEndWidth>0.0625</slurEndWidth>
       <slurMidWidth>0.21875</slurMidWidth>
+      <tieEndWidth>0.0625</tieEndWidth>
+      <tieMidWidth>0.21875</tieMidWidth>
       <tupletFontFace>Times New Roman</tupletFontFace>
+      <titleFontFace>Times New Roman</titleFontFace>
+      <subTitleFontFace>Times New Roman</subTitleFontFace>
+      <composerFontFace>Times New Roman</composerFontFace>
+      <lyricistFontFace>Times New Roman</lyricistFontFace>
       <fingeringFontFace>Times New Roman</fingeringFontFace>
       <lhGuitarFingeringFontFace>Times New Roman</lhGuitarFingeringFontFace>
       <rhGuitarFingeringFontFace>Times New Roman</rhGuitarFingeringFontFace>
+      <hammerOnPullOffTappingFontFace>Times New Roman</hammerOnPullOffTappingFontFace>
       <stringNumberFontFace>Times New Roman</stringNumberFontFace>
+      <harpPedalDiagramFontFace>Times New Roman</harpPedalDiagramFontFace>
+      <harpPedalTextDiagramFontFace>Times New Roman</harpPedalTextDiagramFontFace>
+      <articulationFontFace>Times New Roman</articulationFontFace>
       <longInstrumentFontFace>Times New Roman</longInstrumentFontFace>
       <shortInstrumentFontFace>Times New Roman</shortInstrumentFontFace>
       <partInstrumentFontFace>Times New Roman</partInstrumentFontFace>
@@ -39,18 +53,23 @@
       <tempoChangeFontFace>Times New Roman</tempoChangeFontFace>
       <metronomeFontFace>Times New Roman</metronomeFontFace>
       <measureNumberFontFace>Times New Roman</measureNumberFontFace>
+      <measureNumberAlternateFontFace>Times New Roman</measureNumberAlternateFontFace>
       <mmRestRangeFontFace>Times New Roman</mmRestRangeFontFace>
       <translatorFontFace>Times New Roman</translatorFontFace>
-      <systemFontFace>Times New Roman</systemFontFace>
-      <staffFontFace>Times New Roman</staffFontFace>
+      <systemTextFontFace>Times New Roman</systemTextFontFace>
+      <staffTextFontFace>Times New Roman</staffTextFontFace>
       <rehearsalMarkFontFace>Times New Roman</rehearsalMarkFontFace>
+      <repeatPlayCountFontFace>Times New Roman</repeatPlayCountFontFace>
       <repeatLeftFontFace>Times New Roman</repeatLeftFontFace>
       <repeatRightFontFace>Times New Roman</repeatRightFontFace>
       <frameFontFace>Times New Roman</frameFontFace>
+      <noteLineFontFace>Times New Roman</noteLineFontFace>
       <glissandoFontFace>Times New Roman</glissandoFontFace>
       <bendFontFace>Times New Roman</bendFontFace>
       <headerFontFace>Times New Roman</headerFontFace>
       <footerFontFace>Times New Roman</footerFontFace>
+      <copyrightFontFace>Times New Roman</copyrightFontFace>
+      <pageNumberFontFace>Times New Roman</pageNumberFontFace>
       <instrumentChangeFontFace>Times New Roman</instrumentChangeFontFace>
       <stickingFontFace>Times New Roman</stickingFontFace>
       <user1FontFace>Times New Roman</user1FontFace>
@@ -65,7 +84,7 @@
       <user10FontFace>Times New Roman</user10FontFace>
       <user11FontFace>Times New Roman</user11FontFace>
       <user12FontFace>Times New Roman</user12FontFace>
-      <Spatium>1.75</Spatium>
+      <spatium>1.75</spatium>
       </Style>
     <showInvisible>1</showInvisible>
     <showUnprintable>1</showUnprintable>
@@ -82,25 +101,25 @@
     <metaTag name="workNumber"></metaTag>
     <metaTag name="workTitle"></metaTag>
     <Part id="1">
-      <Staff id="1">
+      <Staff>
+        <eid>C_C</eid>
         <StaffType group="pitched">
           <name>stdNormal</name>
           </StaffType>
-        <hideWhenEmpty>3</hideWhenEmpty>
         </Staff>
       <trackName>Flute</trackName>
-      <Instrument id="treble-flute">
+      <Instrument id="flute">
         <longName>Flute</longName>
         <shortName>Fl.</shortName>
         <trackName>Flute</trackName>
-        <minPitchP>67</minPitchP>
-        <maxPitchP>103</maxPitchP>
-        <minPitchA>67</minPitchA>
-        <maxPitchA>100</maxPitchA>
+        <minPitchP>59</minPitchP>
+        <maxPitchP>98</maxPitchP>
+        <minPitchA>60</minPitchA>
+        <maxPitchA>93</maxPitchA>
         <instrumentId>wind.flutes.flute</instrumentId>
         <Articulation>
           <velocity>100</velocity>
-          <gateTime>100</gateTime>
+          <gateTime>95</gateTime>
           </Articulation>
         <Articulation name="staccatissimo">
           <velocity>100</velocity>
@@ -139,7 +158,7 @@
           <gateTime>100</gateTime>
           </Articulation>
         <Channel>
-          <program value="72"/>
+          <program value="73"/>
           <controller ctrl="7" value="95"/>
           <controller ctrl="10" value="69"/>
           </Channel>
@@ -148,148 +167,185 @@
     <Staff id="1">
       <VBox>
         <height>10</height>
+        <eid>D_D</eid>
         </VBox>
       <Measure>
+        <eid>E_E</eid>
         <voice>
           <Clef>
             <concertClefType>G</concertClefType>
             <transposingClefType>G</transposingClefType>
             <isHeader>1</isHeader>
+            <eid>F_F</eid>
             </Clef>
           <TimeSig>
+            <eid>G_G</eid>
             <sigN>4</sigN>
             <sigD>4</sigD>
             </TimeSig>
           <Tempo>
             <tempo>2</tempo>
+            <eid>H_H</eid>
             <text><b>Moderately</b></text>
             </Tempo>
           <Rest>
+            <eid>I_I</eid>
             <durationType>measure</durationType>
             <duration>1/1</duration>
             </Rest>
           </voice>
         </Measure>
       <Measure>
+        <eid>J_J</eid>
         <LayoutBreak>
+          <eid>K_K</eid>
           <subtype>line</subtype>
           </LayoutBreak>
         <voice>
           <Tempo>
             <tempo>2</tempo>
+            <eid>L_L</eid>
             <text><b>Allegro</b></text>
             </Tempo>
           <Rest>
+            <eid>M_M</eid>
             <durationType>measure</durationType>
             <duration>1/1</duration>
             </Rest>
           </voice>
         </Measure>
       <Measure>
+        <eid>N_N</eid>
         <voice>
           <Tempo>
             <tempo>2</tempo>
+            <eid>O_O</eid>
             <text><b>A tempo, warmly</b></text>
             </Tempo>
           <Rest>
+            <eid>P_P</eid>
             <durationType>measure</durationType>
             <duration>1/1</duration>
             </Rest>
           </voice>
         </Measure>
       <Measure>
+        <eid>Q_Q</eid>
         <LayoutBreak>
+          <eid>R_R</eid>
           <subtype>line</subtype>
           </LayoutBreak>
         <voice>
           <Tempo>
             <tempo>2</tempo>
+            <eid>S_S</eid>
             <text><b>Fast three, in one</b></text>
             </Tempo>
           <Rest>
+            <eid>T_T</eid>
             <durationType>measure</durationType>
             <duration>1/1</duration>
             </Rest>
           </voice>
         </Measure>
       <Measure>
+        <eid>U_U</eid>
         <voice>
           <Tempo>
             <tempo>2</tempo>
+            <eid>V_V</eid>
             <text><b>Classic Ballad</b></text>
             </Tempo>
           <Rest>
+            <eid>W_W</eid>
             <durationType>measure</durationType>
             <duration>1/1</duration>
             </Rest>
           </voice>
         </Measure>
       <Measure>
+        <eid>X_X</eid>
         <LayoutBreak>
+          <eid>Y_Y</eid>
           <subtype>line</subtype>
           </LayoutBreak>
         <voice>
           <Tempo>
             <tempo>2</tempo>
+            <eid>Z_Z</eid>
             <text><b>Moderato</b></text>
             </Tempo>
           <Rest>
+            <eid>a_a</eid>
             <durationType>measure</durationType>
             <duration>1/1</duration>
             </Rest>
           </voice>
         </Measure>
       <Measure>
+        <eid>b_b</eid>
         <voice>
           <Tempo>
             <tempo>2</tempo>
+            <eid>c_c</eid>
             <text><b>Freely, with quiet intensity</b></text>
             </Tempo>
           <Rest>
+            <eid>d_d</eid>
             <durationType>measure</durationType>
             <duration>1/1</duration>
             </Rest>
           </voice>
         </Measure>
       <Measure>
+        <eid>e_e</eid>
         <LayoutBreak>
+          <eid>f_f</eid>
           <subtype>line</subtype>
           </LayoutBreak>
         <voice>
-          <Tempo>
-            <tempo>2</tempo>
-            <text><b>Andante</b></text>
-            </Tempo>
+          <StaffText>
+            <eid>g_g</eid>
+            <text><b>“Andante”</b></text>
+            </StaffText>
           <Rest>
+            <eid>h_h</eid>
             <durationType>measure</durationType>
             <duration>1/1</duration>
             </Rest>
           </voice>
         </Measure>
       <Measure>
+        <eid>i_i</eid>
         <voice>
           <Tempo>
             <tempo>2</tempo>
+            <eid>j_j</eid>
             <text><b>Andantino</b></text>
             </Tempo>
           <Rest>
+            <eid>k_k</eid>
             <durationType>measure</durationType>
             <duration>1/1</duration>
             </Rest>
           </voice>
         </Measure>
       <Measure>
+        <eid>l_l</eid>
         <voice>
           <Tempo>
             <tempo>2</tempo>
+            <eid>m_m</eid>
             <text><b>BRISK</b></text>
             </Tempo>
           <Rest>
+            <eid>n_n</eid>
             <durationType>measure</durationType>
             <duration>1/1</duration>
             </Rest>
           <BarLine>
             <subtype>end</subtype>
+            <eid>o_o</eid>
             </BarLine>
           </voice>
         </Measure>

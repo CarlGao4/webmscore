@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2023 MuseScore BVBA and others
+ * Copyright (C) 2023 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,19 +22,22 @@
 #ifndef MU_NOTATION_MSCOREERRORSCONTROLLER_H
 #define MU_NOTATION_MSCOREERRORSCONTROLLER_H
 
-#include "modularity/ioc.h"
+#include "global/async/asyncable.h"
 
-#include "iinteractive.h"
+#include "modularity/ioc.h"
+#include "global/iinteractive.h"
 #include "inotationconfiguration.h"
 
 namespace mu::notation {
-class MScoreErrorsController
+class MScoreErrorsController : public muse::Injectable, public muse::async::Asyncable
 {
-    INJECT_STATIC(INotationConfiguration, configuration)
-    INJECT_STATIC(framework::IInteractive, interactive)
+    muse::Inject<INotationConfiguration> configuration = { this };
+    muse::Inject<muse::IInteractive> interactive = { this };
 
 public:
-    static void checkAndShowMScoreError();
+    MScoreErrorsController(const muse::modularity::ContextPtr& iocCtx);
+
+    void checkAndShowMScoreError();
 };
 }
 

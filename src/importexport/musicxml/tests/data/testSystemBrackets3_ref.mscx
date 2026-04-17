@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<museScore version="4.30">
+<museScore version="4.60">
   <Score>
+    <eid>B_B</eid>
     <Division>480</Division>
     <Style>
-      <Spatium>1.74978</Spatium>
+      <spatium>1.74978</spatium>
       </Style>
     <showInvisible>1</showInvisible>
     <showUnprintable>1</showUnprintable>
@@ -15,16 +16,16 @@
     <metaTag name="lyricist"></metaTag>
     <metaTag name="movementNumber"></metaTag>
     <metaTag name="movementTitle"></metaTag>
-    <metaTag name="source"> </metaTag>
+    <metaTag name="source"></metaTag>
     <metaTag name="translator"></metaTag>
     <metaTag name="workNumber"></metaTag>
     <metaTag name="workTitle">Sample</metaTag>
     <Part id="1">
-      <Staff id="1">
+      <Staff>
+        <eid>C_C</eid>
         <StaffType group="pitched">
           <name>stdNormal</name>
           </StaffType>
-        <hideWhenEmpty>3</hideWhenEmpty>
         <bracket type="0" span="1" col="0" visible="1"/>
         </Staff>
       <trackName>Backing
@@ -39,6 +40,7 @@ Vocals</longName>
         <minPitchA>41</minPitchA>
         <maxPitchA>79</maxPitchA>
         <instrumentId>voice.vocals</instrumentId>
+        <glissandoStyle>portamento</glissandoStyle>
         <Articulation>
           <velocity>100</velocity>
           <gateTime>100</gateTime>
@@ -88,16 +90,17 @@ Vocals</longName>
         </Instrument>
       </Part>
     <Part id="2">
-      <Staff id="2">
+      <Staff>
+        <eid>D_D</eid>
         <StaffType group="pitched">
           <name>stdNormal</name>
           </StaffType>
-        <hideWhenEmpty>3</hideWhenEmpty>
         <bracket type="0" span="6" col="0" visible="1"/>
         <bracket type="1" span="2" col="1" visible="1"/>
         <barLineSpan>1</barLineSpan>
         </Staff>
-      <Staff id="3">
+      <Staff>
+        <eid>E_E</eid>
         <StaffType group="tablature">
           <name>tab6StrCommon</name>
           <lines>6</lines>
@@ -106,9 +109,8 @@ Vocals</longName>
           <durationFontName>MuseScore Tab Modern</durationFontName>
           <durationFontSize>15</durationFontSize>
           <durationFontY>0</durationFontY>
-          <fretFontName>MuseScore Tab Sans</fretFontName>
-          <fretFontSize>9</fretFontSize>
-          <fretFontY>0</fretFontY>
+          <fretUseTextStyle>1</fretUseTextStyle>
+          <fretTextStyle>tab_fret_number</fretTextStyle>
           <linesThrough>0</linesThrough>
           <minimStyle>1</minimStyle>
           <onLines>1</onLines>
@@ -119,7 +121,6 @@ Vocals</longName>
           <showTabFingering>1</showTabFingering>
           <useNumbers>1</useNumbers>
           </StaffType>
-        <hideWhenEmpty>3</hideWhenEmpty>
         <barLineSpan>1</barLineSpan>
         </Staff>
       <trackName>Electric
@@ -136,6 +137,7 @@ Gtr. 1</shortName>
         <maxPitchA>86</maxPitchA>
         <instrumentId>pluck.guitar.electric</instrumentId>
         <clef>G8vb</clef>
+        <glissandoStyle>portamento</glissandoStyle>
         <StringData>
           <frets>24</frets>
           <string>40</string>
@@ -219,15 +221,16 @@ Gtr. 1</shortName>
         </Instrument>
       </Part>
     <Part id="3">
-      <Staff id="4">
+      <Staff>
+        <eid>F_F</eid>
         <StaffType group="pitched">
           <name>stdNormal</name>
           </StaffType>
-        <hideWhenEmpty>3</hideWhenEmpty>
         <bracket type="2" span="2" col="1" visible="1"/>
         <barLineSpan>1</barLineSpan>
         </Staff>
-      <Staff id="5">
+      <Staff>
+        <eid>G_G</eid>
         <StaffType group="tablature">
           <name>tab6StrCommon</name>
           <lines>6</lines>
@@ -236,9 +239,8 @@ Gtr. 1</shortName>
           <durationFontName>MuseScore Tab Modern</durationFontName>
           <durationFontSize>15</durationFontSize>
           <durationFontY>0</durationFontY>
-          <fretFontName>MuseScore Tab Sans</fretFontName>
-          <fretFontSize>9</fretFontSize>
-          <fretFontY>0</fretFontY>
+          <fretUseTextStyle>1</fretUseTextStyle>
+          <fretTextStyle>tab_fret_number</fretTextStyle>
           <linesThrough>0</linesThrough>
           <minimStyle>1</minimStyle>
           <onLines>1</onLines>
@@ -249,7 +251,6 @@ Gtr. 1</shortName>
           <showTabFingering>1</showTabFingering>
           <useNumbers>1</useNumbers>
           </StaffType>
-        <hideWhenEmpty>3</hideWhenEmpty>
         <barLineSpan>1</barLineSpan>
         </Staff>
       <trackName>Electric
@@ -266,6 +267,7 @@ Gtr. 2</shortName>
         <maxPitchA>86</maxPitchA>
         <instrumentId>pluck.guitar.electric</instrumentId>
         <clef>G8vb</clef>
+        <glissandoStyle>portamento</glissandoStyle>
         <StringData>
           <frets>24</frets>
           <string>40</string>
@@ -349,15 +351,16 @@ Gtr. 2</shortName>
         </Instrument>
       </Part>
     <Part id="4">
-      <Staff id="6">
+      <Staff>
+        <eid>H_H</eid>
         <StaffType group="pitched">
           <name>stdNormal</name>
           </StaffType>
-        <hideWhenEmpty>3</hideWhenEmpty>
         <bracket type="1" span="2" col="1" visible="1"/>
         <barLineSpan>1</barLineSpan>
         </Staff>
-      <Staff id="7">
+      <Staff>
+        <eid>I_I</eid>
         <StaffType group="tablature">
           <name>tab6StrCommon</name>
           <lines>6</lines>
@@ -366,9 +369,8 @@ Gtr. 2</shortName>
           <durationFontName>MuseScore Tab Modern</durationFontName>
           <durationFontSize>15</durationFontSize>
           <durationFontY>0</durationFontY>
-          <fretFontName>MuseScore Tab Sans</fretFontName>
-          <fretFontSize>9</fretFontSize>
-          <fretFontY>0</fretFontY>
+          <fretUseTextStyle>1</fretUseTextStyle>
+          <fretTextStyle>tab_fret_number</fretTextStyle>
           <linesThrough>0</linesThrough>
           <minimStyle>1</minimStyle>
           <onLines>1</onLines>
@@ -379,7 +381,6 @@ Gtr. 2</shortName>
           <showTabFingering>1</showTabFingering>
           <useNumbers>1</useNumbers>
           </StaffType>
-        <hideWhenEmpty>3</hideWhenEmpty>
         </Staff>
       <trackName>Acoustic
 Guitar</trackName>
@@ -396,6 +397,7 @@ Gtr.</shortName>
         <instrumentId>pluck.guitar.acoustic</instrumentId>
         <clef>G8vb</clef>
         <singleNoteDynamics>0</singleNoteDynamics>
+        <glissandoStyle>portamento</glissandoStyle>
         <StringData>
           <frets>20</frets>
           <string>40</string>
@@ -464,19 +466,19 @@ Gtr.</shortName>
         </Instrument>
       </Part>
     <Part id="5">
-      <Staff id="8">
+      <Staff>
+        <eid>J_J</eid>
         <StaffType group="pitched">
           <name>stdNormal</name>
           </StaffType>
-        <hideWhenEmpty>3</hideWhenEmpty>
         <bracket type="0" span="2" col="0" visible="1"/>
         <barLineSpan>1</barLineSpan>
         </Staff>
-      <Staff id="9">
+      <Staff>
+        <eid>K_K</eid>
         <StaffType group="pitched">
           <name>stdNormal</name>
           </StaffType>
-        <hideWhenEmpty>3</hideWhenEmpty>
         </Staff>
       <trackName>Piano 2</trackName>
       <Instrument id="piano">
@@ -541,28 +543,35 @@ Gtr.</shortName>
     <Staff id="1">
       <VBox>
         <height>10</height>
+        <eid>L_L</eid>
         <Text>
+          <eid>M_M</eid>
           <style>title</style>
           <text>Sample</text>
           </Text>
         </VBox>
       <Measure>
+        <eid>N_N</eid>
         <voice>
           <Clef>
             <concertClefType>G</concertClefType>
             <transposingClefType>G</transposingClefType>
             <isHeader>1</isHeader>
+            <eid>O_O</eid>
             </Clef>
           <TimeSig>
+            <eid>P_P</eid>
             <sigN>4</sigN>
             <sigD>4</sigD>
             </TimeSig>
           <Rest>
+            <eid>Q_Q</eid>
             <durationType>measure</durationType>
             <duration>1/1</duration>
             </Rest>
           <BarLine>
             <subtype>end</subtype>
+            <eid>R_R</eid>
             </BarLine>
           </voice>
         </Measure>
@@ -574,17 +583,21 @@ Gtr.</shortName>
             <concertClefType>G8vb</concertClefType>
             <transposingClefType>G8vb</transposingClefType>
             <isHeader>1</isHeader>
+            <eid>S_S</eid>
             </Clef>
           <TimeSig>
+            <eid>T_T</eid>
             <sigN>4</sigN>
             <sigD>4</sigD>
             </TimeSig>
           <Rest>
+            <eid>U_U</eid>
             <durationType>measure</durationType>
             <duration>1/1</duration>
             </Rest>
           <BarLine>
             <subtype>end</subtype>
+            <eid>V_V</eid>
             </BarLine>
           </voice>
         </Measure>
@@ -596,18 +609,22 @@ Gtr.</shortName>
             <concertClefType>TAB</concertClefType>
             <transposingClefType>TAB</transposingClefType>
             <isHeader>1</isHeader>
+            <eid>W_W</eid>
             </Clef>
           <TimeSig>
+            <eid>X_X</eid>
             <sigN>4</sigN>
             <sigD>4</sigD>
             </TimeSig>
           <Rest>
+            <eid>Y_Y</eid>
             <durationType>measure</durationType>
             <duration>1/1</duration>
             </Rest>
           <BarLine>
             <subtype>end</subtype>
             <span>0</span>
+            <eid>Z_Z</eid>
             </BarLine>
           </voice>
         </Measure>
@@ -619,17 +636,21 @@ Gtr.</shortName>
             <concertClefType>G8vb</concertClefType>
             <transposingClefType>G8vb</transposingClefType>
             <isHeader>1</isHeader>
+            <eid>a_a</eid>
             </Clef>
           <TimeSig>
+            <eid>b_b</eid>
             <sigN>4</sigN>
             <sigD>4</sigD>
             </TimeSig>
           <Rest>
+            <eid>c_c</eid>
             <durationType>measure</durationType>
             <duration>1/1</duration>
             </Rest>
           <BarLine>
             <subtype>end</subtype>
+            <eid>d_d</eid>
             </BarLine>
           </voice>
         </Measure>
@@ -641,18 +662,22 @@ Gtr.</shortName>
             <concertClefType>TAB</concertClefType>
             <transposingClefType>TAB</transposingClefType>
             <isHeader>1</isHeader>
+            <eid>e_e</eid>
             </Clef>
           <TimeSig>
+            <eid>f_f</eid>
             <sigN>4</sigN>
             <sigD>4</sigD>
             </TimeSig>
           <Rest>
+            <eid>g_g</eid>
             <durationType>measure</durationType>
             <duration>1/1</duration>
             </Rest>
           <BarLine>
             <subtype>end</subtype>
             <span>0</span>
+            <eid>h_h</eid>
             </BarLine>
           </voice>
         </Measure>
@@ -664,17 +689,21 @@ Gtr.</shortName>
             <concertClefType>G8vb</concertClefType>
             <transposingClefType>G8vb</transposingClefType>
             <isHeader>1</isHeader>
+            <eid>i_i</eid>
             </Clef>
           <TimeSig>
+            <eid>j_j</eid>
             <sigN>4</sigN>
             <sigD>4</sigD>
             </TimeSig>
           <Rest>
+            <eid>k_k</eid>
             <durationType>measure</durationType>
             <duration>1/1</duration>
             </Rest>
           <BarLine>
             <subtype>end</subtype>
+            <eid>l_l</eid>
             </BarLine>
           </voice>
         </Measure>
@@ -686,17 +715,21 @@ Gtr.</shortName>
             <concertClefType>TAB</concertClefType>
             <transposingClefType>TAB</transposingClefType>
             <isHeader>1</isHeader>
+            <eid>m_m</eid>
             </Clef>
           <TimeSig>
+            <eid>n_n</eid>
             <sigN>4</sigN>
             <sigD>4</sigD>
             </TimeSig>
           <Rest>
+            <eid>o_o</eid>
             <durationType>measure</durationType>
             <duration>1/1</duration>
             </Rest>
           <BarLine>
             <subtype>end</subtype>
+            <eid>p_p</eid>
             </BarLine>
           </voice>
         </Measure>
@@ -708,17 +741,21 @@ Gtr.</shortName>
             <concertClefType>G</concertClefType>
             <transposingClefType>G</transposingClefType>
             <isHeader>1</isHeader>
+            <eid>q_q</eid>
             </Clef>
           <TimeSig>
+            <eid>r_r</eid>
             <sigN>4</sigN>
             <sigD>4</sigD>
             </TimeSig>
           <Rest>
+            <eid>s_s</eid>
             <durationType>measure</durationType>
             <duration>1/1</duration>
             </Rest>
           <BarLine>
             <subtype>end</subtype>
+            <eid>t_t</eid>
             </BarLine>
           </voice>
         </Measure>
@@ -730,17 +767,21 @@ Gtr.</shortName>
             <concertClefType>F</concertClefType>
             <transposingClefType>F</transposingClefType>
             <isHeader>1</isHeader>
+            <eid>u_u</eid>
             </Clef>
           <TimeSig>
+            <eid>v_v</eid>
             <sigN>4</sigN>
             <sigD>4</sigD>
             </TimeSig>
           <Rest>
+            <eid>w_w</eid>
             <durationType>measure</durationType>
             <duration>1/1</duration>
             </Rest>
           <BarLine>
             <subtype>end</subtype>
+            <eid>x_x</eid>
             </BarLine>
           </voice>
         </Measure>

@@ -20,25 +20,23 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_MPE_ARTICULATIONPROFILESREPOSITORY_H
-#define MU_MPE_ARTICULATIONPROFILESREPOSITORY_H
+#ifndef MUSE_MPE_ARTICULATIONPROFILESREPOSITORY_H
+#define MUSE_MPE_ARTICULATIONPROFILESREPOSITORY_H
 
 #include "modularity/ioc.h"
 #include "io/ifilesystem.h"
 #include "async/asyncable.h"
 
-#include <QJsonArray>
-#include <QJsonObject>
-
 #include "iarticulationprofilesrepository.h"
 
-namespace mu::mpe {
-class ArticulationProfilesRepository : public IArticulationProfilesRepository, public async::Asyncable
+namespace muse::mpe {
+class ArticulationProfilesRepository : public IArticulationProfilesRepository, public Injectable, public async::Asyncable
 {
-    INJECT(io::IFileSystem, fileSystem)
+    Inject<io::IFileSystem> fileSystem = { this };
 
 public:
-    ArticulationProfilesRepository() = default;
+    ArticulationProfilesRepository(const modularity::ContextPtr& iocCtx)
+        : Injectable(iocCtx) {}
 
     ArticulationsProfilePtr createNew() const override;
     ArticulationsProfilePtr defaultProfile(const ArticulationFamily family) const override;
@@ -68,4 +66,4 @@ private:
 };
 }
 
-#endif // MU_MPE_ARTICULATIONPROFILESREPOSITORY_H
+#endif // MUSE_MPE_ARTICULATIONPROFILESREPOSITORY_H

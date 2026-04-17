@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -28,13 +28,32 @@ using namespace mu::appshell;
 using namespace mu::notation;
 
 CanvasPreferencesModel::CanvasPreferencesModel(QObject* parent)
-    : QObject(parent)
+    : QObject(parent), muse::Injectable(muse::iocCtxForQmlObject(this))
 {
 }
 
 void CanvasPreferencesModel::load()
 {
     setupConnections();
+}
+
+void CanvasPreferencesModel::setupConnections()
+{
+    notationConfiguration()->defaultZoomChanged().onNotify(this, [this]() {
+        emit defaultZoomChanged();
+    });
+    notationConfiguration()->mouseZoomPrecisionChanged().onNotify(this, [this]() {
+        emit mouseZoomPrecisionChanged();
+    });
+    notationConfiguration()->canvasOrientation().ch.onReceive(this, [this](muse::Orientation) {
+        emit scrollPagesOrientationChanged();
+    });
+    notationConfiguration()->isLimitCanvasScrollAreaChanged().onNotify(this, [this]() {
+        emit limitScrollAreaChanged();
+    });
+    notationConfiguration()->selectionProximityChanged().onReceive(this, [this](int selectionProximity) {
+        emit selectionProximityChanged(selectionProximity);
+    });
 }
 
 QVariantList CanvasPreferencesModel::zoomTypes() const
@@ -117,7 +136,7 @@ void CanvasPreferencesModel::setScrollPagesOrientation(int orientation)
         return;
     }
 
-    notationConfiguration()->setCanvasOrientation(static_cast<framework::Orientation>(orientation));
+    notationConfiguration()->setCanvasOrientation(static_cast<muse::Orientation>(orientation));
 }
 
 void CanvasPreferencesModel::setLimitScrollArea(bool limit)
@@ -138,13 +157,6 @@ void CanvasPreferencesModel::setSelectionProximity(int proximity)
 
     notationConfiguration()->setSelectionProximity(proximity);
     emit selectionProximityChanged(proximity);
-}
-
-void CanvasPreferencesModel::setupConnections()
-{
-    notationConfiguration()->canvasOrientation().ch.onReceive(this, [this](framework::Orientation) {
-        emit scrollPagesOrientationChanged();
-    });
 }
 
 ZoomType CanvasPreferencesModel::defaultZoomType() const

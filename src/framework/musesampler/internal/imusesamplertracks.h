@@ -20,12 +20,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_MUSESAMPLER_IMUSESAMPLERTRACKS_H
-#define MU_MUSESAMPLER_IMUSESAMPLERTRACKS_H
+#ifndef MUSE_MUSESAMPLER_IMUSESAMPLERTRACKS_H
+#define MUSE_MUSESAMPLER_IMUSESAMPLERTRACKS_H
 
 #include "apitypes.h"
 
-namespace mu::musesampler {
+namespace muse::musesampler {
 class IMuseSamplerTracks
 {
 public:
@@ -36,4 +36,4 @@ public:
 };
 }
 
-#endif // MU_MUSESAMPLER_IMUSESAMPLERTRACKS_H
+#endif // MUSE_MUSESAMPLER_IMUSESAMPLERTRACKS_H

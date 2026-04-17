@@ -19,14 +19,14 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_NETWORK_NETWORKMANAGERMOCK_H
-#define MU_NETWORK_NETWORKMANAGERMOCK_H
+#ifndef MUSE_NETWORK_NETWORKMANAGERMOCK_H
+#define MUSE_NETWORK_NETWORKMANAGERMOCK_H
 
 #include <gmock/gmock.h>
 
 #include "network/inetworkmanager.h"
 
-namespace mu::network {
+namespace muse::network {
 class NetworkManagerMock : public INetworkManager
 {
 public:
@@ -37,10 +37,10 @@ public:
     MOCK_METHOD(Ret, patch, (const QUrl&, OutgoingDevice*, IncomingDevice*, const RequestHeaders&), (override));
     MOCK_METHOD(Ret, del, (const QUrl&, IncomingDevice*, const RequestHeaders&), (override));
 
-    MOCK_METHOD(framework::Progress, progress, (), (const, override));
+    MOCK_METHOD(Progress, progress, (), (const, override));
 
     MOCK_METHOD(void, abort, (), (override));
 };
 }
 
-#endif // MU_NETWORK_NETWORKMANAGERMOCK_H
+#endif // MUSE_NETWORK_NETWORKMANAGERMOCK_H

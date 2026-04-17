@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -19,20 +19,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_INSPECTOR_DYNAMICSETTINGSMODEL_H
-#define MU_INSPECTOR_DYNAMICSETTINGSMODEL_H
+#pragma once
 
-#include "models/abstractinspectormodel.h"
+#include "models/inspectormodelwithvoiceandpositionoptions.h"
 
 namespace mu::inspector {
-class DynamicsSettingsModel : public AbstractInspectorModel
+class DynamicsSettingsModel : public InspectorModelWithVoiceAndPositionOptions
 {
     Q_OBJECT
 
     Q_PROPERTY(PropertyItem * avoidBarLines READ avoidBarLines CONSTANT)
     Q_PROPERTY(PropertyItem * dynamicSize READ dynamicSize CONSTANT)
     Q_PROPERTY(PropertyItem * centerOnNotehead READ centerOnNotehead CONSTANT)
-    Q_PROPERTY(PropertyItem * placement READ placement CONSTANT)
 
     // Frame-related settings
     Q_PROPERTY(PropertyItem * frameType READ frameType CONSTANT)
@@ -53,7 +51,6 @@ public:
     PropertyItem* avoidBarLines() const;
     PropertyItem* dynamicSize() const;
     PropertyItem* centerOnNotehead() const;
-    PropertyItem* placement() const;
 
     PropertyItem* frameType() const;
     PropertyItem* frameBorderColor() const;
@@ -63,10 +60,12 @@ public:
     PropertyItem* frameCornerRadius() const;
 
 private:
+    void updateFramePropertiesAvailability();
+
+private:
     PropertyItem* m_avoidBarLines = nullptr;
     PropertyItem* m_dynamicSize = nullptr;
     PropertyItem* m_centerOnNotehead = nullptr;
-    PropertyItem* m_placement = nullptr;
 
     PropertyItem* m_frameType = nullptr;
     PropertyItem* m_frameBorderColor = nullptr;
@@ -74,9 +73,5 @@ private:
     PropertyItem* m_frameThickness = nullptr;
     PropertyItem* m_frameMargin = nullptr;
     PropertyItem* m_frameCornerRadius = nullptr;
-
-    void updateFramePropertiesAvailability();
 };
 }
-
-#endif // MU_INSPECTOR_DYNAMICSETTINGSMODEL_H

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -36,15 +36,15 @@ class INotationBraille : MODULE_EXPORT_INTERFACE
 public:
     virtual ~INotationBraille() = default;
 
-    virtual ValCh<std::string> brailleInfo() const = 0;
-    virtual ValCh<int> cursorPosition() const = 0;
-    virtual ValCh<int> currentItemPositionStart() const = 0;
-    virtual ValCh<int> currentItemPositionEnd() const = 0;
-    virtual ValCh<std::string> keys() const = 0;
-    virtual ValCh<bool> enabled() const = 0;
-    virtual ValCh<BrailleIntervalDirection> intervalDirection() const = 0;
-    virtual ValCh<int> mode() const = 0;
-    virtual ValCh<std::string> cursorColor() const = 0;
+    virtual muse::ValCh<std::string> brailleInfo() const = 0;
+    virtual muse::ValCh<int> cursorPosition() const = 0;
+    virtual muse::ValCh<int> currentItemPositionStart() const = 0;
+    virtual muse::ValCh<int> currentItemPositionEnd() const = 0;
+    virtual muse::ValCh<std::string> keys() const = 0;
+    virtual muse::ValCh<bool> enabled() const = 0;
+    virtual muse::ValCh<BrailleIntervalDirection> intervalDirection() const = 0;
+    virtual muse::ValCh<int> mode() const = 0;
+    virtual muse::ValCh<std::string> cursorColor() const = 0;
 
     virtual void setEnabled(const bool enabled) = 0;
     virtual void setIntervalDirection(const BrailleIntervalDirection direction) = 0;

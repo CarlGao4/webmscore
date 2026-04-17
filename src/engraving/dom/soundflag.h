@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2024 MuseScore BVBA and others
+ * Copyright (C) 2024 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -69,7 +69,7 @@ public:
     void undoChangeSoundFlag(const PresetCodes& presets, const PlayingTechniqueCode& technique);
 
     char16_t iconCode() const;
-    draw::Font iconFont() const;
+    muse::draw::Font iconFont() const;
     void setIconFontSize(double size);
     Color iconBackgroundColor() const;
 
@@ -77,7 +77,7 @@ private:
     PresetCodes m_soundPresets;
     PlayingTechniqueCode m_playingTechnique;
 
-    draw::Font m_iconFont;
+    muse::draw::Font m_iconFont;
     bool m_iconFontValid = false;
 
     bool m_play = true;

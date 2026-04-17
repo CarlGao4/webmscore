@@ -1,21 +1,22 @@
-#=============================================================================
-#  MuseScore
-#  Music Composition & Notation
+# SPDX-License-Identifier: GPL-3.0-only
+# MuseScore-Studio-CLA-applies
 #
-#  Copyright (C) 2020 MuseScore BVBA and others
+# MuseScore Studio
+# Music Composition & Notation
 #
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License version 2.
+# Copyright (C) 2024 MuseScore Limited
 #
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 3 as
+# published by the Free Software Foundation.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with this program; if not, write to the Free Software
-#  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-#=============================================================================
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>. 
 
 ## Setup
 # set(MODULE_TEST somename)          - set module (target) name
@@ -43,10 +44,21 @@ add_executable(${MODULE_TEST}
 target_include_directories(${MODULE_TEST} PRIVATE
     ${PROJECT_BINARY_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
-    ${PROJECT_SOURCE_DIR}
-    ${PROJECT_SOURCE_DIR}/src/framework
-    ${PROJECT_SOURCE_DIR}/src/framework/global
+
     ${PROJECT_SOURCE_DIR}/src
+
+    ${MUSE_FRAMEWORK_PATH}
+    ${MUSE_FRAMEWORK_PATH}/framework
+    ${MUSE_FRAMEWORK_PATH}/framework/global
+    ${MUSE_FRAMEWORK_PATH}/framework/testing/thirdparty/googletest/googletest/include
+
+    # compat
+    ${MUSE_FRAMEWORK_PATH}/src
+    ${MUSE_FRAMEWORK_PATH}/src/framework
+    ${MUSE_FRAMEWORK_PATH}/src/framework/global
+    ${MUSE_FRAMEWORK_PATH}/src/framework/testing/thirdparty/googletest/googletest/include
+    # end compat
+
     ${MODULE_TEST_INCLUDE}
 )
 
@@ -54,15 +66,22 @@ target_compile_definitions(${MODULE_TEST} PRIVATE
     ${MODULE_TEST_DEF}
     ${MODULE_TEST}_DATA_ROOT="${MODULE_TEST_DATA_ROOT}"
 )
+if (MUSE_ENABLE_UNIT_TESTS_CODE_COVERAGE)
+    set(COVERAGE_FLAGS -fprofile-arcs -ftest-coverage --coverage)
+    target_compile_options(${MODULE_TEST} PRIVATE ${COVERAGE_FLAGS})
+    target_link_options(${MODULE_TEST} PRIVATE -lgcov --coverage)
+endif()
 
-find_package(Qt5 COMPONENTS Core Gui REQUIRED)
+find_package(Qt6Core REQUIRED)
+find_package(Qt6Gui REQUIRED)
 
 target_link_libraries(${MODULE_TEST}
-    Qt5::Core
-    Qt5::Gui
+    Qt6::Core
+    Qt6::Gui
     gmock
-    global
+    muse_global
     ${MODULE_TEST_LINK}
+    ${COVERAGE_FLAGS}
     )
 
 add_test(NAME ${MODULE_TEST} COMMAND ${MODULE_TEST})

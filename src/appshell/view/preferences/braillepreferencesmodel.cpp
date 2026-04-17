@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2023 MuseScore BVBA and others
+ * Copyright (C) 2023 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,14 +22,31 @@
 
 #include "braillepreferencesmodel.h"
 
+#include <QVariant>
+
 #include "translation.h"
 
 using namespace mu::appshell;
 using namespace mu::braille;
 
 BraillePreferencesModel::BraillePreferencesModel(QObject* parent)
-    : QObject(parent)
+    : QObject(parent), muse::Injectable(muse::iocCtxForQmlObject(this))
 {
+}
+
+void BraillePreferencesModel::load()
+{
+    brailleConfiguration()->braillePanelEnabledChanged().onNotify(this, [this]() {
+        emit braillePanelEnabledChanged(braillePanelEnabled());
+    });
+
+    brailleConfiguration()->intervalDirectionChanged().onNotify(this, [this]() {
+        emit intervalDirectionChanged(intervalDirection());
+    });
+
+    brailleConfiguration()->brailleTableChanged().onNotify(this, [this]() {
+        emit brailleTableChanged(brailleTable());
+    });
 }
 
 bool BraillePreferencesModel::braillePanelEnabled() const
@@ -57,17 +74,17 @@ QVariantList BraillePreferencesModel::intervalDirections() const
     return QVariantList {
         QVariantMap {
             //: Braille chord interval direction: automatic (based on clef)
-            { "text", qtrc("appshell/preferences", "Auto") },
+            { "text", muse::qtrc("appshell/preferences", "Auto") },
             { "value", static_cast<int>(BrailleIntervalDirection::Auto) },
         },
         QVariantMap {
             //: Braille chord interval direction: up (ascending)
-            { "text", qtrc("appshell/preferences", "Up") },
+            { "text", muse::qtrc("appshell/preferences", "Up") },
             { "value", static_cast<int>(BrailleIntervalDirection::Up) },
         },
         QVariantMap {
             //: Braille chord interval direction: down (descending)
-            { "text", qtrc("appshell/preferences", "Down") },
+            { "text", muse::qtrc("appshell/preferences", "Down") },
             { "value", static_cast<int>(BrailleIntervalDirection::Down) },
         },
     };

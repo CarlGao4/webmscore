@@ -19,17 +19,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_VST_VSTPLUGINSSCANNER_H
-#define MU_VST_VSTPLUGINSSCANNER_H
+#ifndef MUSE_VST_VSTPLUGINSSCANNER_H
+#define MUSE_VST_VSTPLUGINSSCANNER_H
 
-#include "audio/iaudiopluginsscanner.h"
+#include "audioplugins/iaudiopluginsscanner.h"
 
 #include "modularity/ioc.h"
 #include "ivstconfiguration.h"
 #include "io/ifilesystem.h"
 
-namespace mu::vst {
-class VstPluginsScanner : public audio::IAudioPluginsScanner
+namespace muse::vst {
+class VstPluginsScanner : public audioplugins::IAudioPluginsScanner
 {
     INJECT(IVstConfiguration, configuration)
     INJECT(io::IFileSystem, fileSystem)
@@ -42,4 +42,4 @@ private:
 };
 }
 
-#endif // MU_VST_VSTPLUGINSSCANNER_H
+#endif // MUSE_VST_VSTPLUGINSSCANNER_H

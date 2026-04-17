@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -31,8 +31,8 @@
 #include "log.h"
 #include "translation.h"
 
-using namespace mu;
-using namespace mu::io;
+using namespace muse;
+using namespace muse::io;
 using namespace mu::notation;
 
 static InstrumentGroup* createAndAddOtherGroup()
@@ -167,7 +167,7 @@ void InstrumentsRepository::load()
 
             m_instrumentTemplateList.push_back(templ);
             m_instrumentTemplateMap.insert_or_assign(templ->id, templ);
-            instrumentByMusicXmlId.insert_or_assign(templ->musicXMLid, templ);
+            instrumentByMusicXmlId.insert_or_assign(templ->musicXmlId, templ);
         }
     }
 
@@ -223,7 +223,7 @@ bool InstrumentsRepository::loadStringTuningsPresets(const path_t& path)
                 JsonObject presetObj = presetVal.toObject();
 
                 StringTuningPreset preset;
-                preset.name = trc("instruments/stringTunings", presetObj.value("name").toStdString().c_str());
+                preset.name = muse::trc("instruments/stringTunings", presetObj.value("name").toStdString().c_str());
 
                 JsonArray valuesArr = presetObj.value("value").toArray();
                 for (size_t l = 0; l < valuesArr.size(); ++l) {
@@ -279,7 +279,7 @@ void InstrumentsRepository::loadMuseInstruments(const InstrumentTemplateMap& sta
         InstrumentTemplate* templ = new InstrumentTemplate();
         templ->id = instrument.id;
         templ->soundId = instrument.soundId;
-        templ->musicXMLid = instrument.musicXmlId;
+        templ->musicXmlId = instrument.musicXmlId;
         templ->trackName = instrument.name;
         templ->longNames.emplace_back(StaffName(instrument.name));
         templ->shortNames.emplace_back(StaffName(instrument.abbreviation));
@@ -289,8 +289,8 @@ void InstrumentsRepository::loadMuseInstruments(const InstrumentTemplateMap& sta
         templ->clefTypes[0].transposingClef = clefType;
 
         if (instrument.staffType == musesampler::StaffType::Grand) {
-            templ->bracketSpan[0] = templ->staffCount;
-            templ->barlineSpan[0] = templ->staffCount;
+            templ->bracketSpan[0] = static_cast<int>(templ->staffCount);
+            templ->barlineSpan[0] = static_cast<int>(templ->staffCount);
 
             for (size_t i = 0; i < templ->staffCount; ++i) {
                 templ->bracket[i] = mu::engraving::BracketType::BRACE;
@@ -301,11 +301,11 @@ void InstrumentsRepository::loadMuseInstruments(const InstrumentTemplateMap& sta
         }
 
         for (int i = 0; i < MAX_STAVES; ++i) {
-            templ->staffLines[i] = instrument.staffLines;
+            templ->staffLines[i] = static_cast<int>(instrument.staffLines);
         }
 
         if (!instrument.musicXmlId.empty()) {
-            const InstrumentTemplate* standardTempl = mu::value(standardInstrumentByMusicXmlId, instrument.musicXmlId, nullptr);
+            const InstrumentTemplate* standardTempl = muse::value(standardInstrumentByMusicXmlId, instrument.musicXmlId, nullptr);
             if (standardTempl) {
                 templ->family = standardTempl->family;
                 templ->groupId = standardTempl->groupId;

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -31,12 +31,12 @@
 
 #include "log.h"
 
-using namespace mu::io;
+using namespace muse;
+using namespace muse::io;
 using namespace mu::project;
-using namespace mu::framework;
 using namespace mu::engraving;
 
-mu::RetVal<ProjectMeta> MscMetaReader::readMeta(const io::path_t& filePath) const
+RetVal<ProjectMeta> MscMetaReader::readMeta(const muse::io::path_t& filePath) const
 {
     MscReader msczReader;
     Ret ret = prepareReader(filePath, msczReader);
@@ -46,7 +46,7 @@ mu::RetVal<ProjectMeta> MscMetaReader::readMeta(const io::path_t& filePath) cons
 
     // Read score meta
     ByteArray scoreData = msczReader.readScoreFile();
-    framework::XmlReader xmlReader(scoreData.toQByteArray());
+    deprecated::XmlReader xmlReader(scoreData.toQByteArray());
 
     RetVal<ProjectMeta> meta;
     meta.ret = make_ok();
@@ -65,7 +65,7 @@ mu::RetVal<ProjectMeta> MscMetaReader::readMeta(const io::path_t& filePath) cons
     return meta;
 }
 
-mu::RetVal<CloudProjectInfo> MscMetaReader::readCloudProjectInfo(const io::path_t& filePath) const
+muse::RetVal<CloudProjectInfo> MscMetaReader::readCloudProjectInfo(const muse::io::path_t& filePath) const
 {
     TRACEFUNC;
 
@@ -77,7 +77,7 @@ mu::RetVal<CloudProjectInfo> MscMetaReader::readCloudProjectInfo(const io::path_
 
     // Read score meta
     ByteArray scoreData = msczReader.readScoreFile();
-    framework::XmlReader xmlReader(scoreData.toQByteArray());
+    deprecated::XmlReader xmlReader(scoreData.toQByteArray());
 
     ProjectMeta meta;
     doReadMeta(xmlReader, meta);
@@ -90,7 +90,7 @@ mu::RetVal<CloudProjectInfo> MscMetaReader::readCloudProjectInfo(const io::path_
     return info;
 }
 
-mu::Ret MscMetaReader::prepareReader(const io::path_t& filePath, MscReader& reader) const
+Ret MscMetaReader::prepareReader(const muse::io::path_t& filePath, MscReader& reader) const
 {
     Ret ret = fileSystem()->exists(filePath);
     if (!ret) {
@@ -113,7 +113,7 @@ mu::Ret MscMetaReader::prepareReader(const io::path_t& filePath, MscReader& read
     return make_ok();
 }
 
-MscMetaReader::RawMeta MscMetaReader::doReadBox(framework::XmlReader& xmlReader) const
+MscMetaReader::RawMeta MscMetaReader::doReadBox(deprecated::XmlReader& xmlReader) const
 {
     RawMeta meta;
 
@@ -176,7 +176,7 @@ MscMetaReader::RawMeta MscMetaReader::doReadBox(framework::XmlReader& xmlReader)
     return meta;
 }
 
-MscMetaReader::RawMeta MscMetaReader::doReadRawMeta(framework::XmlReader& xmlReader) const
+MscMetaReader::RawMeta MscMetaReader::doReadRawMeta(deprecated::XmlReader& xmlReader) const
 {
     RawMeta meta;
 
@@ -242,7 +242,7 @@ MscMetaReader::RawMeta MscMetaReader::doReadRawMeta(framework::XmlReader& xmlRea
     return meta;
 }
 
-void MscMetaReader::doReadMeta(framework::XmlReader& xmlReader, ProjectMeta& meta) const
+void MscMetaReader::doReadMeta(deprecated::XmlReader& xmlReader, ProjectMeta& meta) const
 {
     RawMeta rawMeta;
 
@@ -359,13 +359,13 @@ std::string MscMetaReader::cutXmlTags(const std::string& str) const
     return fin;
 }
 
-QString MscMetaReader::readText(mu::framework::XmlReader& xmlReader) const
+QString MscMetaReader::readText(deprecated::XmlReader& xmlReader) const
 {
-    std::string str = xmlReader.readString(framework::XmlReader::IncludeChildElements);
+    std::string str = xmlReader.readString(deprecated::XmlReader::IncludeChildElements);
     return formatFromXml(str);
 }
 
-QString MscMetaReader::readMetaTagText(mu::framework::XmlReader& xmlReader) const
+QString MscMetaReader::readMetaTagText(deprecated::XmlReader& xmlReader) const
 {
     return QString::fromStdString(xmlReader.readString());
 }

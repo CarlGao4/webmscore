@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -38,15 +38,15 @@ class Audio
 
 public:
     Audio();
-    const String& path() const { return m_path; }
-    void setPath(const String& s) { m_path = s; }
-    const ByteArray& data() const { return m_data; }
-    ByteArray data() { return m_data; }
-    void setData(const ByteArray& ba) { m_data = ba; }
+    const muse::String& path() const { return m_path; }
+    void setPath(const muse::String& s) { m_path = s; }
+    const muse::ByteArray& data() const { return m_data; }
+    muse::ByteArray data() { return m_data; }
+    void setData(const muse::ByteArray& ba) { m_data = ba; }
 
 private:
-    String m_path;
-    ByteArray m_data;
+    muse::String m_path;
+    muse::ByteArray m_data;
 };
 } // namespace mu::engraving
 #endif // MU_ENGRAVING_AUDIO_H

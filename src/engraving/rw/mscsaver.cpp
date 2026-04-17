@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -34,11 +34,13 @@
 #include "log.h"
 
 using namespace mu;
-using namespace mu::io;
+using namespace muse;
+using namespace muse::io;
 using namespace mu::engraving;
 using namespace mu::engraving::rw;
 
-bool MscSaver::writeMscz(MasterScore* score, MscWriter& mscWriter, bool onlySelection, bool doCreateThumbnail)
+bool MscSaver::writeMscz(MasterScore* score, MscWriter& mscWriter, bool createThumbnail,
+                         const write::WriteRange* range)
 {
     TRACEFUNC;
 
@@ -57,7 +59,11 @@ bool MscSaver::writeMscz(MasterScore* score, MscWriter& mscWriter, bool onlySele
         mscWriter.writeStyleFile(styleData);
     }
 
-    WriteInOutData masterWriteOutData;
+    WriteInOutData masterWriteOutData(score);
+
+    if (range) {
+        masterWriteOutData.ctx.setRange(*range);
+    }
 
     // Write MasterScore
     {
@@ -65,14 +71,14 @@ bool MscSaver::writeMscz(MasterScore* score, MscWriter& mscWriter, bool onlySele
         Buffer scoreBuf(&scoreData);
         scoreBuf.open(IODevice::ReadWrite);
 
-        RWRegister::writer()->writeScore(score, &scoreBuf, onlySelection, &masterWriteOutData);
+        RWRegister::writer(score->iocContext())->writeScore(score, &scoreBuf, &masterWriteOutData);
 
         mscWriter.writeScoreFile(scoreData);
     }
 
     // Write Excerpts
     {
-        if (!onlySelection) {
+        if (!range) {
             const std::vector<Excerpt*>& excerpts = score->excerpts();
 
             for (size_t excerptIndex = 0; excerptIndex < excerpts.size(); ++excerptIndex) {
@@ -101,7 +107,8 @@ bool MscSaver::writeMscz(MasterScore* score, MscWriter& mscWriter, bool onlySele
                     Buffer excerptBuf(&excerptData);
                     excerptBuf.open(IODevice::ReadWrite);
 
-                    RWRegister::writer()->writeScore(excerpt->excerptScore(), &excerptBuf, onlySelection, &masterWriteOutData);
+                    RWRegister::writer(partScore->iocContext())->writeScore(
+                        excerpt->excerptScore(), &excerptBuf, &masterWriteOutData);
 
                     mscWriter.addExcerptFile(excerpt->fileName(), excerptData);
                 }
@@ -128,13 +135,13 @@ bool MscSaver::writeMscz(MasterScore* score, MscWriter& mscWriter, bool onlySele
                 continue;
             }
             ByteArray data = ip->buffer();
-            mscWriter.addImageFile(ip->hashName(), data);
+            mscWriter.addImageFile(String::fromStdString(ip->hashName()), data);
         }
     }
 
     // Write thumbnail
     {
-        if (doCreateThumbnail && !score->pages().empty()) {
+        if (createThumbnail && !score->pages().empty()) {
             auto pixmap = score->createThumbnail();
 
             ByteArray ba;
@@ -173,7 +180,7 @@ bool MscSaver::exportPart(Score* partScore, MscWriter& mscWriter)
         Buffer excerptBuf(&excerptData);
         excerptBuf.open(IODevice::WriteOnly);
 
-        rw::RWRegister::writer()->writeScore(partScore, &excerptBuf, false);
+        rw::RWRegister::writer(partScore->iocContext())->writeScore(partScore, &excerptBuf);
 
         mscWriter.writeScoreFile(excerptData);
     }

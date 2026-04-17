@@ -16,8 +16,8 @@ if (IS_NODE) {
         global.__dirname = dirname(fileURLToPath(import.meta.url))
     }
 
-    // silence `Assertion failed: IDBStore used, but indexedDB not supported` on Node.js
-    global.indexedDB = function () { };
+    // Provide a minimal in-memory IndexedDB implementation for IDBFS in Node.js.
+    require("fake-indexeddb/auto");
 
     shimDom()
 }

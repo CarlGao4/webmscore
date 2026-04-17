@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2025 MuseScore BVBA and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -19,8 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_AUDIO_IAUDIODRIVER_H
-#define MU_AUDIO_IAUDIODRIVER_H
+#pragma once
 
 #include <cstdint>
 #include <string>
@@ -28,16 +27,13 @@
 #include <functional>
 #include <memory>
 
-#include "async/notification.h"
-#include "modularity/imoduleinterface.h"
+#include "global/async/notification.h"
 
 #include "audiotypes.h"
 
-namespace mu::audio {
-class IAudioDriver : MODULE_EXPORT_INTERFACE
+namespace muse::audio {
+class IAudioDriver
 {
-    INTERFACE_ID(IAudioDriver)
-
 public:
     virtual ~IAudioDriver() = default;
 
@@ -65,6 +61,8 @@ public:
     virtual void close() = 0;
     virtual bool isOpened() const = 0;
 
+    virtual const Spec& activeSpec() const = 0;
+
     virtual AudioDeviceID outputDevice() const = 0;
     virtual bool selectOutputDevice(const AudioDeviceID& id) = 0;
     virtual bool resetToDefaultOutputDevice() = 0;
@@ -79,10 +77,14 @@ public:
 
     virtual std::vector<unsigned int> availableOutputDeviceBufferSizes() const = 0;
 
+    virtual unsigned int outputDeviceSampleRate() const = 0;
+    virtual bool setOutputDeviceSampleRate(unsigned int bufferSize) = 0;
+    virtual async::Notification outputDeviceSampleRateChanged() const = 0;
+
+    virtual std::vector<unsigned int> availableOutputDeviceSampleRates() const = 0;
+
     virtual void resume() = 0;
     virtual void suspend() = 0;
 };
 using IAudioDriverPtr = std::shared_ptr<IAudioDriver>;
 }
-
-#endif // MU_AUDIO_IAUDIODRIVER_H

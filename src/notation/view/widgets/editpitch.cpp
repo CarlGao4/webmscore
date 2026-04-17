@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -29,7 +29,7 @@
 #include "ui/view/widgetnavigationfix.h"
 
 using namespace mu::notation;
-using namespace mu::ui;
+using namespace muse::ui;
 
 //---------------------------------------------------------
 //   EditPitch
@@ -56,9 +56,11 @@ EditPitch::EditPitch(QWidget* parent, int midiCode)
     tableWidget->setCurrentCell(tableWidget->rowCount() - 1 - (midiCode / 12), midiCode % 12);
 }
 
-//---------------------------------------------------------
-//   hideEvent
-//---------------------------------------------------------
+void EditPitch::showEvent(QShowEvent* event)
+{
+    WidgetStateStore::restoreGeometry(this);
+    QWidget::showEvent(event);
+}
 
 void EditPitch::hideEvent(QHideEvent* ev)
 {
@@ -85,8 +87,6 @@ void EditPitch::setup()
 {
     setupUi(this);
     setWindowFlags(this->windowFlags() & ~Qt::WindowContextHelpButtonHint);
-
-    WidgetStateStore::restoreGeometry(this);
 
     //! NOTE: It is necessary for the correct start of navigation in the dialog
     setFocus();

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2022 MuseScore BVBA and others
+ * Copyright (C) 2022 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,9 +22,12 @@
 
 #include "braillewriter.h"
 
+#include <QBuffer>
+
 #include "braille.h"
 
 using namespace mu::project;
+using namespace muse;
 
 namespace mu::engraving {
 std::vector<INotationWriter::UnitType> BrailleWriter::supportedUnitTypes() const
@@ -38,7 +41,7 @@ bool BrailleWriter::supportsUnitType(UnitType unitType) const
     return std::find(unitTypes.cbegin(), unitTypes.cend(), unitType) != unitTypes.cend();
 }
 
-mu::Ret BrailleWriter::write(notation::INotationPtr notation, QIODevice& destinationDevice, const Options&)
+muse::Ret BrailleWriter::write(notation::INotationPtr notation, muse::io::IODevice& destinationDevice, const Options&)
 {
     IF_ASSERT_FAILED(notation) {
         return make_ret(Ret::Code::UnknownError);
@@ -49,12 +52,21 @@ mu::Ret BrailleWriter::write(notation::INotationPtr notation, QIODevice& destina
         return make_ret(Ret::Code::UnknownError);
     }
 
-    return Braille(score).write(destinationDevice);
+    QByteArray qdata;
+    QBuffer buf(&qdata);
+    buf.open(QIODevice::WriteOnly);
+
+    Ret ret = Braille(score).write(buf);
+    if (ret) {
+        ByteArray data = ByteArray::fromQByteArrayNoCopy(qdata);
+        destinationDevice.write(data);
+    }
+    return ret;
 }
 
-mu::Ret BrailleWriter::writeList(const notation::INotationPtrList&, QIODevice&, const Options&)
+muse::Ret BrailleWriter::writeList(const notation::INotationPtrList&, muse::io::IODevice&, const Options&)
 {
     NOT_SUPPORTED;
-    return Ret(Ret::Code::NotSupported);
+    return muse::Ret(muse::Ret::Code::NotSupported);
 }
 }

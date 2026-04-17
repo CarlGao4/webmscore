@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,6 +22,8 @@
 
 #include "bracket.h"
 
+#include "types/typesconv.h"
+
 #include "bracketItem.h"
 #include "measure.h"
 #include "score.h"
@@ -32,7 +34,7 @@
 
 using namespace mu;
 using namespace mu::engraving;
-using namespace mu::draw;
+using namespace muse::draw;
 
 //---------------------------------------------------------
 //   Bracket
@@ -82,7 +84,7 @@ void Bracket::setStaffSpan(size_t a, size_t b)
     m_lastStaff = b;
 
     if (bracketType() == BracketType::BRACE
-        && style().styleSt(Sid::MusicalSymbolFont) != "Emmentaler" && style().styleSt(Sid::MusicalSymbolFont) != "Gonville") {
+        && style().styleSt(Sid::musicalSymbolFont) != "Emmentaler" && style().styleSt(Sid::musicalSymbolFont) != "Gonville") {
         int v = static_cast<int>(m_lastStaff - m_firstStaff + 1);
 
         // if staves inner staves are hidden, decrease span
@@ -92,7 +94,7 @@ void Bracket::setStaffSpan(size_t a, size_t b)
             }
         }
 
-        if (style().styleSt(Sid::MusicalSymbolFont) == "Leland") {
+        if (style().styleSt(Sid::musicalSymbolFont) == "Leland") {
             v = std::min(4, v);
         }
 
@@ -155,8 +157,6 @@ void Bracket::editDrag(EditData& ed)
     double bracketHeight = ldata()->bracketHeight();
     bracketHeight += ed.delta.y();
     mutldata()->bracketHeight.set_value(bracketHeight);
-
-    renderer()->layoutItem(this);
 }
 
 //---------------------------------------------------------
@@ -319,13 +319,22 @@ PropertyValue Bracket::propertyDefault(Pid id) const
 }
 
 //---------------------------------------------------------
+//   subtypeUserName
+//---------------------------------------------------------
+
+muse::TranslatableString Bracket::subtypeUserName() const
+{
+    return TConv::userName(bracketType());
+}
+
+//---------------------------------------------------------
 //   undoChangeProperty
 //---------------------------------------------------------
 
 void Bracket::undoChangeProperty(Pid id, const PropertyValue& v, PropertyFlags ps)
 {
     if (id == Pid::COLOR) {
-        setColor(v.value<draw::Color>());
+        setColor(v.value<Color>());
     }
 
     // brackets do not survive layout() and therefore cannot be on

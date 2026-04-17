@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -23,8 +23,8 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 
 import MuseScore.Inspector 1.0
-import MuseScore.UiComponents 1.0
-import MuseScore.Ui 1.0
+import Muse.UiComponents 1.0
+import Muse.Ui 1.0
 
 import "../../../common"
 import "../../../"
@@ -67,34 +67,13 @@ FocusableItem {
 
         SeparatorLine { anchors.margins: -12 }
 
-        SpinBoxPropertyView {
-            id: gapBetweenTextAndLineControl
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.rightMargin: 2
-
-            titleText: qsTrc("inspector", "Gap between text and line")
-            propertyItem: root.model ? root.model.gapBetweenTextAndLine : null
-
-            step: 0.1
-            maxValue: 100.0
-            minValue: 0.0
-            decimals: 2
-
-            navigationName: "GapBetweenTextAndLine"
-            navigationPanel: root.navigationPanel
-            navigationRowStart: beginningTextOffsetSection.navigationRowEnd + 1
-        }
-
-        SeparatorLine { anchors.margins: -12 }
-
         TextSection {
             id: continuousTextSection
             titleText: qsTrc("inspector", "Text when continuing to a new system")
             propertyItem: root.model ? root.model.continuousText : null
 
             navigationPanel: root.navigationPanel
-            navigationRowStart: gapBetweenTextAndLineControl.navigationRowEnd + 1
+            navigationRowStart: beginningTextOffsetSection.navigationRowEnd + 1
         }
 
         OffsetSection {
@@ -124,6 +103,27 @@ FocusableItem {
 
             navigationPanel: root.navigationPanel
             navigationRowStart: endTextSection.navigationRowEnd + 1
+        }
+
+        SeparatorLine { anchors.margins: -12 }
+
+        SpinBoxPropertyView {
+            id: gapBetweenTextAndLineControl
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.rightMargin: 2
+
+            titleText: qsTrc("inspector", "Gap between text and line")
+            propertyItem: root.model ? root.model.gapBetweenTextAndLine : null
+
+            step: 0.1
+            maxValue: 100.0
+            minValue: 0.0
+            decimals: 2
+
+            navigationName: "GapBetweenTextAndLine"
+            navigationPanel: root.navigationPanel
+            navigationRowStart: endTextOffsetSection.navigationRowEnd + 1
         }
     }
 }

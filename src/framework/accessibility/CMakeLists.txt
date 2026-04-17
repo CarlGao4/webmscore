@@ -18,7 +18,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-set(MODULE accessibility)
+declare_module(muse_accessibility)
+set(MODULE_ALIAS muse::accessibility)
 
 set(MODULE_SRC
     ${CMAKE_CURRENT_LIST_DIR}/accessibilitymodule.cpp
@@ -27,6 +28,9 @@ set(MODULE_SRC
     ${CMAKE_CURRENT_LIST_DIR}/iaccessibilitycontroller.h
     ${CMAKE_CURRENT_LIST_DIR}/iaccessibilityconfiguration.h
     ${CMAKE_CURRENT_LIST_DIR}/iqaccessibleinterfaceregister.h
+
+    ${CMAKE_CURRENT_LIST_DIR}/api/accessibilityapi.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/api/accessibilityapi.h
 
     ${CMAKE_CURRENT_LIST_DIR}/internal/accessibilitycontroller.cpp
     ${CMAKE_CURRENT_LIST_DIR}/internal/accessibilitycontroller.h
@@ -44,18 +48,21 @@ set(MODULE_SRC
 
 if (OS_IS_LIN)
     # it needed to send a spontaneous event by activating navigation
-    set(MODULE_INCLUDE
-        ${Qt5Core_PRIVATE_INCLUDE_DIRS}
-        )
+    find_package(Qt6 REQUIRED COMPONENTS CorePrivate)
+    set(MODULE_LINK ${MODULE_LINK} Qt6::CorePrivate)
 endif()
 
 
-if (MUE_ENABLE_ACCESSIBILITY_TRACE)
-    set(MODULE_DEF ${MODULE_DEF} -DMUE_ENABLE_ACCESSIBILITY_TRACE )
+if (MUSE_MODULE_ACCESSIBILITY_TRACE)
+    set(MODULE_DEF ${MODULE_DEF} -DMUSE_MODULE_ACCESSIBILITY_TRACE )
 endif()
 
-include(SetupModule)
+if (QT_SUPPORT)
+    list(APPEND MODULE_LINK Qt::Quick)
+endif()
 
-if (MUE_BUILD_UNIT_TESTS)
+setup_module()
+
+if (MUSE_MODULE_ACCESSIBILITY_TESTS)
     add_subdirectory(tests)
 endif()

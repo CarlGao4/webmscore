@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -28,7 +28,6 @@
 #include "utils.h"
 
 namespace mu::engraving {
-/// This class implements a multimeasure rest.
 class MMRest final : public Rest
 {
     OBJECT_ALLOCATOR(engraving, MMRest)
@@ -41,18 +40,26 @@ public:
     MMRest* clone() const override { return new MMRest(*this, false); }
     EngravingItem* linkedClone() override { return new MMRest(*this, true); }
 
-    bool numberVisible() const { return m_numberVisible; }
+    bool shouldShowNumberByDefault() const;
+    bool showNumber() const;
 
     PropertyValue propertyDefault(Pid) const override;
     bool setProperty(Pid, const PropertyValue&) override;
     PropertyValue getProperty(Pid) const override;
 
-    mu::RectF numberRect() const override;
+    RectF numberRect() const override;
+    PointF numberPos() const;
 
-    mu::PointF numberPosition(const mu::RectF& numberBbox) const;
+    void setNumberOffset(double y) { m_numberOffset = y; }
+    double numberOffset() const { return m_numberOffset; }
+
+    double yNumberPos() const;
+
+    bool isOldStyle() const;
 
     struct LayoutData : public Rest::LayoutData {
         int number = 0;                     // number of measures represented
+        double yNumberPos = 0.0;
         SymIdList numberSym;
         SymIdList restSyms;                 // stores symbols when using old-style rests
         double symsWidth = 0.0;             // width of symbols with spacing when using old-style
@@ -65,9 +72,7 @@ public:
 
 private:
 
-    Sid getPropertyStyle(Pid) const override;
-
-    double m_numberPos = 0.0;       // vertical position of number relative to staff
+    double m_numberOffset = 0.0;   // vertical position of number relative to staff
     bool m_numberVisible = false;   // show or hide number
 };
 } // namespace mu::engraving

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -161,7 +161,7 @@ void ScoreOrder::readSection(XmlReader& reader)
             sg.thinBracket = thinBrackets;
             groups.push_back(sg);
         } else if (reader.name() == "unsorted") {
-            String group { reader.attribute("group", String(u"")) };
+            String group { reader.attribute("group", String()) };
 
             if (hasGroup(UNSORTED_ID, group)) {
                 reader.skipCurrentElement();
@@ -237,7 +237,7 @@ String ScoreOrder::getFamilyName(const InstrumentTemplate* instrTemplate, bool s
 
     if (soloist) {
         return String(u"<soloists>");
-    } else if (mu::contains(instrumentMap, instrTemplate->id)) {
+    } else if (muse::contains(instrumentMap, instrTemplate->id)) {
         return instrumentMap.at(instrTemplate->id).id;
     } else if (instrTemplate->family) {
         return instrTemplate->family->id;
@@ -302,7 +302,7 @@ int ScoreOrder::instrumentSortingIndex(const String& instrumentId, bool isSolois
     static const String SoloistsGroup(u"<soloists>");
     static const String UnsortedGroup(u"<unsorted>");
 
-    enum class Priority {
+    enum class Priority : unsigned char {
         Undefined,
         Unsorted,
         UnsortedGroup,
@@ -315,7 +315,7 @@ int ScoreOrder::instrumentSortingIndex(const String& instrumentId, bool isSolois
         return 0;
     }
 
-    String family = mu::contains(instrumentMap, instrumentId) ? instrumentMap.at(instrumentId).id : ii.instrTemplate->familyId();
+    String family = muse::contains(instrumentMap, instrumentId) ? instrumentMap.at(instrumentId).id : ii.instrTemplate->familyId();
 
     size_t index = groups.size();
 
@@ -338,7 +338,7 @@ int ScoreOrder::instrumentSortingIndex(const String& instrumentId, bool isSolois
             index = i;
             priority = Priority::UnsortedGroup;
         } else if ((priority < Priority::Unsorted) && (sg.family == UnsortedGroup)
-                   && (sg.unsorted == u"")) {
+                   && (sg.unsorted.empty())) {
             index = i;
             priority = Priority::Unsorted;
         }
@@ -428,7 +428,7 @@ void ScoreOrder::setBracketsAndBarlines(Score* score)
                 --braceSpan;
             }
 
-            if (prvSection.isEmpty() || (sg.section != prvSection)) {
+            if ((prvSection.isEmpty() || (sg.section != prvSection)) && score->parts().size() > 1) {
                 if (thkBracketStaff && (thkBracketSpan > 1)) {
                     score->undoAddBracket(thkBracketStaff, 0, BracketType::NORMAL, thkBracketSpan);
                 }
@@ -513,7 +513,7 @@ void ScoreOrder::read(XmlReader& reader)
         } else if (reader.name() == "soloists") {
             readSoloists(reader, sectionId);
         } else if (reader.name() == "unsorted") {
-            String group { reader.attribute("group", String(u"")) };
+            String group { reader.attribute("group", String()) };
 
             if (!hasGroup(UNSORTED_ID, group)) {
                 groups.push_back(newUnsortedGroup(group, sectionId));
@@ -525,7 +525,7 @@ void ScoreOrder::read(XmlReader& reader)
         }
     }
 
-    String group { String(u"") };
+    String group;
     if (!hasGroup(UNSORTED_ID, group)) {
         groups.push_back(newUnsortedGroup(group, id));
     }

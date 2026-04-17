@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -31,6 +31,9 @@ class MarkerSettingsModel : public AbstractInspectorModel
 
     Q_PROPERTY(PropertyItem * type READ type CONSTANT)
     Q_PROPERTY(PropertyItem * label READ label CONSTANT)
+    Q_PROPERTY(PropertyItem * position READ position CONSTANT)
+    Q_PROPERTY(PropertyItem * centerOnSymbol READ centerOnSymbol CONSTANT)
+
 public:
     explicit MarkerSettingsModel(QObject* parent, IElementRepositoryService* repository);
 
@@ -41,10 +44,16 @@ public:
 
     PropertyItem* type() const;
     PropertyItem* label() const;
+    PropertyItem* position() const;
+    PropertyItem* centerOnSymbol() const;
+
+    Q_INVOKABLE QString markerTypeName() const;
 
 private:
     PropertyItem* m_type = nullptr;
     PropertyItem* m_label = nullptr;
+    PropertyItem* m_position = nullptr;
+    PropertyItem* m_centerOnSymbol = nullptr;
 };
 }
 

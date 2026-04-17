@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -20,8 +20,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_ENGRAVING_SYSTEM_H
-#define MU_ENGRAVING_SYSTEM_H
+#pragma once
 
 /**
  \file
@@ -37,6 +36,8 @@ class InstrumentName;
 class MeasureBase;
 class Page;
 class SpannerSegment;
+class StaffVisibilityIndicator;
+class SystemLock;
 
 //---------------------------------------------------------
 //   SysStaff
@@ -52,9 +53,9 @@ public:
     //int idx     { 0    };
     std::vector<InstrumentName*> instrumentNames;
 
-    const mu::RectF& bbox() const { return m_bbox; }
-    mu::RectF& bbox() { return m_bbox; }
-    void setbbox(const mu::RectF& r) { m_bbox = r; }
+    const RectF& bbox() const { return m_bbox; }
+    RectF& bbox() { return m_bbox; }
+    void setbbox(const RectF& r) { m_bbox = r; }
     void setbbox(double x, double y, double w, double h) { m_bbox.setRect(x, y, w, h); }
     double y() const { return m_bbox.y() + m_yOff; }
     void setYOff(double offset) { m_yOff = offset; }
@@ -74,7 +75,7 @@ public:
     Skyline& skyline() { return m_skyline; }
 
 private:
-    mu::RectF m_bbox;               // Bbox of StaffLines.
+    RectF m_bbox;               // Bbox of StaffLines.
     Skyline m_skyline;
     double m_yOff = 0.0;            // offset of top staff line within bbox
     double m_yPos = 0.0;            // y position of bbox after System::layout2
@@ -120,7 +121,6 @@ public:
 
     void clear(); ///< Clear measure list.
 
-    mu::RectF bboxStaff(int staff) const { return m_staves[staff]->bbox(); }
     std::vector<SysStaff*>& staves() { return m_staves; }
     const std::vector<SysStaff*>& staves() const { return m_staves; }
     double staffYpage(staff_idx_t staffIdx) const;
@@ -133,15 +133,16 @@ public:
     void removeStaff(int);
     void adjustStavesNumber(size_t nstaves);
 
-    int y2staff(double y) const;
-    staff_idx_t searchStaff(double y, staff_idx_t preferredStaff = mu::nidx, double spacingFactor = 0.5) const;
-    Fraction snap(const Fraction& tick, const mu::PointF p) const;
-    Fraction snapNote(const Fraction& tick, const mu::PointF p, int staff) const;
+    staff_idx_t searchStaff(double y, staff_idx_t preferredStaff = muse::nidx, double spacingFactor = 0.5) const;
+    Fraction snap(const Fraction& tick, const PointF p) const;
+    Fraction snapNote(const Fraction& tick, const PointF p, int staff) const;
 
     const std::vector<MeasureBase*>& measures() const { return m_ml; }
     std::vector<MeasureBase*>& measures() { return m_ml; }
 
     MeasureBase* measure(int idx) { return m_ml[idx]; }
+    MeasureBase* first() const { return m_ml.front(); }
+    MeasureBase* last() const { return m_ml.back(); }
     Measure* firstMeasure() const;
     Measure* lastMeasure() const;
     Fraction endTick() const;
@@ -176,16 +177,19 @@ public:
     Spacer* upSpacer(staff_idx_t staffIdx, Spacer* prevDownSpacer) const;
     Spacer* downSpacer(staff_idx_t staffIdx) const;
 
-    double firstNoteRestSegmentX(bool leading = false);
+    double firstNoteRestSegmentX(bool leading = false) const;
     double endingXForOpenEndedLines() const;
-    ChordRest* lastChordRest(track_idx_t track);
-    ChordRest* firstChordRest(track_idx_t track);
+    ChordRest* lastChordRest(track_idx_t track) const;
+    ChordRest* firstChordRest(track_idx_t track) const;
 
     bool hasFixedDownDistance() const { return m_fixedDownDistance; }
     void setFixedDownDistance(bool val) const { m_fixedDownDistance = val; }
 
     staff_idx_t firstVisibleStaff() const;
     staff_idx_t nextVisibleStaff(staff_idx_t) const;
+    staff_idx_t prevVisibleStaff(staff_idx_t) const;
+    staff_idx_t lastVisibleStaff() const;
+
     double distance() const { return m_distance; }
     void setDistance(double d) { m_distance = d; }
 
@@ -194,18 +198,24 @@ public:
     staff_idx_t lastSysStaffOfPart(const Part* part) const;
     staff_idx_t lastVisibleSysStaffOfPart(const Part* part) const;
 
-    Fraction minSysTicks() const;
-    Fraction maxSysTicks() const;
-
-    double squeezableSpace() const;
-    bool hasCrossStaffOrModifiedBeams();
-
 #ifndef ENGRAVING_NO_ACCESSIBILITY
     AccessibleItemPtr createAccessible() override;
 #endif
 
     void setBracketsXPosition(const double xOffset);
     size_t getBracketsColumnsCount();
+
+    void resetShortestLongestChordRest();
+
+    StaffVisibilityIndicator* staffVisibilityIndicator() const { return m_staffVisibilityIndicator; }
+    void setHasStaffVisibilityIndicator(bool has);
+
+    bool isLocked() const;
+    const SystemLock* systemLock() const;
+
+    const std::vector<SystemLockIndicator*> lockIndicators() const { return m_lockIndicators; }
+    void addLockIndicator(SystemLockIndicator* sli);
+    void deleteLockIndicators();
 
 private:
     friend class Factory;
@@ -224,6 +234,9 @@ private:
     std::vector<SysStaff*> m_staves;
     std::vector<Bracket*> m_brackets;
     std::list<SpannerSegment*> m_spannerSegments;
+    std::vector<SystemLockIndicator*> m_lockIndicators;
+
+    StaffVisibilityIndicator* m_staffVisibilityIndicator = nullptr;
 
     double m_leftMargin = 0.0;      // left margin for instrument name, brackets etc.
     mutable bool m_fixedDownDistance = false;
@@ -234,4 +247,3 @@ private:
 typedef std::vector<System*>::iterator iSystem;
 typedef std::vector<System*>::const_iterator ciSystem;
 } // namespace mu::engraving
-#endif

@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -20,13 +20,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_ENGRAVING_SELECT_H
-#define MU_ENGRAVING_SELECT_H
+#pragma once
 
 #include "durationtype.h"
 #include "mscore.h"
 #include "pitchspelling.h"
-#include "types.h"
+#include "../types/types.h"
+
+#include "selectionfilter.h"
 
 namespace mu::engraving {
 class Score;
@@ -37,7 +38,10 @@ class EngravingItem;
 class Segment;
 class Note;
 class Measure;
+class MeasureBase;
 class Chord;
+class Tuplet;
+class GuitarBend;
 
 //---------------------------------------------------------
 //   ElementPattern
@@ -82,64 +86,6 @@ enum class SelState : char {
     // is selected
 };
 
-//---------------------------------------------------------
-//   SelectionFilterType
-//---------------------------------------------------------
-
-static constexpr size_t NUMBER_OF_SELECTION_FILTER_TYPES = 23;
-
-enum class SelectionFilterType : unsigned int {
-    NONE                    = 0,
-    FIRST_VOICE             = 1 << 0,
-    SECOND_VOICE            = 1 << 1,
-    THIRD_VOICE             = 1 << 2,
-    FOURTH_VOICE            = 1 << 3,
-    DYNAMIC                 = 1 << 4,
-    HAIRPIN                 = 1 << 5,
-    FINGERING               = 1 << 6,
-    LYRICS                  = 1 << 7,
-    CHORD_SYMBOL            = 1 << 8,
-    OTHER_TEXT              = 1 << 9,
-    ARTICULATION            = 1 << 10,
-    ORNAMENT                = 1 << 11,
-    SLUR                    = 1 << 12,
-    FIGURED_BASS            = 1 << 13,
-    OTTAVA                  = 1 << 14,
-    PEDAL_LINE              = 1 << 15,
-    OTHER_LINE              = 1 << 16,
-    ARPEGGIO                = 1 << 17,
-    GLISSANDO               = 1 << 18,
-    FRET_DIAGRAM            = 1 << 19,
-    BREATH                  = 1 << 20,
-    TREMOLO                 = 1 << 21,
-    GRACE_NOTE              = 1 << 22,
-    ALL                     = ~(~0u << NUMBER_OF_SELECTION_FILTER_TYPES)
-};
-
-//---------------------------------------------------------
-//   SelectionFilter
-//---------------------------------------------------------
-
-class SelectionFilter
-{
-public:
-    SelectionFilter() = default;
-    SelectionFilter(SelectionFilterType type);
-
-    inline bool operator==(const SelectionFilter& f) const { return m_filteredTypes == f.m_filteredTypes; }
-    inline bool operator!=(const SelectionFilter& f) const { return !this->operator==(f); }
-
-    int filteredTypes() const;
-    bool isFiltered(SelectionFilterType type) const;
-    void setFiltered(SelectionFilterType type, bool filtered);
-
-    bool canSelect(const EngravingItem* element) const;
-    bool canSelectVoice(track_idx_t track) const;
-
-private:
-    unsigned int m_filteredTypes = static_cast<unsigned int>(SelectionFilterType::ALL);
-};
-
 //-------------------------------------------------------------------
 //   Selection
 //    For SelState::LIST state only visible elements can be selected
@@ -166,12 +112,13 @@ public:
 
     const std::vector<EngravingItem*>& elements() const { return m_el; }
     std::vector<EngravingItem*> elements(ElementType type) const;
-    std::vector<Note*> noteList(track_idx_t track = mu::nidx) const;
+    std::vector<Note*> noteList(track_idx_t track = muse::nidx) const;
 
     const std::list<EngravingItem*> uniqueElements() const;
-    std::list<Note*> uniqueNotes(track_idx_t track = mu::nidx) const;
+    std::list<Note*> uniqueNotes(track_idx_t track = muse::nidx) const;
 
     bool isSingle() const { return (m_state == SelState::LIST) && (m_el.size() == 1); }
+    bool elementsSelected(const ElementTypeSet& types) const;
 
     void add(EngravingItem*);
     void deselectAll();
@@ -179,15 +126,17 @@ public:
     void clear();
     EngravingItem* element() const;
     ChordRest* cr() const;
-    Segment* firstChordRestSegment() const;
-    ChordRest* firstChordRest(track_idx_t track = mu::nidx) const;
-    ChordRest* lastChordRest(track_idx_t track = mu::nidx) const;
+    ChordRest* firstChordRest(track_idx_t track = muse::nidx) const;
+    ChordRest* lastChordRest(track_idx_t track = muse::nidx) const;
     Measure* findMeasure() const;
+    MeasureBase* startMeasureBase() const;
+    MeasureBase* endMeasureBase() const;
+    std::vector<System*> selectedSystems() const;
     void update();
     void updateState();
     void dump();
     String mimeType() const;
-    mu::ByteArray mimeData() const;
+    muse::ByteArray mimeData() const;
 
     Segment* startSegment() const { return m_startSegment; }
     Segment* endSegment() const { return m_endSegment; }
@@ -214,16 +163,23 @@ public:
     bool measureRange(Measure** m1, Measure** m2) const;
     void extendRangeSelection(ChordRest* cr);
     void extendRangeSelection(Segment* seg, Segment* segAfter, staff_idx_t staffIdx, const Fraction& tick, const Fraction& etick);
+    bool rangeContainsMultiNoteChords() const;
 
 private:
-
-    mu::ByteArray staffMimeData() const;
-    mu::ByteArray symbolListMimeData() const;
+    muse::ByteArray staffMimeData() const;
+    muse::ByteArray symbolListMimeData() const;
     SelectionFilter selectionFilter() const;
-    bool canSelect(EngravingItem* e) const { return selectionFilter().canSelect(e); }
+    bool canSelect(const EngravingItem* e) const { return selectionFilter().canSelect(e); }
+    bool canSelectNoteIdx(size_t noteIdx, size_t totalNotesInChord, bool rangeContainsMultiNoteChords) const;
     bool canSelectVoice(track_idx_t track) const { return selectionFilter().canSelectVoice(track); }
     void appendFiltered(EngravingItem* e);
-    void appendChord(Chord* chord);
+    void appendFiltered(const std::unordered_set<EngravingItem*>& elems);
+    void appendChordRest(ChordRest* cr);
+    void appendTupletHierarchy(Tuplet* innermostTuplet);
+    void appendGuitarBend(GuitarBend* guitarBend);
+
+    ChordRest* firstChordRestInRange(track_idx_t preferredTrack = muse::nidx) const;
+    ChordRest* lastChordRestInRange(track_idx_t preferredTrack = muse::nidx) const;
 
     Score* m_score = nullptr;
     SelState m_state = SelState::NONE;
@@ -245,7 +201,8 @@ private:
     Fraction m_currentTick;    // tracks the most recent selection
     track_idx_t m_currentTrack = 0;
 
+    bool m_rangeContainsMultiNoteChords = false; // cached - calculating this isn't free
+
     String m_lockReason;
 };
 } // namespace mu::engraving
-#endif

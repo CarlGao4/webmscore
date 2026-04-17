@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -24,17 +24,24 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 
-import MuseScore.Ui 1.0
-import MuseScore.UiComponents 1.0
+import Muse.Ui 1.0
+import Muse.UiComponents 1.0
 import MuseScore.Braille 1.0
 
 StyledFlickable {
     id: root
+    enabled: brailleModel.enabled
+    visible: enabled
 
     property NavigationPanel navigationPanel: NavigationPanel {
         name: "BrailleView"
         enabled: brailleTextArea.enabled && brailleTextArea.visible
         direction: NavigationPanel.Both
+        accessible.name: qsTrc("braille/view", "Braille")
+    }
+
+    Component.onCompleted: {
+        brailleModel.load()
     }
 
     BrailleModel {
@@ -51,31 +58,14 @@ StyledFlickable {
                 }
             }
         }
-
-        onBraillePanelEnabledChanged: {
-            root.visible = brailleModel.enabled
-        }
-
-        onBrailleModeChanged: {
-            switch(brailleModel.mode) {
-                case 1: {
-                    fakeNavCtrl.accessible.setName("Braille: Normal mode");
-                    break;
-                }
-                case 2: {
-                    fakeNavCtrl.accessible.setName("Braille: Note input mode");
-                    break;
-                }
-            }
-        }
-
-        Component.onCompleted: {
-            root.visible = brailleModel.enabled
-        }
     }
 
     TextArea.flickable: TextArea {
         id: brailleTextArea
+        color: ui.theme.fontPrimaryColor
+        font {
+            pixelSize: ui.theme.bodyFont.pixelSize
+        }
         text: brailleModel.brailleInfo
         wrapMode: Text.AlignLeft
 
@@ -134,7 +124,7 @@ StyledFlickable {
         cursorDelegate: Rectangle {
             id: brailleCursor
             visible: brailleTextArea.cursorVisible
-            color: brailleModel.cursorColor
+            color: ui.theme.isDark && brailleModel.cursorColor == "black" ? ui.theme.fontPrimaryColor : brailleModel.cursorColor
             width: brailleTextArea.cursorRectangle.width
 
             SequentialAnimation {
@@ -176,7 +166,11 @@ StyledFlickable {
             order: 1
 
             accessible.role: MUAccessible.EditableText
-            accessible.name: "Braille"
+            accessible.name: brailleModel.mode === 2
+                             //: Braille input with 6 keyboard keys (F,D,S & J,K,L) to represent the 6 dots in a braille cell.
+                             ? qsTrc("braille/view", "Six-key input mode")
+                             //: Braille navigation.
+                             : qsTrc("braille/view", "Navigation mode")
             accessible.visualItem: brailleTextArea
             accessible.text: brailleTextArea.text
             accessible.selectedText: brailleTextArea.selectedText
@@ -207,23 +201,45 @@ StyledFlickable {
         }
 
         Component.onCompleted: {
-            textInputFieldModel.init()
+            textInputModel.init()
         }
 
-        TextInputFieldModel {
-            id: textInputFieldModel
+        TextInputModel {
+            id: textInputModel
         }
 
-        Keys.onPressed: {
-            if (event.key === Qt.Key_Tab) {
+        Keys.onShortcutOverride: function(event) {
+
+            if (keyMap.get(event.key) === "") {
+                // Not interested in this key. Allow it to undergo normal
+                // shortcut processing (i.e. trigger an action, if it's been
+                // assigned one in Preferences that's valid in this context).
+                return;
+            }
+
+            // Intercept key for use in Keys.onPressed (below). This prevents
+            // it from triggering actions it's assigned to in Preferences.
+            // Note: users can reassign shortcuts to use keys that aren't
+            // blocked. Conclusion: we can block keys here but not actions.
+            event.accepted = true;
+            return;
+        }
+
+        Keys.onPressed: function(event) {
+            if (event.key === Qt.Key_Tab
+                    || event.key === Qt.Key_Backtab
+                    || event.key === Qt.Key_F6
+                    || event.key === Qt.Key_QuoteLeft) {
                 //! NOTE: We need to handle Tab key here because https://doc.qt.io/qt-5/qml-qtquick-controls2-textarea.html#tab-focus
                 //!       and we don't use qt navigation system
-                if (textInputFieldModel.handleShortcut(Qt.Key_Tab, Qt.NoModifier)) {
+                if (textInputModel.handleShortcut(event.key, event.modifiers)) {
                     brailleTextArea.focus = false;
                     event.accepted = true;
                     return;
                 }
             }
+
+            // Note: Subsequent keys must be accepted in Keys.onShortcutOverride (above).
 
             if (event.key !== Qt.Key_Shift
                 && event.key !== Qt.Key_Alt
@@ -267,7 +283,7 @@ StyledFlickable {
             }
         }
 
-        Keys.onReleased: {
+        Keys.onReleased: function(event) {
             if (event.key !== Qt.Key_Shift
                 && event.key !== Qt.Key_Alt
                 && event.key !== Qt.Key_Control

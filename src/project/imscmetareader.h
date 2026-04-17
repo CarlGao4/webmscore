@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -39,8 +39,8 @@ class IMscMetaReader : MODULE_EXPORT_INTERFACE
 public:
     virtual ~IMscMetaReader() = default;
 
-    virtual RetVal<ProjectMeta> readMeta(const io::path_t& filePath) const = 0;
-    virtual RetVal<CloudProjectInfo> readCloudProjectInfo(const io::path_t& filePath) const = 0;
+    virtual muse::RetVal<ProjectMeta> readMeta(const muse::io::path_t& filePath) const = 0;
+    virtual muse::RetVal<CloudProjectInfo> readCloudProjectInfo(const muse::io::path_t& filePath) const = 0;
 };
 }
 

@@ -1,13 +1,23 @@
-
 #include "global/log.h"
 #include "async/processevents.h"
 
-#include "audio/internal/worker/playback.h"
-#include "audio/internal/worker/audioengine.h"
+#include "modularity/ioc.h"
+
+#include "audio/common/rpc/irpcchannel.h"
+#include "audio/worker/internal/audioengine.h"
+#include "audio/worker/internal/workerplayback.h"
+
+#include "notation/inotation.h"
+
+#include "playback/iplaybackcontroller.h"
 
 #include "./audiosynth.h"
 
+using namespace muse;
+
 namespace MainAudio {
+
+std::vector<std::function<Synth::SynthRes*(bool)>> Synth::synthIterators;
 
 /**
  * De-interleave audio channels
@@ -37,28 +47,37 @@ Synth Synth::start(MainScore score, float starttime) {
     static const size_t channels = 2;
     static const size_t sampleRate = 44100;
 
+    auto rpcChannel = modularity::globalIoc()->resolve<audio::rpc::IRpcChannel>("");
+
     // Wait async ticks, otherwise `sequenceIdList` is empty
     //  previous `Playback::addSequence()` is a `Promise`
-    mu::async::processEvents();
+    for (int i=0; i < 3; i++) {
+        async::processEvents();
+        rpcChannel->process();
+    }
     //  resolve `totalDuration`
-    mu::async::processEvents();
+    async::processEvents();
 
-    auto playback = modularity::ioc()->resolve<audio::Playback>("");
-    IF_ASSERT_FAILED (playback->getSequences().size() > 0) {
+    auto playbackController = modularity::globalIoc()->resolve<playback::IPlaybackController>("");
+    auto worker_playback = modularity::globalIoc()->resolve<audio::worker::WorkerPlayback>("");
+    auto audio_engine = modularity::globalIoc()->resolve<audio::worker::IAudioEngine>("");
+
+    const auto sequenceId = playbackController->currentTrackSequenceId();
+    IF_ASSERT_FAILED(sequenceId != -1) {
         LOGE() << "no playback sequence found!";
         return nullptr;
     }
-    audio::ITrackSequencePtr sequence = playback->getSequences().at(0); // use only the first `sequence`
+    auto sequence = worker_playback->sequence(sequenceId);
 
     // Seek
     // https://github.com/LibreScore/webmscore/blob/v4.0/src/framework/audio/internal/worker/audiooutputhandler.cpp#L200-L201
     sequence->player()->stop();
-    sequence->player()->seek(starttime * 1000); // get ms
+    sequence->player()->seek_ms(starttime * 1000 * 1000); // get microsecs
 
     // Setup audio source
     // https://github.com/LibreScore/webmscore/blob/v4.0/src/framework/audio/internal/soundtracks/soundtrackwriter.cpp#L73-L76
-    audio::AudioEngine::instance()->setMode(audio::RenderMode::OfflineMode);
-    auto source = audio::AudioEngine::instance()->mixer();
+    audio_engine->setMode(audio::RenderMode::OfflineMode);
+    auto source = audio_engine->mixer();
     source->setSampleRate(sampleRate);
     source->setIsActive(true);
 

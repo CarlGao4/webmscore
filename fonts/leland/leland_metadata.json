@@ -4,19 +4,20 @@
         "barlineSeparation": 0.37,
         "beamSpacing": 0.25,
         "beamThickness": 0.5,
-        "bracketThickness": 0.44,
+        "bracketThickness": 0.45,
         "dashedBarlineDashLength": 0.6,
         "dashedBarlineGapLength": 0.4,
         "dashedBarlineThickness": 0.11,
+        "hBarThickness": 0.7,
         "hairpinThickness": 0.12,
-        "legerLineExtension": 0.35,
+        "legerLineExtension": 0.33,
         "legerLineThickness": 0.16,
         "lyricLineThickness": 0.1,
         "octaveLineThickness": 0.11,
         "pedalLineThickness": 0.11,
         "repeatBarlineDotSeparation": 0.37,
         "repeatEndingLineThickness": 0.11,
-        "slurEndpointThickness": 0.07,
+        "slurEndpointThickness": 0.05,
         "slurMidpointThickness": 0.21,
         "staffLineThickness": 0.11,
         "stemThickness": 0.1,
@@ -28,7 +29,8 @@
         ],
         "thickBarlineThickness": 0.55,
         "thinBarlineThickness": 0.18,
-        "tieEndpointThickness": 0.07,
+        "thinThickBarlineSeparation": 0.37,
+        "tieEndpointThickness": 0.05,
         "tieMidpointThickness": 0.21,
         "tupletBracketThickness": 0.1
     },
@@ -183,6 +185,14 @@
                 }
             ]
         },
+        "keyboardPedalPed": {
+            "alternates": [
+                {
+                    "codepoint": "U+F434",
+                    "name": "keyboardPedalPedNoDot"
+                }
+            ]
+        },
         "noteDoubleWhole": {
             "alternates": [
                 {
@@ -196,6 +206,126 @@
                 {
                     "codepoint": "U+F4BA",
                     "name": "noteheadDoubleWholeAlt"
+                }
+            ]
+        },
+        "timeSig0": {
+            "alternates": [
+                {
+                    "codepoint": "U+F506",
+                    "name": "timeSig0Narrow"
+                },
+                {
+                    "codepoint": "U+F440",
+                    "name": "timeSig0Large"
+                }
+            ]
+        },
+        "timeSig1": {
+            "alternates": [
+                {
+                    "codepoint": "U+F507",
+                    "name": "timeSig1Narrow"
+                },
+                {
+                    "codepoint": "U+F441",
+                    "name": "timeSig1Large"
+                }
+            ]
+        },
+        "timeSig2": {
+            "alternates": [
+                {
+                    "codepoint": "U+F508",
+                    "name": "timeSig2Narrow"
+                },
+                {
+                    "codepoint": "U+F442",
+                    "name": "timeSig2Large"
+                }
+            ]
+        },
+        "timeSig3": {
+            "alternates": [
+                {
+                    "codepoint": "U+F509",
+                    "name": "timeSig3Narrow"
+                },
+                {
+                    "codepoint": "U+F443",
+                    "name": "timeSig3Large"
+                }
+            ]
+        },
+        "timeSig4": {
+            "alternates": [
+                {
+                    "codepoint": "U+F50A",
+                    "name": "timeSig4Narrow"
+                },
+                {
+                    "codepoint": "U+F444",
+                    "name": "timeSig4Large"
+                }
+            ]
+        },
+        "timeSig5": {
+            "alternates": [
+                {
+                    "codepoint": "U+F50B",
+                    "name": "timeSig5Narrow"
+                },
+                {
+                    "codepoint": "U+F445",
+                    "name": "timeSig5Large"
+                }
+            ]
+        },
+        "timeSig6": {
+            "alternates": [
+                {
+                    "codepoint": "U+F50C",
+                    "name": "timeSig6Narrow"
+                },
+                {
+                    "codepoint": "U+F446",
+                    "name": "timeSig6Large"
+                }
+            ]
+        },
+        "timeSig7": {
+            "alternates": [
+                {
+                    "codepoint": "U+F50D",
+                    "name": "timeSig7Narrow"
+                },
+                {
+                    "codepoint": "U+F447",
+                    "name": "timeSig7Large"
+                }
+            ]
+        },
+        "timeSig8": {
+            "alternates": [
+                {
+                    "codepoint": "U+F50E",
+                    "name": "timeSig8Narrow"
+                },
+                {
+                    "codepoint": "U+F448",
+                    "name": "timeSig8Large"
+                }
+            ]
+        },
+        "timeSig9": {
+            "alternates": [
+                {
+                    "codepoint": "U+F50F",
+                    "name": "timeSig9Narrow"
+                },
+                {
+                    "codepoint": "U+F449",
+                    "name": "timeSig9Large"
                 }
             ]
         }
@@ -436,10 +566,6 @@
             ]
         },
         "accidentalQuarterToneFlatStein": {
-            "cutOutNE": [
-                0.18,
-                0.64
-            ],
             "cutOutNW": [
                 0.62,
                 0.624
@@ -655,61 +781,187 @@
                 -0.756
             ]
         },
+        "cClef": {
+            "cutOutNE": [
+                2.236,
+                1.708
+            ],
+            "cutOutSE": [
+                2.236,
+                -1.7
+            ]
+        },
+        "cClef8vb": {
+            "cutOutNE": [
+                2.236,
+                1.708
+            ],
+            "cutOutSE": [
+                1.472,
+                -1.92
+            ],
+            "cutOutSW": [
+                0.748,
+                -1.868
+            ]
+        },
+        "cClefChange": {
+            "cutOutNE": [
+                1.68,
+                1.296
+            ],
+            "cutOutSE": [
+                1.68,
+                -1.26
+            ]
+        },
         "dynamicFF": {
+            "cutOutNW": [
+                0.34,
+                1.004
+            ],
+            "cutOutSE": [
+                1.576,
+                0.5
+            ],
             "opticalCenter": [
                 1.264,
                 0.0
             ]
         },
         "dynamicFFF": {
+            "cutOutNW": [
+                0.344,
+                1.004
+            ],
+            "cutOutSE": [
+                2.576,
+                0.5
+            ],
             "opticalCenter": [
                 1.824,
                 0.0
             ]
         },
         "dynamicFFFF": {
+            "cutOutNW": [
+                0.344,
+                1.004
+            ],
+            "cutOutSE": [
+                3.576,
+                0.5
+            ],
             "opticalCenter": [
                 2.324,
                 0.0
             ]
         },
         "dynamicFFFFF": {
+            "cutOutNW": [
+                0.344,
+                1.004
+            ],
+            "cutOutSE": [
+                4.58,
+                0.5
+            ],
             "opticalCenter": [
                 2.824,
                 0.0
             ]
         },
         "dynamicFFFFFF": {
+            "cutOutNW": [
+                0.344,
+                1.004
+            ],
+            "cutOutSE": [
+                5.576,
+                0.5
+            ],
             "opticalCenter": [
                 3.324,
                 0.0
             ]
         },
         "dynamicForte": {
+            "cutOutNW": [
+                0.336,
+                1.004
+            ],
+            "cutOutSE": [
+                0.568,
+                0.5
+            ],
             "opticalCenter": [
                 0.812,
                 0.0
             ]
         },
         "dynamicFortePiano": {
+            "cutOutNE": [
+                1.336,
+                1.052
+            ],
+            "cutOutNW": [
+                0.34,
+                1.004
+            ],
+            "cutOutSE": [
+                1.572,
+                -0.088
+            ],
             "opticalCenter": [
                 1.308,
                 0.0
             ]
         },
         "dynamicForzando": {
+            "cutOutNE": [
+                1.336,
+                1.032
+            ],
+            "cutOutNW": [
+                0.336,
+                1.004
+            ],
+            "cutOutSE": [
+                0.408,
+                -0.008
+            ],
             "opticalCenter": [
                 1.068,
                 0.0
             ]
         },
         "dynamicMF": {
+            "cutOutNW": [
+                1.832,
+                1.008
+            ],
+            "cutOutSE": [
+                2.064,
+                0.5
+            ],
+            "cutOutSW": [
+                0.944,
+                -0.008
+            ],
             "opticalCenter": [
                 1.52,
                 0.0
             ]
         },
         "dynamicMP": {
+            "cutOutSE": [
+                2.032,
+                -0.088
+            ],
+            "cutOutSW": [
+                1.136,
+                -0.008
+            ],
             "opticalCenter": [
                 1.496,
                 0.0
@@ -728,42 +980,74 @@
             ]
         },
         "dynamicPF": {
+            "cutOutNW": [
+                1.784,
+                1.048
+            ],
+            "cutOutSE": [
+                2.016,
+                0.5
+            ],
             "opticalCenter": [
                 1.544,
                 0.0
             ]
         },
         "dynamicPP": {
+            "cutOutSE": [
+                1.812,
+                -0.088
+            ],
             "opticalCenter": [
                 1.432,
                 0.0
             ]
         },
         "dynamicPPP": {
+            "cutOutSE": [
+                3.108,
+                -0.088
+            ],
             "opticalCenter": [
                 2.08,
                 0.0
             ]
         },
         "dynamicPPPP": {
+            "cutOutSE": [
+                4.404,
+                -0.088
+            ],
             "opticalCenter": [
                 2.728,
                 0.0
             ]
         },
         "dynamicPPPPP": {
+            "cutOutSE": [
+                5.7,
+                -0.088
+            ],
             "opticalCenter": [
                 3.376,
                 0.0
             ]
         },
         "dynamicPPPPPP": {
+            "cutOutSE": [
+                6.996,
+                -0.088
+            ],
             "opticalCenter": [
                 4.024,
                 0.0
             ]
         },
         "dynamicPiano": {
+            "cutOutSE": [
+                0.516,
+                -0.088
+            ],
             "opticalCenter": [
                 0.784,
                 0.0
@@ -776,12 +1060,40 @@
             ]
         },
         "dynamicRinforzando1": {
+            "cutOutNW": [
+                1.34,
+                1.016
+            ],
+            "cutOutSE": [
+                1.576,
+                0.5
+            ],
+            "cutOutSW": [
+                0.46,
+                0.0
+            ],
             "opticalCenter": [
                 1.268,
                 0.0
             ]
         },
         "dynamicRinforzando2": {
+            "cutOutNE": [
+                2.344,
+                1.032
+            ],
+            "cutOutNW": [
+                1.34,
+                1.016
+            ],
+            "cutOutSE": [
+                1.416,
+                -0.008
+            ],
+            "cutOutSW": [
+                0.46,
+                0.0
+            ],
             "opticalCenter": [
                 1.528,
                 0.0
@@ -794,36 +1106,146 @@
             ]
         },
         "dynamicSforzando1": {
+            "cutOutNW": [
+                1.284,
+                1.056
+            ],
+            "cutOutSE": [
+                1.5,
+                0.5
+            ],
+            "cutOutSW": [
+                0.384,
+                -0.02
+            ],
             "opticalCenter": [
                 1.204,
                 0.0
             ]
         },
+        "dynamicSforzandoFF": {
+            "cutOutNW": [
+                1.284,
+                1.056
+            ],
+            "cutOutSE": [
+                2.348,
+                -0.008
+            ],
+            "cutOutSW": [
+                0.384,
+                -0.02
+            ],
+            "opticalCenter": [
+                1.968,
+                0.0
+            ]
+        },
         "dynamicSforzandoPianissimo": {
+            "cutOutNE": [
+                2.268,
+                1.068
+            ],
+            "cutOutNW": [
+                1.284,
+                1.056
+            ],
+            "cutOutSE": [
+                3.8,
+                -0.088
+            ],
+            "cutOutSW": [
+                0.384,
+                -0.02
+            ],
             "opticalCenter": [
                 1.62,
                 0.0
             ]
         },
         "dynamicSforzandoPiano": {
+            "cutOutNE": [
+                2.268,
+                1.068
+            ],
+            "cutOutNW": [
+                1.284,
+                1.056
+            ],
+            "cutOutSE": [
+                2.504,
+                -0.088
+            ],
+            "cutOutSW": [
+                0.384,
+                -0.02
+            ],
             "opticalCenter": [
                 1.62,
                 0.0
             ]
         },
         "dynamicSforzato": {
+            "cutOutNE": [
+                2.268,
+                1.032
+            ],
+            "cutOutNW": [
+                1.284,
+                1.056
+            ],
+            "cutOutSE": [
+                1.34,
+                -0.008
+            ],
+            "cutOutSW": [
+                0.384,
+                -0.02
+            ],
             "opticalCenter": [
                 1.464,
                 0.0
             ]
         },
         "dynamicSforzatoFF": {
+            "cutOutNE": [
+                3.284,
+                1.032
+            ],
+            "cutOutNW": [
+                1.284,
+                1.056
+            ],
+            "cutOutSE": [
+                2.348,
+                -0.008
+            ],
+            "cutOutSW": [
+                0.384,
+                -0.02
+            ],
             "opticalCenter": [
                 1.968,
                 0.0
             ]
         },
         "dynamicSforzatoPiano": {
+            "cutOutNE": [
+                2.268,
+                1.068
+            ],
+            "cutOutNW": [
+                1.284,
+                1.056
+            ],
+            "cutOutSE": [
+                3.296,
+                -0.088
+            ],
+            "cutOutSW": [
+                0.384,
+                -0.02
+            ],
             "opticalCenter": [
                 1.464,
                 0.0
@@ -833,6 +1255,86 @@
             "opticalCenter": [
                 0.596,
                 0.0
+            ]
+        },
+        "fClef": {
+            "cutOutNE": [
+                1.832,
+                0.7
+            ],
+            "cutOutNW": [
+                0.424,
+                0.8
+            ],
+            "cutOutSE": [
+                1.72,
+                -1.2
+            ]
+        },
+        "fClef15ma": {
+            "cutOutNE": [
+                1.944,
+                0.7
+            ],
+            "cutOutNW": [
+                0.388,
+                0.768
+            ],
+            "cutOutSE": [
+                1.72,
+                -1.2
+            ]
+        },
+        "fClef15mb": {
+            "cutOutNE": [
+                1.832,
+                0.7
+            ],
+            "cutOutNW": [
+                0.424,
+                0.8
+            ],
+            "cutOutSE": [
+                1.976,
+                -0.752
+            ]
+        },
+        "fClef8va": {
+            "cutOutNE": [
+                1.82,
+                0.7
+            ],
+            "cutOutNW": [
+                0.424,
+                0.8
+            ],
+            "cutOutSE": [
+                1.72,
+                -1.2
+            ]
+        },
+        "fClef8vb": {
+            "cutOutNE": [
+                1.832,
+                0.7
+            ],
+            "cutOutSE": [
+                1.72,
+                -1.2
+            ]
+        },
+        "fClefChange": {
+            "cutOutNE": [
+                1.372,
+                0.548
+            ],
+            "cutOutNW": [
+                0.288,
+                0.6
+            ],
+            "cutOutSE": [
+                1.196,
+                -1.0
             ]
         },
         "flag1024thDown": {
@@ -1027,6 +1529,150 @@
                 -0.04
             ]
         },
+        "gClef": {
+            "cutOutNE": [
+                2.152,
+                0.844
+            ],
+            "cutOutNW": [
+                1.072,
+                2.152
+            ],
+            "cutOutSE": [
+                2.0,
+                -0.94
+            ],
+            "cutOutSW": [
+                0.488,
+                -0.7
+            ]
+        },
+        "gClef15ma": {
+            "cutOutNE": [
+                2.292,
+                0.724
+            ],
+            "cutOutNW": [
+                0.948,
+                2.024
+            ],
+            "cutOutSE": [
+                2.0,
+                -0.94
+            ],
+            "cutOutSW": [
+                0.488,
+                -0.7
+            ]
+        },
+        "gClef15mb": {
+            "cutOutNE": [
+                2.152,
+                0.844
+            ],
+            "cutOutNW": [
+                1.072,
+                2.152
+            ],
+            "cutOutSE": [
+                2.0,
+                -0.94
+            ],
+            "cutOutSW": [
+                0.488,
+                -0.7
+            ]
+        },
+        "gClef8va": {
+            "cutOutNE": [
+                2.152,
+                0.844
+            ],
+            "cutOutNW": [
+                1.072,
+                2.152
+            ],
+            "cutOutSE": [
+                2.0,
+                -0.94
+            ],
+            "cutOutSW": [
+                0.488,
+                -0.7
+            ]
+        },
+        "gClef8vb": {
+            "cutOutNE": [
+                2.152,
+                0.844
+            ],
+            "cutOutNW": [
+                1.072,
+                2.152
+            ],
+            "cutOutSE": [
+                2.0,
+                -0.94
+            ],
+            "cutOutSW": [
+                0.488,
+                -0.7
+            ]
+        },
+        "gClef8vbOld": {
+            "cutOutNE": [
+                3.768,
+                0.844
+            ],
+            "cutOutNW": [
+                1.072,
+                2.152
+            ],
+            "cutOutSE": [
+                3.616,
+                -0.94
+            ],
+            "cutOutSW": [
+                0.488,
+                -0.7
+            ]
+        },
+        "gClef8vbParens": {
+            "cutOutNE": [
+                2.152,
+                0.844
+            ],
+            "cutOutNW": [
+                1.072,
+                2.152
+            ],
+            "cutOutSE": [
+                2.12,
+                -0.94
+            ],
+            "cutOutSW": [
+                0.488,
+                -0.7
+            ]
+        },
+        "gClefChange": {
+            "cutOutNE": [
+                1.612,
+                0.652
+            ],
+            "cutOutNW": [
+                0.804,
+                1.628
+            ],
+            "cutOutSE": [
+                1.5,
+                -0.652
+            ],
+            "cutOutSW": [
+                0.368,
+                -0.504
+            ]
+        },
         "mensuralNoteheadMinimaWhite": {
             "stemDownNW": [
                 0.0,
@@ -1114,6 +1760,32 @@
             ]
         },
         "noteheadHalf": {
+            "cutOutNE": [
+                1.184,
+                0.42
+            ],
+            "cutOutNW": [
+                0.272,
+                0.312
+            ],
+            "cutOutSE": [
+                1.072,
+                -0.284
+            ],
+            "cutOutSW": [
+                0.156,
+                -0.456
+            ],
+            "stemDownNW": [
+                0.0,
+                -0.168
+            ],
+            "stemUpSE": [
+                1.3,
+                0.16
+            ]
+        },
+        "noteheadHalfFilled": {
             "cutOutNE": [
                 1.184,
                 0.42
@@ -1358,12 +2030,30 @@
                 0.2,
                 0.4
             ],
+            "cutOutSE": [
+                1.284,
+                -0.4
+            ],
             "cutOutSW": [
                 0.212,
                 -0.4
+            ]
+        },
+        "noteheadWholeFilled": {
+            "cutOutNE": [
+                1.296,
+                0.4
             ],
-            "stemUpSE": [
+            "cutOutNW": [
+                0.2,
+                0.4
+            ],
+            "cutOutSE": [
                 1.284,
+                -0.4
+            ],
+            "cutOutSW": [
+                0.212,
                 -0.4
             ]
         },

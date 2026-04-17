@@ -19,8 +19,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_FRAMEWORK_TIMER_H
-#define MU_FRAMEWORK_TIMER_H
+#ifndef MUSE_GLOBAL_TIMER_H
+#define MUSE_GLOBAL_TIMER_H
 
 #include "async/notification.h"
 #include "async/asyncable.h"
@@ -28,9 +28,9 @@
 #include <memory>
 #include <thread>
 
-namespace mu {
+namespace muse {
 /*!
- * mu::Timer
+ * muse::Timer
  * usage:
  *      auto timer = new Timer(std::chrono::microseconds(20));
  *      timer.onTimeout(this, []() { LOGI() << "Timer call";});
@@ -112,4 +112,4 @@ private:
     std::unique_ptr<std::thread> m_thread = nullptr;
 };
 }
-#endif // MU_FRAMEWORK_TIMER_H
+#endif // MUSE_GLOBAL_TIMER_H

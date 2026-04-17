@@ -26,7 +26,7 @@
 
 #include "log.h"
 
-using namespace mu::framework;
+using namespace muse;
 
 std::thread::id Invoker::m_mainThreadId;
 

@@ -19,16 +19,14 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
-#ifndef MU_VST_IVSTCONFIGURATION_H
-#define MU_VST_IVSTCONFIGURATION_H
+#pragma once
 
 #include "modularity/imoduleinterface.h"
 
 #include "io/path.h"
 #include "async/channel.h"
 
-namespace mu::vst {
+namespace muse::vst {
 class IVstConfiguration : MODULE_EXPORT_INTERFACE
 {
     INTERFACE_ID(IVstConfiguration)
@@ -39,7 +37,9 @@ public:
     virtual io::paths_t userVstDirectories() const = 0;
     virtual void setUserVstDirectories(const io::paths_t& paths) = 0;
     virtual async::Channel<io::paths_t> userVstDirectoriesChanged() const = 0;
+
+    // dev
+    virtual std::string usedVstView() const = 0;
+    virtual void setUsedVstView(const std::string& code) = 0;
 };
 }
-
-#endif // IVSTCONFIGURATION_H

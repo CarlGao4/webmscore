@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -28,9 +28,11 @@
 #include <map>
 
 #include "modularity/ioc.h"
-#include "async/asyncable.h"
-#include "audio/iaudiooutput.h"
-#include "audio/iplayback.h"
+
+#include "global/iglobalconfiguration.h"
+#include "iinteractive.h"
+
+#include "audio/main/iplayback.h"
 #include "audio/audiotypes.h"
 
 #include "abstractaudioresourceitem.h"
@@ -41,23 +43,25 @@
 #endif
 
 namespace mu::playback {
-class OutputResourceItem : public AbstractAudioResourceItem, public async::Asyncable
+class OutputResourceItem : public AbstractAudioResourceItem
 {
     Q_OBJECT
 
     Q_PROPERTY(QString id READ id NOTIFY fxParamsChanged)
     Q_PROPERTY(bool isActive READ isActive WRITE setIsActive NOTIFY isActiveChanged)
 
-    INJECT(audio::IPlayback, playback)
+    INJECT(muse::IGlobalConfiguration, globalConfiguration)
+    INJECT(muse::IInteractive, interactive)
+    INJECT(muse::audio::IPlayback, playback)
 
 public:
-    explicit OutputResourceItem(QObject* parent, const audio::AudioFxParams& params);
+    explicit OutputResourceItem(QObject* parent, const muse::audio::AudioFxParams& params);
 
     void requestAvailableResources() override;
     void handleMenuItem(const QString& menuItemId) override;
 
-    const audio::AudioFxParams& params() const;
-    void setParams(const audio::AudioFxParams& params);
+    const muse::audio::AudioFxParams& params() const;
+    void setParams(const muse::audio::AudioFxParams& params);
 
     QString title() const override;
     bool isBlank() const override;
@@ -73,12 +77,12 @@ signals:
     void fxParamsChanged();
 
 private:
-    void updateCurrentFxParams(const audio::AudioResourceMeta& newMeta);
-    void updateAvailableFxVendorsMap(const audio::AudioResourceMetaList& availableFxResources);
+    void updateCurrentFxParams(const muse::audio::AudioResourceMeta& newMeta);
+    void updateAvailableFxVendorsMap(const muse::audio::AudioResourceMetaList& availableFxResources);
 
-    std::map<audio::AudioResourceVendor, audio::AudioResourceMetaList> m_fxByVendorMap;
+    std::map<muse::audio::AudioResourceVendor, muse::audio::AudioResourceMetaList> m_fxByVendorMap;
 
-    audio::AudioFxParams m_currentFxParams;
+    muse::audio::AudioFxParams m_currentFxParams;
 };
 }
 

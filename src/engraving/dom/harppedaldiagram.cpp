@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2022 MuseScore BVBA and others
+ * Copyright (C) 2022 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -342,13 +342,13 @@ String HarpPedalDiagram::screenReaderInfo() const
         s.append(harpStringTypeToString(HarpStringType(idx)) + u" ");
         switch (m_pedalState.at(idx)) {
         case PedalPosition::FLAT:
-            s.append(mtrc("engraving", TConv::userName(AccidentalVal::FLAT, true)));
+            s.append(muse::mtrc("engraving", TConv::userName(AccidentalVal::FLAT, true)));
             break;
         case PedalPosition::NATURAL:
-            s.append(mtrc("engraving", TConv::userName(AccidentalVal::NATURAL, true)));
+            s.append(muse::mtrc("engraving", TConv::userName(AccidentalVal::NATURAL, true)));
             break;
         case PedalPosition::SHARP:
-            s.append(mtrc("engraving", TConv::userName(AccidentalVal::SHARP, true)));
+            s.append(muse::mtrc("engraving", TConv::userName(AccidentalVal::SHARP, true)));
             break;
         case PedalPosition::UNSET:
             s.append(u" unset ");

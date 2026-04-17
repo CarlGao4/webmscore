@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -31,8 +31,8 @@ AmbitusSettingsModel::AmbitusSettingsModel(QObject* parent, IElementRepositorySe
     : AbstractInspectorModel(parent, repository)
 {
     setModelType(InspectorModelType::TYPE_AMBITUS);
-    setTitle(qtrc("inspector", "Ambitus"));
-    setIcon(ui::IconCode::Code::AMBITUS);
+    setTitle(muse::qtrc("inspector", "Ambitus"));
+    setIcon(muse::ui::IconCode::Code::AMBITUS);
     createProperties();
 }
 
@@ -59,7 +59,7 @@ void AmbitusSettingsModel::createProperties()
     });
 
     m_direction = buildPropertyItem(mu::engraving::Pid::MIRROR_HEAD);
-    m_lineThickness = buildPropertyItem(mu::engraving::Pid::LINE_WIDTH_SPATIUM);
+    m_lineThickness = buildPropertyItem(mu::engraving::Pid::LINE_WIDTH);
 }
 
 void AmbitusSettingsModel::requestElements()

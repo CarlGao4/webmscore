@@ -20,14 +20,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_DRAW_TRANSFORM_H
-#define MU_DRAW_TRANSFORM_H
+#ifndef MUSE_DRAW_TRANSFORM_H
+#define MUSE_DRAW_TRANSFORM_H
+
+#include "global/realfn.h"
 
 #include "matrix.h"
 #include "geometry.h"
-#include "realfn.h"
 
-namespace mu::draw {
+namespace muse::draw {
 class PainterPath;
 
 class Transform
@@ -122,7 +123,7 @@ private:
 
     void mapElement(double& nx, double& ny, TransformationType t) const;
 
-#ifdef MUE_ENABLE_DRAW_TRACE
+#ifdef MUSE_MODULE_DRAW_TRACE
     static void nanWarning(const std::string& func);
 #endif
 
@@ -177,4 +178,4 @@ inline Transform operator/(const Transform& a, double n)
 }
 }
 
-#endif // MU_DRAW_TRANSFORM_H
+#endif // MUSE_DRAW_TRANSFORM_H

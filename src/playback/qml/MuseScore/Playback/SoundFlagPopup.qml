@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2024 MuseScore BVBA and others
+ * Copyright (C) 2024 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,19 +22,20 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 
-import MuseScore.Ui 1.0
-import MuseScore.UiComponents 1.0
+import Muse.Ui 1.0
+import Muse.UiComponents 1.0
 
+import MuseScore.NotationScene 1.0
 import MuseScore.Playback 1.0
 
 import "internal/SoundFlag"
 
-StyledPopupView {
+AbstractElementPopup {
     id: root
 
-    property NavigationSection notationViewNavigationSection: null
-    property int navigationOrderStart: 0
-    property int navigationOrderEnd: museSoundsParams.navigationPanelOrderEnd
+    property alias notationViewNavigationSection: navPanel.section
+    property alias navigationOrderStart: navPanel.order
+    readonly property alias navigationOrderEnd: museSoundsParams.navigationPanelOrderEnd
 
     contentWidth: content.width
     contentHeight: content.childrenRect.height
@@ -45,16 +46,15 @@ StyledPopupView {
     showArrow: false
 
     openPolicies: PopupView.Default | PopupView.OpenOnContentReady
+    placementPolicies: PopupView.PreferAbove
     isContentReady: soundFlagModel.inited
 
-    signal elementRectChanged(var elementRect)
+    model: SoundFlagSettingsModel {
+        id: soundFlagModel
+    }
 
     function updatePosition() {
-        var popupHeight = root.contentHeight + root.margins * 2 + root.padding * 2
-        root.y = -popupHeight
         root.x = (root.parent.width / 2) - (root.width / 2) + root.margins
-
-        root.setOpensUpward(true)
     }
 
     Column {
@@ -63,18 +63,6 @@ StyledPopupView {
         width: 294
 
         spacing: 12
-
-        SoundFlagSettingsModel {
-            id: soundFlagModel
-
-            onIconRectChanged: function(rect) {
-                root.elementRectChanged(rect)
-            }
-        }
-
-        Component.onCompleted: {
-            soundFlagModel.init()
-        }
 
         RowLayout {
             width: parent.width
@@ -88,6 +76,12 @@ StyledPopupView {
                 section: root.notationViewNavigationSection
                 order: root.navigationOrderStart
                 accessible.name: qsTrc("playback", "Sound flag settings")
+
+                onNavigationEvent: function(event) {
+                    if (event.type === NavigationEvent.Escape) {
+                        root.close()
+                    }
+                }
             }
 
             StyledIconLabel {
@@ -107,6 +101,7 @@ StyledPopupView {
                 horizontalAlignment: Text.AlignLeft
 
                 NavigationControl {
+                    id: navCtrl
                     name: "SoundFlagTitle"
                     enabled: titleLabel.enabled && titleLabel.visible
                     panel: navPanel
@@ -116,6 +111,10 @@ StyledPopupView {
                     accessible.role: MUAccessible.StaticText
                     accessible.visualItem: titleLabel
                     accessible.name: titleLabel.text
+                }
+
+                NavigationFocusBorder {
+                    navigationCtrl: navCtrl
                 }
             }
 
@@ -148,6 +147,10 @@ StyledPopupView {
 
             navigationPanelSection: root.notationViewNavigationSection
             navigationPanelOrderStart: navPanel.order + 1
+
+            onCloseRequested: {
+                root.close()
+            }
         }
     }
 }

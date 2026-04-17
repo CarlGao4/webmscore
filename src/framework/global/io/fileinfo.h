@@ -19,19 +19,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_IO_FILEINFO_H
-#define MU_IO_FILEINFO_H
+#ifndef MUSE_IO_FILEINFO_H
+#define MUSE_IO_FILEINFO_H
 
-#include "types/string.h"
+#include "global/types/string.h"
+#include "global/modularity/ioc.h"
+#include "ifilesystem.h"
 #include "dir.h"
 
-#include "modularity/ioc.h"
-#include "ifilesystem.h"
-
-namespace mu::io {
+namespace muse::io {
 class FileInfo
 {
-    INJECT_STATIC(IFileSystem, fileSystem)
+    static inline GlobalInject<IFileSystem> fileSystem;
+
 public:
     FileInfo() = default;
     FileInfo(const path_t& filePath);
@@ -68,4 +68,4 @@ private:
 };
 }
 
-#endif // MU_IO_FILEINFO_H
+#endif // MUSE_IO_FILEINFO_H

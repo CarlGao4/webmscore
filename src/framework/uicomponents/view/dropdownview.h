@@ -19,15 +19,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
-#ifndef MU_UICOMPONENTS_DROPDOWNVIEW_H
-#define MU_UICOMPONENTS_DROPDOWNVIEW_H
+#pragma once
 
 #include "popupview.h"
 
 class QQuickCloseEvent;
 
-namespace mu::uicomponents {
+namespace muse::uicomponents {
 class DropdownView : public PopupView
 {
     Q_OBJECT
@@ -50,5 +48,3 @@ private:
     int m_focusItemY = -1;
 };
 }
-
-#endif // MU_UICOMPONENTS_DROPDOWNVIEW_H

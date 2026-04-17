@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -38,6 +38,7 @@ StaffText::StaffText(Segment* parent, TextStyleType tid)
     : StaffTextBase(ElementType::STAFF_TEXT, parent, tid, ElementFlag::MOVABLE | ElementFlag::ON_STAFF)
 {
     initElementStyle(&STAFF_STYLE);
+    resetProperty(Pid::MUSIC_SYMBOL_SIZE);
 }
 
 StaffText::StaffText(const StaffText& t)
@@ -46,6 +47,18 @@ StaffText::StaffText(const StaffText& t)
     if (t.m_soundFlag) {
         setSoundFlag(t.m_soundFlag->clone());
     }
+}
+
+bool StaffText::isEditAllowed(EditData& ed) const
+{
+    bool ctrlPressed  = ed.modifiers & ControlModifier;
+    bool shiftPressed = ed.modifiers & ShiftModifier;
+    bool altPressed = ed.modifiers & AltModifier;
+    if (altPressed && !ctrlPressed && !shiftPressed && (ed.key == Key_Left || ed.key == Key_Right)) {
+        return false;
+    }
+
+    return TextBase::isEditAllowed(ed);
 }
 
 EngravingItem* StaffText::linkedClone()

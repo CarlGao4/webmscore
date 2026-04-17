@@ -2,6 +2,8 @@
 #include "global/log.h"
 #include "./score.h"
 
+using namespace muse;
+
 engraving::MasterScore* MainScore::maybeUseExcerpt(engraving::MasterScore* score, int excerptId) {
     // -1 means the full score
     if (excerptId < 0) {

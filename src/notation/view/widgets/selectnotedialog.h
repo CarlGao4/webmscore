@@ -1,11 +1,11 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-only
- * MuseScore-CLA-applies
+ * MuseScore-Studio-CLA-applies
  *
- * MuseScore
+ * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -19,8 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_NOTATION_SELECTNOTEDIALOG_H
-#define MU_NOTATION_SELECTNOTEDIALOG_H
+#pragma once
 
 #include "ui_selectnotedialog.h"
 
@@ -33,20 +32,14 @@ class Note;
 }
 
 namespace mu::notation {
-//---------------------------------------------------------
-//   SelectNoteDialog
-//---------------------------------------------------------
-
-class SelectNoteDialog : public QDialog, Ui::SelectNoteDialog
+class SelectNoteDialog : public QDialog, Ui::SelectNoteDialog, public muse::Injectable
 {
     Q_OBJECT
-    INJECT(context::IGlobalContext, globalContext)
+
+    muse::Inject<context::IGlobalContext> globalContext = { this };
 
 public:
     SelectNoteDialog(QWidget* parent = nullptr);
-    SelectNoteDialog(const SelectNoteDialog& other);
-
-    static int metaTypeId();
 
     bool doReplace() const;
     bool doAdd() const;
@@ -59,7 +52,8 @@ private slots:
     void buttonClicked(QAbstractButton* button);
 
 private:
-    virtual void hideEvent(QHideEvent*);
+    void showEvent(QShowEvent*) override;
+    void hideEvent(QHideEvent*) override;
 
     INotationPtr currentNotation() const;
     INotationInteractionPtr currentNotationInteraction() const;
@@ -71,7 +65,3 @@ private:
     const mu::engraving::Note* m_note = nullptr;
 };
 }
-
-Q_DECLARE_METATYPE(mu::notation::SelectNoteDialog)
-
-#endif // MU_NOTATION_SELECTNOTEDIALOG_H

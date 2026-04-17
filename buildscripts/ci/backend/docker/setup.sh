@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
-# MuseScore-CLA-applies
+# MuseScore-Studio-CLA-applies
 #
-# MuseScore
+# MuseScore Studio
 # Music Composition & Notation
 #
-# Copyright (C) 2021 MuseScore BVBA and others
+# Copyright (C) 2021 MuseScore Limited
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 3 as
@@ -27,6 +27,7 @@ apt_packages_basic=(
   file
   software-properties-common
   p7zip-full
+  unzip
   )
 
 apt_packages_standard=(
@@ -82,7 +83,30 @@ apt-get install -y --no-install-recommends \
   "${apt_packages_runtime[@]}" \
   "${apt_packages_ffmpeg[@]}"
 
-
 # DISTROS
 HERE="$(cd "$(dirname "$0")" && pwd)"
 bash $HERE/install_mu.sh
+
+# Google Fonts installation
+TEMP_DIR=$(mktemp -d)
+FONTS_DIR="$HOME/.local/share/fonts"
+
+echo "Downloading Google Fonts..."
+ZIP_URL="https://github.com/google/fonts/archive/main.zip"
+mkdir -p "$TEMP_DIR"
+cd "$TEMP_DIR"
+curl -L -o fonts.zip "$ZIP_URL"
+
+echo "Unpacking Google Fonts..."
+unzip -q fonts.zip
+cd fonts-main
+
+echo "Installing Google Fonts..."
+mkdir -p "$FONTS_DIR"
+find . -type f \( -iname "*.ttf" -o -iname "*.otf" \) -print0 | xargs -0 -r mv -n -t "$FONTS_DIR"
+
+echo "Installing Fonts Cache..."
+fc-cache -f -v
+
+echo "Cleaning..."
+rm -rf "$TEMP_DIR"
